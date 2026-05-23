@@ -1,0 +1,4 @@
+Never create, modify, or delete Unity .meta files. 
+Unity handles the generation of these files automatically. 
+When creating new scripts or folders, only create the source files (.cs) 
+and let the Unity Editor generate the metadata.
