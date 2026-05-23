@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 48a0023d5a859f046bbe6cb71ff6ef98
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/06_Magic/Magic_Weapon_Unsheath.controller
+  uploadId: 568326

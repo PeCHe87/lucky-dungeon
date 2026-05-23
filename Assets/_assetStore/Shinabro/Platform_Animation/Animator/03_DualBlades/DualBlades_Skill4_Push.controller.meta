@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 410821af9073a8e4c9a56a421390198d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/03_DualBlades/DualBlades_Skill4_Push.controller
+  uploadId: 568326

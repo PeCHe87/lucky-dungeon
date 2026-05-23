@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1a012b3471881f241935d87eff91f2fe
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/02_Hammer/Hammer_DodgeAttack.controller
+  uploadId: 568326

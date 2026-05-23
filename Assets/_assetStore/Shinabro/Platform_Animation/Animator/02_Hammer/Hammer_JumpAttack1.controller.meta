@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 86f1301ba0212fa49a91d85306093917
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/02_Hammer/Hammer_JumpAttack1.controller
+  uploadId: 568326

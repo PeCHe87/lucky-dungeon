@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 58687a15038a5f54297cd0ea948e2151
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/01_Sword&Shield/Sword&Shield_Skill5_Pull.controller
+  uploadId: 568326

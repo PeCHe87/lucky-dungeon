@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ad5d6884136b32843afdda685d8d68db
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/04_Bow/Bow_Attack3.controller
+  uploadId: 568326

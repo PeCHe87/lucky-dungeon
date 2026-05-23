@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 64e2acc4d26bee9478d1aa87a84b7815
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/10_Rapier/Rapier_Dodge.controller
+  uploadId: 568326

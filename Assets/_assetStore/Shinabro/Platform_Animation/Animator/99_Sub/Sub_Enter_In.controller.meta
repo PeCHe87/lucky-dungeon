@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 044778f52b0ff40449ecfcc1a218d015
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/99_Sub/Sub_Enter_In.controller
+  uploadId: 568326

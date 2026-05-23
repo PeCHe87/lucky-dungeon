@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b7a16412ca50f3b4dbb679e597db582e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/10_Rapier/Rapier_Walk_F.controller
+  uploadId: 568326

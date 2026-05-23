@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a2adadf7d82f5ab4ca7c16423a5108f3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/03_DualBlades/DualBlades_Skill8_Air.controller
+  uploadId: 568326

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 60444c84dc632f3468cd17f104b715b1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Chase_Timeline.playable
+  uploadId: 568326

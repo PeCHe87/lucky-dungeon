@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fa80b8e06f64cda4aa00f89f2cf35e9f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/10_Rapier/Rapier_Skill8_Air.controller
+  uploadId: 568326

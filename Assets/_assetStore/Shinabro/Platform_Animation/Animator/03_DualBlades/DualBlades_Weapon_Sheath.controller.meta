@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2f6e3c9f6af8eed4b94eb714c2041cd7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/03_DualBlades/DualBlades_Weapon_Sheath.controller
+  uploadId: 568326

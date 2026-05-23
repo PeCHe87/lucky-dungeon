@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 38b8250e0a35e6c4ab4569998ec1491b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/09_Fighter/Fighter_Dodge.controller
+  uploadId: 568326

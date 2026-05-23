@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 49e2736be122e8f4ebbc6238196456ee
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/Player_Base.prefab
+  uploadId: 568326

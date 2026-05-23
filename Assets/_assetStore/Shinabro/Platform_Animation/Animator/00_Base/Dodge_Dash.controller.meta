@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e62df8c03bce96d409ddba5afed8a0f0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/00_Base/Dodge_Dash.controller
+  uploadId: 568326

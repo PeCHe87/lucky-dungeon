@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0ff3f072c2a94a846baa56c8a1a24cdc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/11_DoubleBlades/DoubleBlades_Walk_B.controller
+  uploadId: 568326

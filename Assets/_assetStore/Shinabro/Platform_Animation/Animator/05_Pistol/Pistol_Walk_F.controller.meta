@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ac73193520a9f4a4aa18f91b36312aa6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/05_Pistol/Pistol_Walk_F.controller
+  uploadId: 568326

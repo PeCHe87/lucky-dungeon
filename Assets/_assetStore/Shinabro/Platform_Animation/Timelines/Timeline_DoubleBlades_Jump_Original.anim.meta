@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0a3fae4f1a0f4704fa50ea839d59e3f4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Timeline_DoubleBlades_Jump_Original.anim
+  uploadId: 568326

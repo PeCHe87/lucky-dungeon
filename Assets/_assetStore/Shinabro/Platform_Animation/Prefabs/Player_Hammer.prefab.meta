@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ce24cc499df41fc4584afd982528cf92
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/Player_Hammer.prefab
+  uploadId: 568326

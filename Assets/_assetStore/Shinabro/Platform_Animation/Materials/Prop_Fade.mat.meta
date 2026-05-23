@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f9246bd1bf0e612498c819d0a5094d6e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Materials/Prop_Fade.mat
+  uploadId: 568326

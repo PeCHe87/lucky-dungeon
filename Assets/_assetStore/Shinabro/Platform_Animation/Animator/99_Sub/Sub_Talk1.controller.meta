@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e374cd77030238e4eb35d936198c2ccb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/99_Sub/Sub_Talk1.controller
+  uploadId: 568326

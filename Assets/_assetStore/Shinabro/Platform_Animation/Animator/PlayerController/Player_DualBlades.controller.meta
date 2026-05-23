@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c94ff8455f8a10f40a996eca17d6579a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/PlayerController/Player_DualBlades.controller
+  uploadId: 568326

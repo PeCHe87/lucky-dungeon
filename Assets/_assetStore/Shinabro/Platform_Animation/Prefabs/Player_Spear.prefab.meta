@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6f8d1c734aa00094ea4da9fc68d202d1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/Player_Spear.prefab
+  uploadId: 568326

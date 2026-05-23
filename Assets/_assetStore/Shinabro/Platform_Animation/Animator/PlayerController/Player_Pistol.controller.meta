@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 447b8d653c1dfbe4296f4c570d04744b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/PlayerController/Player_Pistol.controller
+  uploadId: 568326

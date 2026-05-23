@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f675cae2cde2ff5479ca74e020a2c0e8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/06_Magic/Magic_Skill2_Slow.controller
+  uploadId: 568326

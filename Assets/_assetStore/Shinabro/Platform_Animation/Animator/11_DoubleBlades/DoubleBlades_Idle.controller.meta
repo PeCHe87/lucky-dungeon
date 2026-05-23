@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b54b11f7b50ed8a449d79539cbf5601c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/11_DoubleBlades/DoubleBlades_Idle.controller
+  uploadId: 568326

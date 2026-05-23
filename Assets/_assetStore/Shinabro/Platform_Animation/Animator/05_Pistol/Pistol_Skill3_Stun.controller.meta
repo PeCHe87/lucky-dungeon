@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bcd3756ab4154e3468e76e0980acb6ba
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/05_Pistol/Pistol_Skill3_Stun.controller
+  uploadId: 568326

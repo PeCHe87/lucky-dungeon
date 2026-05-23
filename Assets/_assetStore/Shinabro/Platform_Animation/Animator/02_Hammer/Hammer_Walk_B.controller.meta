@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2602c63c4a27df04f9c8c94fdabdbe89
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/02_Hammer/Hammer_Walk_B.controller
+  uploadId: 568326

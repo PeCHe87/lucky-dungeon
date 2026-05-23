@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a4ef668147adfd84abb018b4f0c16fb9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/05_Pistol/Pistol_Reload.controller
+  uploadId: 568326

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 25df3f7c7ea12db42bcb2a5e47553b99
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/50_Adventure/ClimbLadder_Out.controller
+  uploadId: 568326

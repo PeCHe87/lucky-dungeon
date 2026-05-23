@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 39574b58f13ba674fac4386a229956c6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Timeline_Spear_Jump_Original.anim
+  uploadId: 568326

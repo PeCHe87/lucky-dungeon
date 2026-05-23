@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 745317babe3857e4a9d0ec40103422ef
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/11_DoubleBlades/DoubleBlades_JumpAttack2.controller
+  uploadId: 568326

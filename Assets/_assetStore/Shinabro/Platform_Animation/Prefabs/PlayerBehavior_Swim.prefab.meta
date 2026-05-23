@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c643e5ddc3e319f4094e0f2d65f88751
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/PlayerBehavior_Swim.prefab
+  uploadId: 568326

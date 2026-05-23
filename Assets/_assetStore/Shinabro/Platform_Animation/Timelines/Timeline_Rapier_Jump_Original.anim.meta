@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3eb00f00a4b7dbd40918cf758b4dbf9b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Timeline_Rapier_Jump_Original.anim
+  uploadId: 568326

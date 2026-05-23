@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 831667793b622f94183b0b6cd512748b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/00_Base/Jump_Run.controller
+  uploadId: 568326

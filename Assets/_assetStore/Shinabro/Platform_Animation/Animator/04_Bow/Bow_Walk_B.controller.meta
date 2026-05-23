@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 02bda47bdd21aee47bed6dfbb3eaf9fc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/04_Bow/Bow_Walk_B.controller
+  uploadId: 568326

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: dae221e7bdebd5b4fbb92cfe663b2c74
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/01_Sword&Shield/Sword&Shield_JumpAttack3.controller
+  uploadId: 568326

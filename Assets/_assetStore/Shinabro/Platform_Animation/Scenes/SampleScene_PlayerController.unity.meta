@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ad208efbe80215e4ba6cd6501359d59d
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Scenes/SampleScene_PlayerController.unity
+  uploadId: 568326

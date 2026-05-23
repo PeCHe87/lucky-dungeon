@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6e582a58f6fd09f4f89d6924d56e5dba
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/PlayerController/Player_Rapier.controller
+  uploadId: 568326

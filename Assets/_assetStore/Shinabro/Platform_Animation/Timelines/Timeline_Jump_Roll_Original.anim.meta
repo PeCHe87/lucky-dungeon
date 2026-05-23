@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 122221d477cc7034c8cd7b64c5a292ee
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Timeline_Jump_Roll_Original.anim
+  uploadId: 568326

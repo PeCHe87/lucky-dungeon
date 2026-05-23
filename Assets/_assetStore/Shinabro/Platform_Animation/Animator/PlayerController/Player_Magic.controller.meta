@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: dd2567f62c539fd49aa417687e2a1f2b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/PlayerController/Player_Magic.controller
+  uploadId: 568326

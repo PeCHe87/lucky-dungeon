@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5de813cd68a344749ae4706229fc1dd1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Timeline_Fighter_Jump_Original.anim
+  uploadId: 568326

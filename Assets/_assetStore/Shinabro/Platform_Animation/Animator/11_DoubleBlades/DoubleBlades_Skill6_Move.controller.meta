@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 79a3d944405fb6a438aba2b2cdacad74
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/11_DoubleBlades/DoubleBlades_Skill6_Move.controller
+  uploadId: 568326

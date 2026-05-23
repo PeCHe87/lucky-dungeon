@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b6029b1467dcbe24e8095bbfefa9677f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/12_Claymore/Claymore_Weapon_Sheath.controller
+  uploadId: 568326

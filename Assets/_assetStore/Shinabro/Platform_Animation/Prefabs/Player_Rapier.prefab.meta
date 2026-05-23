@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 693737c5fdbb0e9489a1af613dbb5a68
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/Player_Rapier.prefab
+  uploadId: 568326

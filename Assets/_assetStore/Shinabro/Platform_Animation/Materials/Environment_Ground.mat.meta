@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6a9fc699637c76b42915f5128cf7d69f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Materials/Environment_Ground.mat
+  uploadId: 568326

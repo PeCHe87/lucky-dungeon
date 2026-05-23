@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bebd321cb4b7f884fa6ce1d39392bb50
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/98_Damage/DamageAir_Fall.controller
+  uploadId: 568326

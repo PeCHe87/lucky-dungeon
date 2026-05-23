@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 93612ffe887e630458884c71231afb00
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/06_Magic/Magic_Skill7_Around.controller
+  uploadId: 568326

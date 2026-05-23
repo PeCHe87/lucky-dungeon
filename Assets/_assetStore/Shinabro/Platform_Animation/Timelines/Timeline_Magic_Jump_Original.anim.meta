@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ef7032334e0c209428bc2eb26fb4d312
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Timelines/Timeline_Magic_Jump_Original.anim
+  uploadId: 568326

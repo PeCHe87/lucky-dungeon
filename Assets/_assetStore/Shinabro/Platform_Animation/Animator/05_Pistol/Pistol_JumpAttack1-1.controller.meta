@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b389ac0ac1d59004daa876c34970946a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/05_Pistol/Pistol_JumpAttack1-1.controller
+  uploadId: 568326

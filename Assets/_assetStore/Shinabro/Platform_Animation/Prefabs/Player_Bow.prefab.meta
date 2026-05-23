@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 20ad0bb5f1bd8844291c970e06815a0f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/Player_Bow.prefab
+  uploadId: 568326

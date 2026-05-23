@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 962d9ac19021456429111a1cbea6a4c0
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Prefabs/Player_DualBlades.prefab
+  uploadId: 568326

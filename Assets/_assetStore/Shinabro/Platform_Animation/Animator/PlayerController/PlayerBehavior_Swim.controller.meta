@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 471e460d3d9f5084fb6b072566103eba
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 182928
+  packageName: Platform Animation
+  packageVersion: 2.5
+  assetPath: Assets/Shinabro/Platform_Animation/Animator/PlayerController/PlayerBehavior_Swim.controller
+  uploadId: 568326
