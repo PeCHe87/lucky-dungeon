@@ -14,8 +14,6 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
 {
     [Tooltip("Optional. Pick PlayerControls → Player → Move. Leave empty if you use Player Input on this object or assign Controls Asset below.")]
     [SerializeField] InputActionProperty moveAction;
-    [Tooltip("Optional. Pick PlayerControls → Player → Dash. Leave empty to use Player Input / Controls Asset below.")]
-    [SerializeField] InputActionProperty dashAction;
     [Tooltip("Optional. Pick PlayerControls → Player → Attack. Leave empty to use Player Input / Controls Asset below.")]
     [SerializeField] InputActionProperty attackAction;
     [Tooltip("Optional. If Move is empty, movement is read from this component's Actions (same as your .inputactions asset). Auto-fills from Player Input on this GameObject.")]
@@ -27,11 +25,9 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     [SerializeField] float stickDeadzone = 0.08f;
 
     InputAction _moveFromEnabledAssetMap;
-    InputAction _dashFromEnabledAssetMap;
     InputAction _attackFromEnabledAssetMap;
     bool _enabledPlayerMapOnAsset;
     Func<Vector2> _readVirtualStick;
-    bool _uiDashThisFrame;
     bool _uiAttackThisFrame;
     IJoystickDoubleTapSink _doubleTapSink;
     JoystickDoubleTapBridge _joystickDoubleTapBridge;
@@ -112,13 +108,10 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     {
         _enabledPlayerMapOnAsset = false;
         _moveFromEnabledAssetMap = null;
-        _dashFromEnabledAssetMap = null;
         _attackFromEnabledAssetMap = null;
 
         if (moveAction.action != null)
             moveAction.action.Enable();
-        if (dashAction.action != null)
-            dashAction.action.Enable();
         if (attackAction.action != null)
             attackAction.action.Enable();
 
@@ -138,7 +131,6 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
                 map.Enable();
                 _enabledPlayerMapOnAsset = true;
                 _moveFromEnabledAssetMap = map.FindAction("Move", throwIfNotFound: false);
-                _dashFromEnabledAssetMap = map.FindAction("Dash", throwIfNotFound: false);
                 _attackFromEnabledAssetMap = map.FindAction("Attack", throwIfNotFound: false);
             }
         }
@@ -148,8 +140,6 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     {
         if (moveAction.action != null)
             moveAction.action.Disable();
-        if (dashAction.action != null)
-            dashAction.action.Disable();
         if (attackAction.action != null)
             attackAction.action.Disable();
 
@@ -157,16 +147,12 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
             playerControlsAsset.FindActionMap("Player")?.Disable();
 
         _moveFromEnabledAssetMap = null;
-        _dashFromEnabledAssetMap = null;
         _attackFromEnabledAssetMap = null;
         _enabledPlayerMapOnAsset = false;
     }
 
-    /// <summary>Called from UI (e.g. <see cref="UiDashButtonBinder"/>) to request a dash on the next gameplay read.</summary>
-    public void RegisterUiDashFromUi()
-    {
-        _uiDashThisFrame = true;
-    }
+    /// <summary>No-op; dash is joystick double-tap only via <see cref="DashJoystickDoubleTapController"/>.</summary>
+    public void RegisterUiDashFromUi() { }
 
     /// <summary>Called from UI (e.g. <see cref="UiAttackButtonBinder"/>) to request an attack on the next gameplay read.</summary>
     public void RegisterUiAttackFromUi()
@@ -199,20 +185,7 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
         return fromActions;
     }
 
-    public bool WasDashPressedThisFrame()
-    {
-        bool fromUi = _uiDashThisFrame;
-        _uiDashThisFrame = false;
-
-        InputAction action = dashAction.action;
-        if (action == null && playerInput != null && playerInput.actions != null)
-            action = playerInput.actions.FindAction("Dash", throwIfNotFound: false);
-        if (action == null)
-            action = _dashFromEnabledAssetMap;
-
-        bool fromAction = action != null && action.WasPressedThisFrame();
-        return fromUi || fromAction;
-    }
+    public bool WasDashPressedThisFrame() => false;
 
     public bool WasAttackPressedThisFrame()
     {

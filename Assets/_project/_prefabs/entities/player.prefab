@@ -999,6 +999,10 @@ GameObject:
   - component: {fileID: 9012345678901234505}
   - component: {fileID: 9012345678901234506}
   - component: {fileID: -4037862818332867988}
+  - component: {fileID: 9012345678901234510}
+  - component: {fileID: 9012345678901234511}
+  - component: {fileID: 9012345678901234512}
+  - component: {fileID: 9012345678901234513}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1061,7 +1065,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCharacterMovement
   moveIntentProvider: {fileID: 2009791332878126513}
-  dashIntentProvider: {fileID: 2009791332878126513}
   moveSpeed: 5
   cameraTransform: {fileID: 0}
   useWorldSpaceAxes: 0
@@ -1072,7 +1075,6 @@ MonoBehaviour:
   dashDuration: 0.2
   dashSpeed: 18
   dashCollisionPushImpulse: 8
-  dashCooldown: 0.35
   requireGroundedToStartDash: 1
   dashPushableLayers:
     serializedVersion: 2
@@ -1142,18 +1144,6 @@ MonoBehaviour:
         m_Flags: 0
       m_Flags: 0
     m_Reference: {fileID: 8887722091294524998, guid: 54a71c9539899cf47a200b03a1990b92, type: 3}
-  dashAction:
-    m_UseReference: 1
-    m_Action:
-      m_Name: Dash
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: 3f98135a-196e-4af1-aa19-fc67d6ef0daf
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: -600114243332982327, guid: 54a71c9539899cf47a200b03a1990b92, type: 3}
   attackAction:
     m_UseReference: 0
     m_Action:
@@ -1300,6 +1290,84 @@ MonoBehaviour:
   weaponHolder: {fileID: 9012345678901234504}
   logMissingBindings: 0
   logAttackAnimation: 0
+--- !u!114 &9012345678901234510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7489740eef8dad40804805a9834bad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DashCooldownRingView
+  radius: 0.85
+  lineWidth: 0.06
+  segmentCount: 48
+  heightOffset: 0
+  ringColor: {r: 1, g: 0.51522136, b: 0, a: 0.55}
+  backgroundRingColor: {r: 1, g: 1, b: 1, a: 0.15}
+--- !u!114 &9012345678901234511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad77077c7c6e5df4bbda6daaea5541d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageInvulnerability
+--- !u!114 &9012345678901234512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81ac773254818f54f85f01e16d8cc0bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DashMotionTrailEffect
+  enableGhostTrail: 0
+  visualRoot: {fileID: 3936869161901732676}
+  ghostInterval: 0.04
+  ghostFadeDuration: 0.18
+  ghostAlpha: 0.45
+  ghostTint: {r: 0.75, g: 0.85, b: 1, a: 1}
+  playBurstParticles: 1
+  dashBurst: {fileID: 0}
+  burstAnchor: {fileID: 0}
+  orientBurstToDashDirection: 1
+  clearBurstOnStop: 0
+--- !u!114 &9012345678901234513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3ac5f779390da04d9f8f0f18432d824, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DashJoystickDoubleTapController
+  doubleTapMaxInterval: 0.18
+  doubleTapMinInterval: 0.05
+  stickDeadzone: 0.08
+  maxTapHoldDuration: 0.18
+  dashCooldown: 2
+  invincibilityDuration: 0.2
+  dashDuration: 0.5
+  dashSpeed: 15
+  joystickProvider: {fileID: 2009791332878126513}
+  movement: {fileID: 2798365246320322531}
+  invulnerability: {fileID: 9012345678901234511}
+  trailEffect: {fileID: 9012345678901234512}
+  cooldownRing: {fileID: 9012345678901234510}
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0

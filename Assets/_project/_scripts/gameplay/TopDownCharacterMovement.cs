@@ -7,8 +7,6 @@ public class TopDownCharacterMovement : MonoBehaviour
     [Header("Control")]
     [Tooltip("Implements IMoveIntentProvider (e.g. PlayerInputMoveIntentProvider). If unset, uses first IMoveIntentProvider on this GameObject.")]
     [SerializeField] MonoBehaviour moveIntentProvider;
-    [Tooltip("Implements IDashIntentProvider. If unset, uses first IDashIntentProvider on this GameObject.")]
-    [SerializeField] MonoBehaviour dashIntentProvider;
 
     [Header("Movement")]
     [SerializeField] float moveSpeed = 6f;
@@ -30,7 +28,6 @@ public class TopDownCharacterMovement : MonoBehaviour
     [SerializeField] float dashSpeed = 18f;
     [Tooltip("Impulse applied to non-kinematic rigidbodies hit while dashing (horizontal).")]
     [SerializeField] float dashCollisionPushImpulse = 8f;
-    [SerializeField] float dashCooldown = 0.35f;
     [SerializeField] bool requireGroundedToStartDash = true;
     [Tooltip("Only colliders on these layers receive push. If empty, no rigidbodies are pushed.")]
     [SerializeField] LayerMask dashPushableLayers;
@@ -43,10 +40,8 @@ public class TopDownCharacterMovement : MonoBehaviour
     CharacterController _characterController;
     float _verticalVelocity;
     IMoveIntentProvider _provider;
-    IDashIntentProvider _dashProvider;
 
     float _dashTimeRemaining;
-    float _cooldownRemaining;
     Vector3 _dashDirection;
     readonly HashSet<Collider> _dashPushApplied = new HashSet<Collider>();
 
@@ -68,42 +63,14 @@ public class TopDownCharacterMovement : MonoBehaviour
             _provider = moveIntentProvider as IMoveIntentProvider;
         if (_provider == null)
             _provider = GetComponent<IMoveIntentProvider>();
-
-        if (dashIntentProvider != null)
-            _dashProvider = dashIntentProvider as IDashIntentProvider;
-        if (_dashProvider == null)
-            _dashProvider = GetComponent<IDashIntentProvider>();
     }
 
     void Update()
     {
-        if (_cooldownRemaining > 0f)
-            _cooldownRemaining -= Time.deltaTime;
-
         Vector2 intent = _provider != null ? _provider.GetMoveIntent() : Vector2.zero;
         Vector3 moveDir = GetHorizontalMoveDirection(intent);
 
         bool dashing = _dashTimeRemaining > 0f;
-        if (!dashing
-            && _dashProvider != null
-            && _dashProvider.WasDashPressedThisFrame()
-            && _cooldownRemaining <= 0f
-            && (!requireGroundedToStartDash || _characterController.isGrounded))
-        {
-            float deadzoneSq = rotationInputDeadzone * rotationInputDeadzone;
-            Vector3 dashDir = moveDir.sqrMagnitude > deadzoneSq
-                ? moveDir
-                : GetFacingHorizontalDirection();
-            if (dashDir.sqrMagnitude > 1e-6f)
-            {
-                dashDir.Normalize();
-                _dashDirection = dashDir;
-                _dashTimeRemaining = dashDuration;
-                _dashPushApplied.Clear();
-            }
-        }
-
-        dashing = _dashTimeRemaining > 0f;
 
         if (_lungeTimeRemaining > 0f)
             _lungeTimeRemaining -= Time.deltaTime;
@@ -140,12 +107,7 @@ public class TopDownCharacterMovement : MonoBehaviour
         {
             _dashTimeRemaining -= Time.deltaTime;
             if (_dashTimeRemaining <= 0f)
-            {
-                bool wasOverrideDash = _useOverrideDashParams;
                 _useOverrideDashParams = false;
-                if (!wasOverrideDash)
-                    _cooldownRemaining = dashCooldown;
-            }
         }
     }
 

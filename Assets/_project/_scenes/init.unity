@@ -9369,6 +9369,14 @@ PrefabInstance:
       propertyPath: cameraTransform
       value: 
       objectReference: {fileID: 330585546}
+    - target: {fileID: 9012345678901234512, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: dashBurst
+      value: 
+      objectReference: {fileID: 753919918}
+    - target: {fileID: 9012345678901234512, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: burstAnchor
+      value: 
+      objectReference: {fileID: 1311685300}
     - target: {fileID: 3168623999250011889, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: assistant
       value: 
@@ -9432,18 +9440,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7183177815072600276}
-    - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7183177815072600275}
-    - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7183177815072600274}
-    - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7183177815072600273}
-    - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7183177815072600284}
   m_SourcePrefab: {fileID: 100100000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
 --- !u!114 &7183177815072600265 stripped
@@ -9479,82 +9475,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ddd8b8e2574e1543b2fac4fb0463020, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCharacterMovement
---- !u!114 &7183177815072600273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662043928}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7489740eef8dad40804805a9834bad8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DashCooldownRingView
-  radius: 0.85
-  lineWidth: 0.06
-  segmentCount: 48
-  heightOffset: 0
-  ringColor: {r: 1, g: 0.51522136, b: 0, a: 0.55}
-  backgroundRingColor: {r: 1, g: 1, b: 1, a: 0.15}
---- !u!114 &7183177815072600274
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662043928}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81ac773254818f54f85f01e16d8cc0bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DashMotionTrailEffect
-  enableGhostTrail: 0
-  visualRoot: {fileID: 1911952147}
-  ghostInterval: 0.04
-  ghostFadeDuration: 0.18
-  ghostAlpha: 0.45
-  ghostTint: {r: 0.75, g: 0.85, b: 1, a: 1}
-  playBurstParticles: 1
-  dashBurst: {fileID: 753919918}
-  burstAnchor: {fileID: 1311685300}
-  orientBurstToDashDirection: 1
-  clearBurstOnStop: 0
---- !u!114 &7183177815072600275
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662043928}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad77077c7c6e5df4bbda6daaea5541d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DamageInvulnerability
---- !u!114 &7183177815072600276
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662043928}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3ac5f779390da04d9f8f0f18432d824, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DashJoystickDoubleTapController
-  doubleTapMaxInterval: 0.3
-  stickDeadzone: 0.08
-  dashCooldown: 2
-  invincibilityDuration: 0.2
-  dashDuration: 0.5
-  dashSpeed: 15
-  joystickProvider: {fileID: 7183177815072600269}
-  movement: {fileID: 7183177815072600271}
-  invulnerability: {fileID: 7183177815072600275}
-  trailEffect: {fileID: 7183177815072600274}
-  cooldownRing: {fileID: 7183177815072600273}
 --- !u!114 &7183177815072600284
 MonoBehaviour:
   m_ObjectHideFlags: 0

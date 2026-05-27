@@ -3,10 +3,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// Sibling to Joystick Pack on the same UI object; forwards pointer up/down for double-tap dash detection.
+/// Sibling to Joystick Pack on the same UI object; forwards pointer down/move/up for double-tap dash detection.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class JoystickDoubleTapBridge : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+public sealed class JoystickDoubleTapBridge : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerMoveHandler
 {
     static readonly FieldInfo BackgroundField = typeof(Joystick).GetField(
         "background",
@@ -16,6 +16,7 @@ public sealed class JoystickDoubleTapBridge : MonoBehaviour, IPointerDownHandler
     RectTransform _background;
     Canvas _canvas;
     IJoystickDoubleTapSink _sink;
+    bool _pointerDown;
 
     void Awake()
     {
@@ -44,11 +45,25 @@ public sealed class JoystickDoubleTapBridge : MonoBehaviour, IPointerDownHandler
         if (!TryGetNormalizedOffset(eventData.position, out Vector2 normalized))
             return;
 
+        _pointerDown = true;
         _sink.OnJoystickPointerDown(normalized);
+    }
+
+    public void OnPointerMove(PointerEventData eventData)
+    {
+        if (!_pointerDown || _sink == null || _background == null || _canvas == null)
+            return;
+        if (!TryGetNormalizedOffset(eventData.position, out Vector2 normalized))
+            return;
+
+        _sink.OnJoystickPointerMove(normalized);
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (!_pointerDown)
+            return;
+        _pointerDown = false;
         if (_sink == null)
             return;
         _sink.OnJoystickPointerUp();
