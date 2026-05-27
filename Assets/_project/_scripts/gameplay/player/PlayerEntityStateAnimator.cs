@@ -16,9 +16,14 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     [SerializeField] Animator animator;
     [SerializeField] RuntimeAnimatorController locomotionController;
     [SerializeField] PlayerEntityStateAnimationProfile profile;
+    [Tooltip("If unset, uses WeaponHolder on this GameObject.")]
+    [SerializeField] WeaponHolder weaponHolder;
 
     [Header("Debug")]
     [SerializeField] bool logMissingBindings;
+    [SerializeField] bool logAttackAnimation;
+
+    MeleeWeapon _meleeWeapon;
 
     readonly Dictionary<PlayerEntityStateKind, int> _stateHashes = new Dictionary<PlayerEntityStateKind, int>();
     readonly HashSet<int> _attackStateHashes = new HashSet<int>();
@@ -36,6 +41,11 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
         if (attackController == null)
             attackController = GetComponent<PlayerAttackController>();
+
+        if (weaponHolder == null)
+            weaponHolder = GetComponent<WeaponHolder>();
+
+        ResolveMeleeWeapon();
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
@@ -195,6 +205,22 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         return threshold > 0f ? threshold : 0.95f;
     }
 
+    /// <summary>True while a melee attack state is playing and has not reached the combo completion threshold.</summary>
+    public bool IsMeleeAttackClipPlaying => IsAttackClipPlaying(GetAttackLayer());
+
+    /// <summary>True during attack clips, attack-layer transitions, or queued combo inputs.</summary>
+    public bool IsMeleeCombatTargetingLocked =>
+        IsMeleeAttackClipPlaying
+        || _queuedAttackPressCount > 0
+        || IsAttackLayerInTransition();
+
+    bool IsAttackLayerInTransition()
+    {
+        if (animator == null)
+            return false;
+        return animator.IsInTransition(GetAttackLayer());
+    }
+
     bool IsAttackClipPlaying(int layer)
     {
         if (animator == null || _attackStateHashes.Count == 0)
@@ -207,6 +233,14 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         return info.normalizedTime < GetAttackCompletionThreshold();
     }
 
+    void ResolveMeleeWeapon()
+    {
+        if (weaponHolder != null && weaponHolder.Current is MeleeWeapon current)
+            _meleeWeapon = current;
+        else
+            _meleeWeapon = GetComponentInChildren<MeleeWeapon>(true);
+    }
+
     void PlayAttackState(string stateName, int layer)
     {
         if (animator == null)
@@ -217,6 +251,25 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
         _lastPlayedHash = stateHash;
         _lastPlayedLayer = layer;
+
+        ResolveMeleeWeapon();
+
+        if (logAttackAnimation)
+            Debug.Log($"[PlayerEntityStateAnimator] PlayAttackState '{stateName}' on layer {layer}.", this);
+
+        if (_meleeWeapon == null)
+        {
+            if (logAttackAnimation)
+                Debug.LogWarning(
+                    "[PlayerEntityStateAnimator] MeleeWeapon not found; ArmHitForCurrentSwing skipped.",
+                    this);
+            return;
+        }
+
+        _meleeWeapon.ArmHitForCurrentSwing();
+
+        if (logAttackAnimation)
+            Debug.Log($"[PlayerEntityStateAnimator] ArmHitForCurrentSwing on '{_meleeWeapon.name}'.", this);
     }
 
     void RebuildHashCache()

@@ -46,6 +46,8 @@ static class PlayerAnimationEditorSetup
         }
 
         var attackController = prefabRoot.GetComponent<PlayerAttackController>();
+        var weaponHolder = prefabRoot.GetComponent<WeaponHolder>();
+        var meleeWeapon = prefabRoot.GetComponentInChildren<MeleeWeapon>(true);
         var movement = prefabRoot.GetComponent<TopDownCharacterMovement>();
         var animator = prefabRoot.GetComponentInChildren<Animator>(true);
         if (animator != null)
@@ -98,8 +100,43 @@ static class PlayerAnimationEditorSetup
             dirty = true;
         }
 
+        if (weaponHolder != null
+            && animatorSo.FindProperty("weaponHolder").objectReferenceValue != weaponHolder)
+        {
+            animatorSo.FindProperty("weaponHolder").objectReferenceValue = weaponHolder;
+            dirty = true;
+        }
+
         if (animatorSo.ApplyModifiedPropertiesWithoutUndo())
             dirty = true;
+
+        if (animator != null)
+        {
+            var receiver = animator.GetComponent<MeleeAttackAnimationEventReceiver>();
+            if (receiver == null)
+            {
+                receiver = animator.gameObject.AddComponent<MeleeAttackAnimationEventReceiver>();
+                dirty = true;
+            }
+
+            var receiverSo = new SerializedObject(receiver);
+            if (meleeWeapon != null
+                && receiverSo.FindProperty("meleeWeapon").objectReferenceValue != meleeWeapon)
+            {
+                receiverSo.FindProperty("meleeWeapon").objectReferenceValue = meleeWeapon;
+                dirty = true;
+            }
+
+            if (weaponHolder != null
+                && receiverSo.FindProperty("weaponHolder").objectReferenceValue != weaponHolder)
+            {
+                receiverSo.FindProperty("weaponHolder").objectReferenceValue = weaponHolder;
+                dirty = true;
+            }
+
+            if (receiverSo.ApplyModifiedPropertiesWithoutUndo())
+                dirty = true;
+        }
 
         if (movement != null && animator != null)
         {

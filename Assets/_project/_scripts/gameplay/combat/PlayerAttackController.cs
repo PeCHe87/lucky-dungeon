@@ -50,14 +50,17 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
             return;
 
-        AttackPressed?.Invoke();
-
         Transform attacker = transform;
         Transform face = facingRoot != null ? facingRoot : transform;
 
         Transform optionalTarget = null;
-        if (targetQuery != null && targetQuery.TryGetNearestTransform(out Transform t))
-            optionalTarget = t;
+        if (targetQuery != null)
+        {
+            if (targetQuery.IsDetectionSuspended && targetQuery.TryGetFrozenCombatTarget(out Transform frozen))
+                optionalTarget = frozen;
+            else if (targetQuery.TryGetNearestTransform(out Transform t))
+                optionalTarget = t;
+        }
 
         if (snapFacingToNearestTargetBeforeAttack
             && optionalTarget != null)
@@ -86,7 +89,12 @@ public sealed class PlayerAttackController : MonoBehaviour
             facing = f,
             optionalTarget = optionalTarget
         };
-        bool performed = weaponHolder.TryAttack(in ctx);
+        bool performed = weaponHolder.Current is MeleeWeapon melee
+            ? melee.TryBeginAttack(in ctx)
+            : weaponHolder.TryAttack(in ctx);
+
+        AttackPressed?.Invoke();
+
         if (performed)
             AttackPerformed?.Invoke();
 

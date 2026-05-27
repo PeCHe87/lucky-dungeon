@@ -1199,9 +1199,14 @@ MonoBehaviour:
     m_Bits: 4294967295
   losQueryTriggerInteraction: 1
   colliderIgnoreRoot: {fileID: 0}
+  requireTargetsInViewCone: 0
   prioritizeFrontTargets: 0
   frontViewAngle: 90
   facingRoot: {fileID: 0}
+  enableOmnidirectionalFallback: 1
+  omnidirectionalRadius: 12
+  enableTargetStickiness: 1
+  stickyMaxRange: 0
   drawDetectedTargetGizmo: 1
   drawLosDebug: 1
 --- !u!114 &3168623999250011889
@@ -1254,6 +1259,7 @@ MonoBehaviour:
   facingRoot: {fileID: 3936869161901732676}
   snapFacingToNearestTargetBeforeAttack: 1
   logProcessedAttack: 0
+  playerEntityState: {fileID: 0}
 --- !u!114 &9012345678901234506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1288,11 +1294,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerEntityStateAnimator
   playerEntityState: {fileID: 9012345678901234506}
   attackController: {fileID: 9012345678901234505}
-  weaponHolder: {fileID: 9012345678901234504}
   animator: {fileID: 99504793957550150}
   locomotionController: {fileID: 9100000, guid: 3867d71e261b62b4c97e4562b1fa8efc, type: 2}
   profile: {fileID: 11400000, guid: 23438f43f4ac2d441b21f5b3c030f092, type: 2}
+  weaponHolder: {fileID: 9012345678901234504}
   logMissingBindings: 0
+  logAttackAnimation: 0
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0
@@ -1542,13 +1549,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7072383029163001940, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -3790341027782439186}
   m_SourcePrefab: {fileID: 100100000, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
 --- !u!95 &99504793957550150 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 7072383029155625528, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
   m_PrefabInstance: {fileID: 7153868991383712382}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &99504793966918186 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7072383029163001940, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
+  m_PrefabInstance: {fileID: 7153868991383712382}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-3790341027782439186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 99504793966918186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a06f67a4c0caf8b4ca03f74444494454, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeAttackAnimationEventReceiver
+  meleeWeapon: {fileID: 9012345678901234503}
+  weaponHolder: {fileID: 9012345678901234504}
+  logHitFrameEvents: 0
 --- !u!4 &99504793967339466 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7072383029163103668, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}

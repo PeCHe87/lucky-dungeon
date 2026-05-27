@@ -2,7 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-/// <summary>Simple melee swing: sphere overlap, cone filter, optional <see cref="IDamageable"/>.</summary>
+/// <summary>
+/// Melee swing: overlap on animation hit event, cone filter, optional <see cref="IDamageable"/>.
+/// <see cref="TryAttack"/> begins the swing (cooldown, lunge); damage runs when
+/// <see cref="ApplyPendingDamage"/> is called from an animation event.
+/// </summary>
 public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity
 {
     [SerializeField] float damage = 10f;
@@ -27,11 +31,18 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
     [SerializeField] GameObject[] equippedVisualRoots;
 
+    [Header("Debug")]
+    [SerializeField] bool logDamagePipeline;
+
     float _cooldownRemaining;
     float _attackActiveTimer;
     Collider[] _overlapBuffer;
     TopDownCharacterMovement _cachedMovement;
     bool _movementResolved;
+    bool _hasArmedContext;
+    AttackContext _armedContext;
+    bool _hasPendingHitContext;
+    AttackContext _pendingHitContext;
 
     void Awake()
     {
@@ -60,7 +71,10 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
             _attackActiveTimer -= Time.deltaTime;
     }
 
-    public bool TryAttack(in AttackContext ctx)
+    /// <summary>Begins a melee swing: cooldown, lunge, arms context for the next clip start. No overlap yet.</summary>
+    public bool TryAttack(in AttackContext ctx) => TryBeginAttack(in ctx);
+
+    public bool TryBeginAttack(in AttackContext ctx)
     {
         if (ctx.attacker == null)
             return false;
@@ -77,8 +91,69 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
             forward.Normalize();
 
         TryMoveAttackerForward(ctx.attacker, forward);
-        Vector3 origin = ctx.attacker.position;
 
+        _armedContext = ctx;
+        _hasArmedContext = true;
+        _attackActiveTimer = attackActiveDuration;
+        return true;
+    }
+
+    /// <summary>Called when an attack animator state starts; links armed context to the clip's hit event.</summary>
+    public void ArmHitForCurrentSwing()
+    {
+        if (!_hasArmedContext)
+        {
+            if (logDamagePipeline)
+                Debug.LogWarning("[MeleeWeapon] ArmHitForCurrentSwing skipped: no armed context (TryBeginAttack did not run).", this);
+            return;
+        }
+
+        _pendingHitContext = _armedContext;
+        _hasPendingHitContext = true;
+        _hasArmedContext = false;
+
+        if (logDamagePipeline)
+            Debug.Log("[MeleeWeapon] Pending hit context armed for animation event.", this);
+    }
+
+    /// <summary>Called from animation event <c>OnMeleeHitFrame</c> on the Animator object.</summary>
+    public void ApplyPendingDamage()
+    {
+        if (!_hasPendingHitContext)
+        {
+            if (logDamagePipeline)
+                Debug.LogWarning(
+                    "[MeleeWeapon] ApplyPendingDamage skipped: no pending hit context (ArmHitForCurrentSwing did not run).",
+                    this);
+            return;
+        }
+
+        AttackContext ctx = _pendingHitContext;
+        _hasPendingHitContext = false;
+
+        if (logDamagePipeline)
+        {
+            string attackerName = ctx.attacker != null ? ctx.attacker.name : "<null>";
+            Debug.Log($"[MeleeWeapon] Applying pending damage (attacker={attackerName}).", this);
+        }
+
+        ApplyDamage(in ctx);
+        onAttackPerformed?.Invoke();
+    }
+
+    void ApplyDamage(in AttackContext ctx)
+    {
+        if (ctx.attacker == null)
+            return;
+
+        Vector3 forward = ctx.facing;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-8f)
+            forward = Vector3.forward;
+        else
+            forward.Normalize();
+
+        Vector3 origin = ctx.attacker.position;
         float halfCone = coneAngle >= 360f ? 180f : coneAngle * 0.5f;
 
         int count = Physics.OverlapSphereNonAlloc(
@@ -89,11 +164,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
             overlapQueryTriggerInteraction);
 
         var damagedComponents = new HashSet<int>();
-        int applied = 0;
+        int candidatesInCone = 0;
+        int damagedCount = 0;
 
         for (int i = 0; i < count; i++)
         {
-            if (applied >= maxTargetsPerSwing)
+            if (damagedCount >= maxTargetsPerSwing)
                 break;
 
             Collider col = _overlapBuffer[i];
@@ -110,13 +186,20 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
             if (coneAngle < 360f && Vector3.Angle(forward, to) > halfCone + 0.01f)
                 continue;
 
-            TryDamageFirstOnHierarchy(col.gameObject, damage, damagedComponents, in ctx);
-            applied++;
+            candidatesInCone++;
+            if (TryDamageFirstOnHierarchy(col.gameObject, damage, damagedComponents, in ctx))
+                damagedCount++;
         }
 
-        _attackActiveTimer = attackActiveDuration;
-        onAttackPerformed?.Invoke();
-        return true;
+        if (logDamagePipeline)
+        {
+            Debug.Log(
+                $"[MeleeWeapon] ApplyDamage overlap={count} inCone={candidatesInCone} damaged={damagedCount} " +
+                $"(range={range}, origin={origin}).",
+                this);
+            if (candidatesInCone > 0 && damagedCount == 0)
+                Debug.LogWarning("[MeleeWeapon] Hit colliders in cone but no IDamageable found on hierarchy.", this);
+        }
     }
 
     /// <summary>Walks up from the hit object and applies damage to the first <see cref="IDamageable"/> found.</summary>
