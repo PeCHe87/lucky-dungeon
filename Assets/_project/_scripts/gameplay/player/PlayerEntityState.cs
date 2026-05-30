@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Read-only observer of the player's locomotion/combat state from input and existing gameplay components.
-/// Priority: Attacking > Dashing > Running > Walking > Idle.
+/// Priority: MeleeApproaching > Attacking > Dashing > Running > Walking > Idle.
 /// Extend by adding <see cref="PlayerEntityStateKind"/> values and <see cref="IPlayerStateRule"/> implementations.
 /// </summary>
 [DefaultExecutionOrder(100)]
@@ -14,6 +14,7 @@ public sealed class PlayerEntityState : MonoBehaviour
     [SerializeField] MonoBehaviour moveIntentProvider;
     [SerializeField] TopDownCharacterMovement movement;
     [SerializeField] WeaponHolder weaponHolder;
+    [SerializeField] PlayerAttackController attackController;
 
     [Header("Locomotion thresholds")]
     [SerializeField] float moveDeadzone = 0.08f;
@@ -53,6 +54,9 @@ public sealed class PlayerEntityState : MonoBehaviour
         if (weaponHolder == null)
             weaponHolder = GetComponent<WeaponHolder>();
 
+        if (attackController == null)
+            attackController = GetComponent<PlayerAttackController>();
+
         _rules = BuildRules();
         Current = PlayerEntityStateKind.Idle;
         Previous = PlayerEntityStateKind.Idle;
@@ -79,7 +83,7 @@ public sealed class PlayerEntityState : MonoBehaviour
 
     PlayerEntityStateKind ResolveState()
     {
-        var ctx = new PlayerStateContext(_moveProvider, movement, weaponHolder, moveDeadzone, runThreshold);
+        var ctx = new PlayerStateContext(_moveProvider, movement, weaponHolder, attackController, moveDeadzone, runThreshold);
         for (int i = 0; i < _rules.Length; i++)
         {
             if (_rules[i].TryResolve(in ctx, out PlayerEntityStateKind state))
@@ -93,6 +97,7 @@ public sealed class PlayerEntityState : MonoBehaviour
     {
         return new IPlayerStateRule[]
         {
+            new MeleeApproachingStateRule(),
             new AttackingStateRule(),
             new DashingStateRule(),
             new RunningStateRule(),
@@ -106,6 +111,7 @@ public sealed class PlayerEntityState : MonoBehaviour
         public readonly IMoveIntentProvider MoveProvider;
         public readonly TopDownCharacterMovement Movement;
         public readonly WeaponHolder WeaponHolder;
+        public readonly PlayerAttackController AttackController;
         public readonly float MoveDeadzone;
         public readonly float RunThreshold;
 
@@ -113,12 +119,14 @@ public sealed class PlayerEntityState : MonoBehaviour
             IMoveIntentProvider moveProvider,
             TopDownCharacterMovement movement,
             WeaponHolder weaponHolder,
+            PlayerAttackController attackController,
             float moveDeadzone,
             float runThreshold)
         {
             MoveProvider = moveProvider;
             Movement = movement;
             WeaponHolder = weaponHolder;
+            AttackController = attackController;
             MoveDeadzone = moveDeadzone;
             RunThreshold = runThreshold;
         }
@@ -130,6 +138,21 @@ public sealed class PlayerEntityState : MonoBehaviour
     interface IPlayerStateRule
     {
         bool TryResolve(in PlayerStateContext ctx, out PlayerEntityStateKind state);
+    }
+
+    sealed class MeleeApproachingStateRule : IPlayerStateRule
+    {
+        public bool TryResolve(in PlayerStateContext ctx, out PlayerEntityStateKind state)
+        {
+            if (ctx.AttackController != null && ctx.AttackController.IsMeleeApproaching)
+            {
+                state = PlayerEntityStateKind.MeleeApproaching;
+                return true;
+            }
+
+            state = default;
+            return false;
+        }
     }
 
     sealed class AttackingStateRule : IPlayerStateRule

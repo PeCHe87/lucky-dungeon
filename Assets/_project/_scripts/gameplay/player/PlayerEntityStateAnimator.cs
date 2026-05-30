@@ -19,11 +19,19 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     [Tooltip("If unset, uses WeaponHolder on this GameObject.")]
     [SerializeField] WeaponHolder weaponHolder;
 
+    [Header("Melee approach")]
+    [Tooltip("Used when the animation profile has no MeleeApproaching entry.")]
+    [SerializeField] string meleeApproachStateFallback = "MeleeApproach";
+    [SerializeField, Range(0.25f, 3f)] float minApproachAnimSpeed = 0.25f;
+    [SerializeField, Range(0.25f, 3f)] float maxApproachAnimSpeed = 3f;
+
     [Header("Debug")]
     [SerializeField] bool logMissingBindings;
     [SerializeField] bool logAttackAnimation;
 
     MeleeWeapon _meleeWeapon;
+    bool _meleeApproachAnimActive;
+    float _defaultAnimatorSpeed = 1f;
 
     readonly Dictionary<PlayerEntityStateKind, int> _stateHashes = new Dictionary<PlayerEntityStateKind, int>();
     readonly HashSet<int> _attackStateHashes = new HashSet<int>();
@@ -55,6 +63,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             if (locomotionController != null)
                 animator.runtimeAnimatorController = locomotionController;
             animator.applyRootMotion = false;
+            _defaultAnimatorSpeed = animator.speed > 0f ? animator.speed : 1f;
         }
 
 #if UNITY_EDITOR
@@ -82,7 +91,11 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             playerEntityState.StateChanged += OnStateChanged;
 
         if (attackController != null)
+        {
             attackController.AttackPressed += OnAttackPressed;
+            attackController.MeleeApproachStarted += OnMeleeApproachStarted;
+            attackController.MeleeApproachCancelled += OnMeleeApproachCancelled;
+        }
 
         if (playerEntityState != null)
             PlayForState(playerEntityState.Current, force: true);
@@ -94,7 +107,14 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             playerEntityState.StateChanged -= OnStateChanged;
 
         if (attackController != null)
+        {
             attackController.AttackPressed -= OnAttackPressed;
+            attackController.MeleeApproachStarted -= OnMeleeApproachStarted;
+            attackController.MeleeApproachCancelled -= OnMeleeApproachCancelled;
+        }
+
+        ResetAnimatorPlaybackSpeed();
+        _meleeApproachAnimActive = false;
     }
 
     void OnValidate()
@@ -117,6 +137,12 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     {
         if (animator == null || profile == null)
             return;
+
+        if (attackController != null && attackController.IsMeleeApproaching)
+            return;
+
+        ResetAnimatorPlaybackSpeed();
+        _meleeApproachAnimActive = false;
 
         if (!profile.MeleeAttackSequence.IsValid)
             return;
@@ -143,8 +169,70 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (current == PlayerEntityStateKind.Attacking)
             return;
 
+        if (current == PlayerEntityStateKind.MeleeApproaching || _meleeApproachAnimActive)
+            return;
+
         _locomotionSyncPending = false;
         PlayForState(current, force: false);
+    }
+
+    void OnMeleeApproachStarted(float duration)
+    {
+        if (animator == null || profile == null || duration <= 0f)
+            return;
+
+        string stateName = ResolveMeleeApproachStateName();
+        if (string.IsNullOrWhiteSpace(stateName))
+            return;
+
+        int layer = GetLocomotionLayer();
+        float crossFade = profile.TryGetEntry(PlayerEntityStateKind.MeleeApproaching, out PlayerEntityStateAnimationEntry entry)
+            ? profile.ResolveCrossFadeSeconds(in entry)
+            : profile.DefaultCrossFadeSeconds;
+
+        int stateHash = Animator.StringToHash(stateName);
+        animator.CrossFadeInFixedTime(stateHash, crossFade, layer, 0f);
+
+        _lastPlayedHash = stateHash;
+        _lastPlayedLayer = layer;
+        _meleeApproachAnimActive = true;
+
+        if (_defaultAnimatorSpeed <= 0f)
+            _defaultAnimatorSpeed = animator.speed > 0f ? animator.speed : 1f;
+
+        float clipLength = ResolveApproachClipLength(layer, stateHash);
+
+        if (clipLength > 0f)
+            animator.speed = Mathf.Clamp(clipLength / duration, minApproachAnimSpeed, maxApproachAnimSpeed);
+        else
+            animator.speed = _defaultAnimatorSpeed;
+
+        if (logAttackAnimation)
+            Debug.Log(
+                $"[PlayerEntityStateAnimator] MeleeApproach '{stateName}' duration={duration:F2}s animator.speed={animator.speed:F2}.",
+                this);
+    }
+
+    void OnMeleeApproachCancelled()
+    {
+        EndMeleeApproachAnimation();
+    }
+
+    void EndMeleeApproachAnimation()
+    {
+        if (!_meleeApproachAnimActive)
+            return;
+
+        ResetAnimatorPlaybackSpeed();
+        _meleeApproachAnimActive = false;
+
+        if (playerEntityState == null || profile == null)
+            return;
+
+        if (playerEntityState.Current == PlayerEntityStateKind.Attacking)
+            return;
+
+        PlayForState(playerEntityState.Current, force: false);
     }
 
     void DrainQueuedAttackPresses(int layer)
@@ -198,6 +286,58 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         return 0;
     }
 
+    int GetLocomotionLayer()
+    {
+        if (profile != null
+            && profile.TryGetEntry(PlayerEntityStateKind.MeleeApproaching, out PlayerEntityStateAnimationEntry approachEntry))
+        {
+            return approachEntry.layer;
+        }
+
+        return 0;
+    }
+
+    string ResolveMeleeApproachStateName()
+    {
+        if (profile != null
+            && profile.TryGetEntry(PlayerEntityStateKind.MeleeApproaching, out PlayerEntityStateAnimationEntry entry)
+            && !string.IsNullOrWhiteSpace(entry.animatorStateName))
+        {
+            return entry.animatorStateName;
+        }
+
+        return meleeApproachStateFallback;
+    }
+
+    float ResolveApproachClipLength(int layer, int stateHash)
+    {
+        if (animator == null)
+            return 0f;
+
+        AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
+        if (current.shortNameHash == stateHash && current.length > 0f)
+            return current.length;
+
+        AnimatorClipInfo[] currentClips = animator.GetCurrentAnimatorClipInfo(layer);
+        if (currentClips.Length > 0 && currentClips[0].clip != null)
+            return currentClips[0].clip.length;
+
+        AnimatorClipInfo[] nextClips = animator.GetNextAnimatorClipInfo(layer);
+        if (nextClips.Length > 0 && nextClips[0].clip != null)
+            return nextClips[0].clip.length;
+
+        return 0f;
+    }
+
+    void ResetAnimatorPlaybackSpeed()
+    {
+        if (animator == null)
+            return;
+
+        float restore = _defaultAnimatorSpeed > 0f ? _defaultAnimatorSpeed : 1f;
+        animator.speed = restore;
+    }
+
     float GetAttackCompletionThreshold()
     {
         MeleeAttackAnimationSequence sequence = profile.MeleeAttackSequence;
@@ -245,6 +385,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     {
         if (animator == null)
             return;
+
+        ResetAnimatorPlaybackSpeed();
+        _meleeApproachAnimActive = false;
 
         int stateHash = Animator.StringToHash(stateName);
         animator.Play(stateHash, layer, 0f);

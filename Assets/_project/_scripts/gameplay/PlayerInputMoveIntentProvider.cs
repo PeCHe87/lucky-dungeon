@@ -112,4 +112,15 @@ public class PlayerInputMoveIntentProvider : MonoBehaviour, IMoveIntentProvider,
             fromAction = false;
         return fromAction;
     }
+
+    public bool IsAttackHeld()
+    {
+        InputAction action = attackAction.action;
+        if (action == null && playerInput != null && playerInput.actions != null)
+            action = playerInput.actions.FindAction("Attack", throwIfNotFound: false);
+        if (action == null)
+            action = _attackFromEnabledAssetMap;
+
+        return action != null && action.IsPressed();
+    }
 }

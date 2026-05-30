@@ -31,8 +31,18 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
     [SerializeField] GameObject[] equippedVisualRoots;
 
+    [Header("Approach lunge")]
+    [Tooltip("Lunge toward the detected target before the attack clip when outside melee range.")]
+    [SerializeField] bool enableApproachLunge = true;
+    [Tooltip("Stops the approach this far inside damage range (horizontal distance from target).")]
+    [SerializeField, Min(0f)] float approachStopBuffer = 0.3f;
+    [Tooltip("Max horizontal travel per approach lunge.")]
+    [SerializeField, Min(0.01f)] float maxApproachLungeDistance = 6f;
+    [SerializeField, Min(0.01f)] float approachLungeSpeed = 12f;
+
     [Header("Debug")]
     [SerializeField] bool logDamagePipeline;
+    [SerializeField] bool drawDamageRadiusGizmo = true;
 
     float _cooldownRemaining;
     float _attackActiveTimer;
@@ -63,6 +73,83 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
+    public bool EnableApproachLunge => enableApproachLunge;
+
+    /// <summary>Horizontal distance from target at which approach stops (matches in-range check).</summary>
+    public float ApproachStopDistanceFromTarget => Mathf.Max(0f, range - approachStopBuffer);
+
+    /// <summary>True when target is within horizontal melee reach (overlap radius); ignores cone.</summary>
+    public bool IsTargetWithinDamageRadius(Vector3 origin, Vector3 targetWorldPos)
+    {
+        return NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos) <= ApproachStopDistanceFromTarget;
+    }
+
+    public bool IsTargetWithinDamageRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
+    {
+        if (!IsTargetWithinDamageRadius(origin, targetWorldPos))
+            return false;
+
+        if (coneAngle >= 360f)
+            return true;
+
+        Vector3 to = targetWorldPos - origin;
+        to.y = 0f;
+        if (to.sqrMagnitude < 1e-8f)
+            return true;
+        to.Normalize();
+        float halfCone = coneAngle * 0.5f;
+        return Vector3.Angle(facingFlat, to) <= halfCone + 0.01f;
+    }
+
+    /// <summary>True when an approach lunge should run before <see cref="TryBeginAttack"/>.</summary>
+    public bool TryComputeApproachLunge(
+        Vector3 origin,
+        Vector3 targetWorldPos,
+        out float stopDistanceFromTarget,
+        out float maxTravel,
+        out float speed)
+    {
+        stopDistanceFromTarget = ApproachStopDistanceFromTarget;
+        maxTravel = maxApproachLungeDistance;
+        speed = approachLungeSpeed;
+
+        if (!enableApproachLunge)
+            return false;
+
+        if (IsTargetWithinDamageRadius(origin, targetWorldPos))
+            return false;
+
+        float dist = NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos);
+        if (dist <= stopDistanceFromTarget)
+            return false;
+
+        float travel = dist - stopDistanceFromTarget;
+        if (travel > maxTravel)
+            travel = maxTravel;
+        if (travel < 0.01f)
+            return false;
+
+        return true;
+    }
+
+    /// <summary>Duration in seconds for a computed approach lunge (travel / speed).</summary>
+    public bool TryGetApproachLungeDuration(
+        Vector3 origin,
+        Vector3 targetWorldPos,
+        out float duration)
+    {
+        duration = 0f;
+        if (!TryComputeApproachLunge(origin, targetWorldPos, out float stopDistance, out float maxTravel, out float speed))
+            return false;
+
+        float dist = NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos);
+        float travel = dist - stopDistance;
+        if (travel > maxTravel)
+            travel = maxTravel;
+        duration = travel / speed;
+        return duration > 0f;
+    }
+
     void Update()
     {
         if (_cooldownRemaining > 0f)
@@ -90,7 +177,10 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         else
             forward.Normalize();
 
-        TryMoveAttackerForward(ctx.attacker, forward);
+        bool skipForwardLunge = ctx.optionalTarget != null
+            && IsTargetWithinDamageRadius(ctx.attacker.position, ctx.optionalTarget.position);
+        if (!skipForwardLunge)
+            TryMoveAttackerForward(ctx.attacker, forward);
 
         _armedContext = ctx;
         _hasArmedContext = true;
@@ -255,5 +345,97 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         }
 
         attacker.position += forward * moveForwardDistance;
+    }
+
+    void OnDrawGizmos()
+    {
+        if (!drawDamageRadiusGizmo || range <= 0f)
+            return;
+
+        if (Application.isPlaying)
+        {
+            WeaponHolder holder = GetComponentInParent<WeaponHolder>();
+            if (holder != null && !holder.IsMeleeEquipped())
+                return;
+        }
+
+        if (!TryResolveDamageGizmoFrame(out Vector3 origin, out Vector3 forwardFlat))
+            return;
+
+        NavMeshChaseDriver.DrawXZWireDisc(origin, range, new Color(0.25f, 0.9f, 1f, 0.45f));
+
+        if (coneAngle < 360f)
+            DrawDamageConeWire(origin, forwardFlat, range, coneAngle, new Color(0.95f, 0.85f, 0.2f, 1f));
+
+        Gizmos.color = new Color(0.4f, 1f, 0.5f, 1f);
+        Gizmos.DrawLine(origin, origin + forwardFlat * Mathf.Min(range, 1.5f));
+    }
+
+    bool TryResolveDamageGizmoFrame(out Vector3 origin, out Vector3 forwardFlat)
+    {
+        PlayerAttackController attackController = GetComponentInParent<PlayerAttackController>();
+        if (attackController != null)
+        {
+            origin = attackController.AttackOriginTransform.position;
+            forwardFlat = FlattenForward(attackController.AttackFacingTransform.forward);
+            return true;
+        }
+
+        WeaponHolder holder = GetComponentInParent<WeaponHolder>();
+        if (holder != null)
+        {
+            origin = holder.transform.position;
+            forwardFlat = FlattenForward(holder.transform.forward);
+            return true;
+        }
+
+        origin = transform.position;
+        forwardFlat = FlattenForward(transform.forward);
+        return true;
+    }
+
+    static Vector3 FlattenForward(Vector3 forward)
+    {
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 1e-8f)
+            return Vector3.forward;
+        forward.Normalize();
+        return forward;
+    }
+
+    static void DrawDamageConeWire(Vector3 origin, Vector3 forwardFlat, float radius, float totalAngleDeg, Color color)
+    {
+        if (radius <= 0f || totalAngleDeg <= 0f)
+            return;
+
+        float halfRad = totalAngleDeg * 0.5f * Mathf.Deg2Rad;
+        float baseYaw = Mathf.Atan2(forwardFlat.x, forwardFlat.z);
+
+        const int arcSegments = 48;
+        Vector3 left = XZDirectionFromYaw(baseYaw - halfRad);
+        Vector3 right = XZDirectionFromYaw(baseYaw + halfRad);
+
+        Color prev = Gizmos.color;
+        Gizmos.color = color;
+
+        Gizmos.DrawLine(origin, origin + left * radius);
+        Gizmos.DrawLine(origin, origin + right * radius);
+
+        Vector3 prevPt = origin + left * radius;
+        for (int i = 1; i <= arcSegments; i++)
+        {
+            float t = (float)i / arcSegments;
+            float yaw = Mathf.Lerp(baseYaw - halfRad, baseYaw + halfRad, t);
+            Vector3 p = origin + XZDirectionFromYaw(yaw) * radius;
+            Gizmos.DrawLine(prevPt, p);
+            prevPt = p;
+        }
+
+        Gizmos.color = prev;
+    }
+
+    static Vector3 XZDirectionFromYaw(float yawRadians)
+    {
+        return new Vector3(Mathf.Sin(yawRadians), 0f, Mathf.Cos(yawRadians));
     }
 }

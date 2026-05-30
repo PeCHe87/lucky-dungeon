@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [DefaultExecutionOrder(101)]
 [RequireComponent(typeof(Button))]
-public class UiAttackButtonBinder : MonoBehaviour
+public class UiAttackButtonBinder : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
 {
     [SerializeField] FeneraxJoystickMoveIntentProvider intentProvider;
     [Tooltip("If unset, uses first PlayerEntityState in the scene.")]
@@ -26,8 +27,6 @@ public class UiAttackButtonBinder : MonoBehaviour
         _canvasGroup = GetComponent<CanvasGroup>();
         if (_canvasGroup == null)
             _canvasGroup = gameObject.AddComponent<CanvasGroup>();
-
-        _button.onClick.AddListener(OnAttackClicked);
     }
 
     void LateUpdate()
@@ -37,16 +36,28 @@ public class UiAttackButtonBinder : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_button != null)
-            _button.onClick.RemoveListener(OnAttackClicked);
+        if (intentProvider != null)
+            intentProvider.RegisterUiAttackPointerUp();
     }
 
-    void OnAttackClicked()
+    public void OnPointerDown(PointerEventData eventData)
     {
         if (IsAttackBlocked())
             return;
         if (intentProvider != null)
-            intentProvider.RegisterUiAttackFromUi();
+            intentProvider.RegisterUiAttackPointerDown();
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (intentProvider != null)
+            intentProvider.RegisterUiAttackPointerUp();
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (intentProvider != null)
+            intentProvider.RegisterUiAttackPointerUp();
     }
 
     bool IsAttackBlocked() =>

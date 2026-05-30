@@ -54,6 +54,8 @@ public class TopDownCharacterMovement : MonoBehaviour
 
     public bool IsDashing => _dashTimeRemaining > 0f;
 
+    public bool IsLunging => _lungeTimeRemaining > 0f;
+
     void Awake()
     {
         _characterController = GetComponent<CharacterController>();
@@ -184,6 +186,31 @@ public class TopDownCharacterMovement : MonoBehaviour
         _lungeDirection = direction.normalized;
         _lungeSpeed = speed;
         _lungeTimeRemaining = duration;
+    }
+
+    /// <summary>Horizontal lunge toward <paramref name="worldTarget"/>, stopping at <paramref name="stopDistanceFromTarget"/>.</summary>
+    public void StartApproachLunge(Vector3 worldTarget, float stopDistanceFromTarget, float maxTravel, float speed)
+    {
+        Vector3 to = worldTarget - transform.position;
+        to.y = 0f;
+        float dist = to.magnitude;
+        if (dist <= stopDistanceFromTarget || speed <= 0f || maxTravel <= 0f)
+            return;
+
+        float travel = dist - stopDistanceFromTarget;
+        if (travel > maxTravel)
+            travel = maxTravel;
+        if (travel < 0.01f)
+            return;
+
+        Vector3 direction = to / dist;
+        float duration = travel / speed;
+        StartAttackLunge(direction, speed, duration);
+    }
+
+    public void CancelApproachLunge()
+    {
+        _lungeTimeRemaining = 0f;
     }
 
     /// <summary>Instantly aligns horizontal yaw toward <paramref name="worldPosition"/> (same pivot and yaw offset as move-facing).</summary>

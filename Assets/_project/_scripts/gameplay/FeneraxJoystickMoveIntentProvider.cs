@@ -29,6 +29,7 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     bool _enabledPlayerMapOnAsset;
     Func<Vector2> _readVirtualStick;
     bool _uiAttackThisFrame;
+    bool _uiAttackHeld;
     IJoystickDoubleTapSink _doubleTapSink;
     JoystickDoubleTapBridge _joystickDoubleTapBridge;
 
@@ -149,6 +150,7 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
         _moveFromEnabledAssetMap = null;
         _attackFromEnabledAssetMap = null;
         _enabledPlayerMapOnAsset = false;
+        _uiAttackHeld = false;
     }
 
     /// <summary>No-op; dash is joystick double-tap only via <see cref="DashJoystickDoubleTapController"/>.</summary>
@@ -158,6 +160,19 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     public void RegisterUiAttackFromUi()
     {
         _uiAttackThisFrame = true;
+    }
+
+    /// <summary>Called from UI pointer down to begin a held attack.</summary>
+    public void RegisterUiAttackPointerDown()
+    {
+        _uiAttackHeld = true;
+        _uiAttackThisFrame = true;
+    }
+
+    /// <summary>Called from UI pointer up/exit to end a held attack.</summary>
+    public void RegisterUiAttackPointerUp()
+    {
+        _uiAttackHeld = false;
     }
 
     public Vector2 GetMoveIntent()
@@ -204,6 +219,20 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
             fromAction = false;
 
         return fromUi || fromAction;
+    }
+
+    public bool IsAttackHeld()
+    {
+        if (_uiAttackHeld)
+            return true;
+
+        InputAction action = attackAction.action;
+        if (action == null && playerInput != null && playerInput.actions != null)
+            action = playerInput.actions.FindAction("Attack", throwIfNotFound: false);
+        if (action == null)
+            action = _attackFromEnabledAssetMap;
+
+        return action != null && action.IsPressed();
     }
 
     /// <summary>True when a pointer/touch is over a UI object so gameplay Attack should not consume the same press.</summary>

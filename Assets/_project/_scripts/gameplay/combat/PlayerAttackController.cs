@@ -7,6 +7,8 @@ public sealed class PlayerAttackController : MonoBehaviour
 {
     public event Action AttackPressed;
     public event Action AttackPerformed;
+    public event Action<float> MeleeApproachStarted;
+    public event Action MeleeApproachCancelled;
     [Tooltip("Implements IAttackIntentProvider. If unset, uses first IAttackIntentProvider on this GameObject.")]
     [SerializeField] MonoBehaviour attackIntentProvider;
     [SerializeField] WeaponHolder weaponHolder;
@@ -22,6 +24,17 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     IAttackIntentProvider _attackProvider;
     TopDownCharacterMovement _movement;
+    bool _meleeApproachPending;
+    bool _hasPendingMeleeContext;
+    AttackContext _pendingMeleeContext;
+
+    /// <summary>World position used as melee overlap origin (<see cref="AttackContext.attacker"/>).</summary>
+    public Transform AttackOriginTransform => transform;
+
+    /// <summary>Transform whose forward defines melee cone facing (<see cref="AttackContext.facing"/>).</summary>
+    public Transform AttackFacingTransform => facingRoot != null ? facingRoot : transform;
+
+    public bool IsMeleeApproaching => _meleeApproachPending;
 
     void Awake()
     {
@@ -45,11 +58,61 @@ public sealed class PlayerAttackController : MonoBehaviour
     {
         if (_attackProvider == null || weaponHolder == null)
             return;
-        if (!_attackProvider.WasAttackPressedThisFrame())
+
+        if (_meleeApproachPending)
+        {
+            if (_movement != null && _movement.IsDashing)
+            {
+                CancelPendingMeleeApproach();
+                return;
+            }
+
+            if (weaponHolder.Current is MeleeWeapon meleeCheck && !meleeCheck.EnableApproachLunge)
+            {
+                CancelPendingMeleeApproach();
+                return;
+            }
+
+            if (_movement != null && !_movement.IsLunging)
+            {
+                CompletePendingMeleeAttack();
+                return;
+            }
+
+            return;
+        }
+
+        bool pressed = _attackProvider.WasAttackPressedThisFrame();
+        bool held = _attackProvider.IsAttackHeld();
+        if (!pressed && !held)
             return;
         if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
             return;
 
+        if (_movement != null && _movement.IsLunging)
+            return;
+
+        if (!TryBuildAttackContext(out AttackContext ctx))
+            return;
+
+        bool performed;
+        if (weaponHolder.Current is MeleeWeapon melee)
+            performed = TryProcessMeleeAttack(melee, in ctx, pressed);
+        else
+            performed = weaponHolder.TryAttack(in ctx);
+
+        if (!_meleeApproachPending && (pressed || performed))
+            AttackPressed?.Invoke();
+
+        if (performed)
+        {
+            AttackPerformed?.Invoke();
+            LogProcessedAttackIfEnabled();
+        }
+    }
+
+    bool TryBuildAttackContext(out AttackContext ctx)
+    {
         Transform attacker = transform;
         Transform face = facingRoot != null ? facingRoot : transform;
 
@@ -62,8 +125,7 @@ public sealed class PlayerAttackController : MonoBehaviour
                 optionalTarget = t;
         }
 
-        if (snapFacingToNearestTargetBeforeAttack
-            && optionalTarget != null)
+        if (snapFacingToNearestTargetBeforeAttack && optionalTarget != null)
         {
             if (_movement != null)
                 _movement.SnapHorizontalFacingTowardWorldPosition(optionalTarget.position);
@@ -83,29 +145,89 @@ public sealed class PlayerAttackController : MonoBehaviour
         else
             f.Normalize();
 
-        var ctx = new AttackContext
+        ctx = new AttackContext
         {
             attacker = attacker,
             facing = f,
             optionalTarget = optionalTarget
         };
-        bool performed = weaponHolder.Current is MeleeWeapon melee
-            ? melee.TryBeginAttack(in ctx)
-            : weaponHolder.TryAttack(in ctx);
+        return true;
+    }
+
+    bool TryProcessMeleeAttack(MeleeWeapon melee, in AttackContext ctx, bool pressed)
+    {
+        Vector3 origin = ctx.attacker.position;
+        Transform target = ctx.optionalTarget;
+
+        if (target == null || melee.IsTargetWithinDamageRadius(origin, target.position))
+            return melee.TryBeginAttack(in ctx);
+
+        if (!melee.EnableApproachLunge || _movement == null)
+            return melee.TryBeginAttack(in ctx);
+
+        if (!melee.TryComputeApproachLunge(
+                origin,
+                target.position,
+                out float stopDistance,
+                out float maxTravel,
+                out float speed))
+        {
+            return melee.TryBeginAttack(in ctx);
+        }
+
+        _movement.StartApproachLunge(target.position, stopDistance, maxTravel, speed);
+        _pendingMeleeContext = ctx;
+        _hasPendingMeleeContext = true;
+        _meleeApproachPending = true;
+
+        if (melee.TryGetApproachLungeDuration(origin, target.position, out float approachDuration))
+            MeleeApproachStarted?.Invoke(approachDuration);
+
+        return false;
+    }
+
+    void CompletePendingMeleeAttack()
+    {
+        _meleeApproachPending = false;
+        if (!_hasPendingMeleeContext || weaponHolder.Current is not MeleeWeapon melee)
+        {
+            _hasPendingMeleeContext = false;
+            return;
+        }
+
+        AttackContext ctx = _pendingMeleeContext;
+        _hasPendingMeleeContext = false;
+
+        bool performed = melee.TryBeginAttack(in ctx);
+        if (!performed)
+            return;
 
         AttackPressed?.Invoke();
+        AttackPerformed?.Invoke();
+        LogProcessedAttackIfEnabled();
+    }
 
-        if (performed)
-            AttackPerformed?.Invoke();
+    void CancelPendingMeleeApproach()
+    {
+        bool wasPending = _meleeApproachPending;
+        _meleeApproachPending = false;
+        _hasPendingMeleeContext = false;
+        if (_movement != null)
+            _movement.CancelApproachLunge();
+        if (wasPending)
+            MeleeApproachCancelled?.Invoke();
+    }
 
-        if (performed && logProcessedAttack)
-        {
-            IWeapon w = weaponHolder.Current;
-            MonoBehaviour wmb = w as MonoBehaviour;
-            string label = wmb != null
-                ? $"'{wmb.name}' ({wmb.GetType().Name})"
-                : (w != null ? $"({w.GetType().Name})" : "<none>");
-            Debug.Log($"{nameof(PlayerAttackController)} on {name}: attack processed with <color=yellow>{label}</color>", this);
-        }
+    void LogProcessedAttackIfEnabled()
+    {
+        if (!logProcessedAttack)
+            return;
+
+        IWeapon w = weaponHolder.Current;
+        MonoBehaviour wmb = w as MonoBehaviour;
+        string label = wmb != null
+            ? $"'{wmb.name}' ({wmb.GetType().Name})"
+            : (w != null ? $"({w.GetType().Name})" : "<none>");
+        Debug.Log($"{nameof(PlayerAttackController)} on {name}: attack processed with <color=yellow>{label}</color>", this);
     }
 }
