@@ -78,10 +78,25 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     /// <summary>Horizontal distance from target at which approach stops (matches in-range check).</summary>
     public float ApproachStopDistanceFromTarget => Mathf.Max(0f, range - approachStopBuffer);
 
-    /// <summary>True when target is within horizontal melee reach (overlap radius); ignores cone.</summary>
+    /// <summary>Radius used by damage overlap and range gizmo (<see cref="ApplyDamage"/>).</summary>
+    public float DamageOverlapRadius => range;
+
+    /// <summary>True when target is within approach-stop distance (range minus buffer); ignores cone.</summary>
     public bool IsTargetWithinDamageRadius(Vector3 origin, Vector3 targetWorldPos)
     {
         return NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos) <= ApproachStopDistanceFromTarget;
+    }
+
+    /// <summary>True when target is inside the damage overlap sphere radius; ignores cone.</summary>
+    public bool IsTargetWithinOverlapRadius(Vector3 origin, Vector3 targetWorldPos)
+    {
+        return NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos) <= DamageOverlapRadius;
+    }
+
+    /// <summary>True when a melee lunge (approach or per-swing forward) should run toward <paramref name="target"/>.</summary>
+    public bool ShouldApplyMeleeLunge(Vector3 origin, Transform target)
+    {
+        return target != null && !IsTargetWithinOverlapRadius(origin, target.position);
     }
 
     public bool IsTargetWithinDamageRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
@@ -109,14 +124,14 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         out float maxTravel,
         out float speed)
     {
-        stopDistanceFromTarget = ApproachStopDistanceFromTarget;
+        stopDistanceFromTarget = DamageOverlapRadius;
         maxTravel = maxApproachLungeDistance;
         speed = approachLungeSpeed;
 
         if (!enableApproachLunge)
             return false;
 
-        if (IsTargetWithinDamageRadius(origin, targetWorldPos))
+        if (IsTargetWithinOverlapRadius(origin, targetWorldPos))
             return false;
 
         float dist = NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos);
@@ -177,9 +192,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         else
             forward.Normalize();
 
-        bool skipForwardLunge = ctx.optionalTarget != null
-            && IsTargetWithinDamageRadius(ctx.attacker.position, ctx.optionalTarget.position);
-        if (!skipForwardLunge)
+        if (ctx.optionalTarget == null
+            || ShouldApplyMeleeLunge(ctx.attacker.position, ctx.optionalTarget))
             TryMoveAttackerForward(ctx.attacker, forward);
 
         _armedContext = ctx;

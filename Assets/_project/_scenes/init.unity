@@ -9418,7 +9418,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2598074907052417657, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: stickyMaxRange
-      value: 4
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 2598074907052417657, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: verticalHalfExtent

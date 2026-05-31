@@ -48,6 +48,9 @@ public class TopDownCharacterMovement : MonoBehaviour
     float _lungeTimeRemaining;
     Vector3 _lungeDirection;
     float _lungeSpeed;
+    Transform _approachLungeTarget;
+    float _approachStopDistanceFromTarget;
+    bool _isApproachLunge;
 
     float _overrideDashSpeed;
     bool _useOverrideDashParams;
@@ -74,8 +77,21 @@ public class TopDownCharacterMovement : MonoBehaviour
 
         bool dashing = _dashTimeRemaining > 0f;
 
+        if (_lungeTimeRemaining > 0f
+            && _isApproachLunge
+            && _approachLungeTarget != null
+            && NavMeshChaseDriver.HorizontalDistance(transform.position, _approachLungeTarget.position)
+                <= _approachStopDistanceFromTarget)
+        {
+            _lungeTimeRemaining = 0f;
+            ClearApproachLungeTracking();
+        }
+
         if (_lungeTimeRemaining > 0f)
             _lungeTimeRemaining -= Time.deltaTime;
+
+        if (_lungeTimeRemaining <= 0f && _isApproachLunge)
+            ClearApproachLungeTracking();
 
         bool lunging = _lungeTimeRemaining > 0f;
         float activeDashSpeed = _useOverrideDashParams ? _overrideDashSpeed : dashSpeed;
@@ -183,34 +199,52 @@ public class TopDownCharacterMovement : MonoBehaviour
     {
         if (direction.sqrMagnitude < 1e-8f || speed <= 0f || duration <= 0f)
             return;
+        ClearApproachLungeTracking();
         _lungeDirection = direction.normalized;
         _lungeSpeed = speed;
         _lungeTimeRemaining = duration;
     }
 
     /// <summary>Horizontal lunge toward <paramref name="worldTarget"/>, stopping at <paramref name="stopDistanceFromTarget"/>.</summary>
-    public void StartApproachLunge(Vector3 worldTarget, float stopDistanceFromTarget, float maxTravel, float speed)
+    public bool StartApproachLunge(Transform worldTarget, float stopDistanceFromTarget, float maxTravel, float speed)
     {
-        Vector3 to = worldTarget - transform.position;
+        if (worldTarget == null)
+            return false;
+
+        Vector3 to = worldTarget.position - transform.position;
         to.y = 0f;
         float dist = to.magnitude;
         if (dist <= stopDistanceFromTarget || speed <= 0f || maxTravel <= 0f)
-            return;
+            return false;
 
         float travel = dist - stopDistanceFromTarget;
         if (travel > maxTravel)
             travel = maxTravel;
         if (travel < 0.01f)
-            return;
+            return false;
 
         Vector3 direction = to / dist;
         float duration = travel / speed;
-        StartAttackLunge(direction, speed, duration);
+        _lungeDirection = direction.normalized;
+        _lungeSpeed = speed;
+        _lungeTimeRemaining = duration;
+        _approachLungeTarget = worldTarget;
+        _approachStopDistanceFromTarget = stopDistanceFromTarget;
+        _isApproachLunge = true;
+        return true;
     }
 
     public void CancelApproachLunge()
     {
         _lungeTimeRemaining = 0f;
+        ClearApproachLungeTracking();
+    }
+
+    void ClearApproachLungeTracking()
+    {
+        _isApproachLunge = false;
+        _approachLungeTarget = null;
+        _approachStopDistanceFromTarget = 0f;
     }
 
     /// <summary>Instantly aligns horizontal yaw toward <paramref name="worldPosition"/> (same pivot and yaw offset as move-facing).</summary>

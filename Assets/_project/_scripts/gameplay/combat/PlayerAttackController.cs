@@ -5,7 +5,8 @@ using UnityEngine;
 [DefaultExecutionOrder(101)]
 public sealed class PlayerAttackController : MonoBehaviour
 {
-    public event Action AttackPressed;
+    /// <param name="isUserPress">True for an explicit press; false for hold auto-repeat or post-approach follow-up.</param>
+    public event Action<bool> AttackPressed;
     public event Action AttackPerformed;
     public event Action<float> MeleeApproachStarted;
     public event Action MeleeApproachCancelled;
@@ -21,6 +22,8 @@ public sealed class PlayerAttackController : MonoBehaviour
     [SerializeField] bool logProcessedAttack;
     [Tooltip("If unset, uses PlayerEntityState on this GameObject or in the scene.")]
     [SerializeField] PlayerEntityState playerEntityState;
+    [Tooltip("If unset, uses PlayerEntityStateAnimator on this GameObject.")]
+    [SerializeField] PlayerEntityStateAnimator entityStateAnimator;
 
     IAttackIntentProvider _attackProvider;
     TopDownCharacterMovement _movement;
@@ -35,6 +38,9 @@ public sealed class PlayerAttackController : MonoBehaviour
     public Transform AttackFacingTransform => facingRoot != null ? facingRoot : transform;
 
     public bool IsMeleeApproaching => _meleeApproachPending;
+
+    public bool IsAttackInputHeld =>
+        _attackProvider != null && _attackProvider.IsAttackHeld();
 
     void Awake()
     {
@@ -52,6 +58,9 @@ public sealed class PlayerAttackController : MonoBehaviour
             playerEntityState = GetComponent<PlayerEntityState>();
         if (playerEntityState == null)
             playerEntityState = FindFirstObjectByType<PlayerEntityState>();
+
+        if (entityStateAnimator == null)
+            entityStateAnimator = GetComponent<PlayerEntityStateAnimator>();
     }
 
     void LateUpdate()
@@ -73,6 +82,16 @@ public sealed class PlayerAttackController : MonoBehaviour
                 return;
             }
 
+            if (weaponHolder.Current is MeleeWeapon meleePending
+                && _hasPendingMeleeContext
+                && _pendingMeleeContext.optionalTarget != null
+                && !meleePending.ShouldApplyMeleeLunge(
+                    AttackOriginTransform.position,
+                    _pendingMeleeContext.optionalTarget))
+            {
+                _movement?.CancelApproachLunge();
+            }
+
             if (_movement != null && !_movement.IsLunging)
             {
                 CompletePendingMeleeAttack();
@@ -92,6 +111,12 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (_movement != null && _movement.IsLunging)
             return;
 
+        if (entityStateAnimator != null
+            && entityStateAnimator.IsMeleeAttackClipPlaying
+            && held
+            && !pressed)
+            return;
+
         if (!TryBuildAttackContext(out AttackContext ctx))
             return;
 
@@ -101,8 +126,13 @@ public sealed class PlayerAttackController : MonoBehaviour
         else
             performed = weaponHolder.TryAttack(in ctx);
 
-        if (!_meleeApproachPending && (pressed || performed))
-            AttackPressed?.Invoke();
+        if (!_meleeApproachPending)
+        {
+            if (pressed)
+                AttackPressed?.Invoke(true);
+            else if (performed)
+                AttackPressed?.Invoke(false);
+        }
 
         if (performed)
         {
@@ -156,10 +186,10 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     bool TryProcessMeleeAttack(MeleeWeapon melee, in AttackContext ctx, bool pressed)
     {
-        Vector3 origin = ctx.attacker.position;
+        Vector3 origin = AttackOriginTransform.position;
         Transform target = ctx.optionalTarget;
 
-        if (target == null || melee.IsTargetWithinDamageRadius(origin, target.position))
+        if (target == null || !melee.ShouldApplyMeleeLunge(origin, target))
             return melee.TryBeginAttack(in ctx);
 
         if (!melee.EnableApproachLunge || _movement == null)
@@ -168,14 +198,16 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (!melee.TryComputeApproachLunge(
                 origin,
                 target.position,
-                out float stopDistance,
+                out _,
                 out float maxTravel,
                 out float speed))
         {
             return melee.TryBeginAttack(in ctx);
         }
 
-        _movement.StartApproachLunge(target.position, stopDistance, maxTravel, speed);
+        if (!_movement.StartApproachLunge(target, melee.DamageOverlapRadius, maxTravel, speed))
+            return melee.TryBeginAttack(in ctx);
+
         _pendingMeleeContext = ctx;
         _hasPendingMeleeContext = true;
         _meleeApproachPending = true;
@@ -192,6 +224,7 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (!_hasPendingMeleeContext || weaponHolder.Current is not MeleeWeapon melee)
         {
             _hasPendingMeleeContext = false;
+            EndApproachPresentation();
             return;
         }
 
@@ -200,12 +233,17 @@ public sealed class PlayerAttackController : MonoBehaviour
 
         bool performed = melee.TryBeginAttack(in ctx);
         if (!performed)
+        {
+            EndApproachPresentation();
             return;
+        }
 
-        AttackPressed?.Invoke();
+        AttackPressed?.Invoke(false);
         AttackPerformed?.Invoke();
         LogProcessedAttackIfEnabled();
     }
+
+    void EndApproachPresentation() => MeleeApproachCancelled?.Invoke();
 
     void CancelPendingMeleeApproach()
     {
