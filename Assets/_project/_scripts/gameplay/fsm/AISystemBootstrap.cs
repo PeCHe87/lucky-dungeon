@@ -27,9 +27,11 @@ public static class AISystemBootstrap
     // ── State Handlers ───────────────────────────────────────────────────────
     static void RegisterHandlers()
     {
-        StateHandlerRegistry.Register("Idle",   new IdleStateHandler());
-        StateHandlerRegistry.Register("Patrol", new PatrolStateHandler());
-        StateHandlerRegistry.Register("Chase",  new ChaseStateHandler());
+        StateHandlerRegistry.Register("Idle",       new IdleStateHandler());
+        StateHandlerRegistry.Register("Patrol",     new PatrolStateHandler());
+        StateHandlerRegistry.Register("Chase",      new ChaseStateHandler());
+        StateHandlerRegistry.Register("TakeDamage", new TakeDamageStateHandler());
+        StateHandlerRegistry.Register("Die",        new DieStateHandler());
 
         // ← Add new handlers here as the game grows
         // StateHandlerRegistry.Register("Attack",  new AttackStateHandler());

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -25,8 +26,14 @@ public class AIStateMachine : MonoBehaviour
     private AIStateData      _currentStateData;
     private IStateHandler    _currentHandler;
 
+    const string ReturnStateKey = "fsm.returnState";
+
     // ── Public read access ───────────────────────────────────────────────────
     public string CurrentStateId => _currentStateData?.stateId ?? "—";
+    public AIStateData CurrentStateData => _currentStateData;
+
+    /// <summary>Fired after a successful transition. Previous is null on the first enter.</summary>
+    public event Action<AIStateData, AIStateData> StateChanged;
 
     // ────────────────────────────────────────────────────────────────────────
     void Awake()
@@ -69,6 +76,8 @@ public class AIStateMachine : MonoBehaviour
     // ── Transition ───────────────────────────────────────────────────────────
     private void TransitionTo(AIStateData nextStateData)
     {
+        AIStateData previousStateData = _currentStateData;
+
         // Exit current state
         if (_currentStateData != null && _currentHandler != null)
             _currentHandler.OnExit(_bb, _currentStateData.handlerParams);
@@ -89,6 +98,8 @@ public class AIStateMachine : MonoBehaviour
 
         if (debugLog)
             Debug.Log($"[FSM] {name} → <b>{nextStateData.stateId}</b>", this);
+
+        StateChanged?.Invoke(previousStateData, _currentStateData);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -102,9 +113,32 @@ public class AIStateMachine : MonoBehaviour
 
     /// <summary>
     /// Force an immediate transition from external code
-    /// (e.g. a TakeDamage() method triggering a "Stunned" state).
+    /// (e.g. fatal damage triggering Die).
     /// </summary>
     public void ForceTransition(AIStateData nextState) => TransitionTo(nextState);
+
+    /// <summary>
+    /// Saves the current state on the blackboard, then transitions to an interrupt state (e.g. TakeDamage).
+    /// </summary>
+    public void ForceInterrupt(AIStateData interruptState)
+    {
+        if (_bb != null && _currentStateData != null)
+            _bb.Set(ReturnStateKey, _currentStateData);
+        TransitionTo(interruptState);
+    }
+
+    /// <summary>
+    /// Returns to the state saved by <see cref="ForceInterrupt"/>, or <see cref="initialState"/> if none.
+    /// </summary>
+    public void ForceReturnFromInterrupt()
+    {
+        if (_bb == null)
+            return;
+
+        AIStateData returnState = _bb.Get<AIStateData>(ReturnStateKey);
+        _bb.Remove(ReturnStateKey);
+        TransitionTo(returnState != null ? returnState : initialState);
+    }
 
     // ── Debug ─────────────────────────────────────────────────────────────────
     void OnGUI()

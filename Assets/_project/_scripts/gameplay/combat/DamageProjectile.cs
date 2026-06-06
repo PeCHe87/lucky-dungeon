@@ -107,6 +107,8 @@ public sealed class DamageProjectile : MonoBehaviour
                 MonoBehaviour mb = components[i];
                 if (mb == null)
                     continue;
+                if (mb is IDefeatable defeated && defeated.IsDefeated)
+                    return;
                 if (mb is IDamageable dmg)
                 {
                     dmg.TakeDamage(_damage, _style);

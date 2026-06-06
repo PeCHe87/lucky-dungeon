@@ -612,7 +612,7 @@ public class NearestTargetQuery : MonoBehaviour
         Transform current = target;
         while (current != null)
         {
-            if (current.TryGetComponent(out BaseDestructibleObject destructible) && destructible.IsDefeated)
+            if (current.TryGetComponent(out IDefeatable defeatable) && defeatable.IsDefeated)
                 return false;
             current = current.parent;
         }

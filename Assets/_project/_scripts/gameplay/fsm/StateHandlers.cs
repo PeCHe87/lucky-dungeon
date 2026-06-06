@@ -176,3 +176,97 @@ public class ChaseStateHandler : IStateHandler
 
     public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params) { }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAKE DAMAGE STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Brief hit-react interrupt: entity stands still for 'duration' seconds, then returns to the prior FSM state.
+/// Exit is handler-driven via <see cref="AIStateMachine.ForceReturnFromInterrupt"/>.
+/// </summary>
+public class TakeDamageStateHandler : IStateHandler
+{
+    const string HitReactTimerKey = "fsm.hitReactTimer";
+
+    public void OnEnter(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params)
+    {
+        bb.Set(HitReactTimerKey, 0f);
+
+        var agent = FSMNavMesh.GetAgent(bb);
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+    }
+
+    public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
+    {
+        var duration = FSMParamUtils.GetFloat(@params, "duration", 0.3f);
+        var timer = bb.Get<float>(HitReactTimerKey) + dt;
+        bb.Set(HitReactTimerKey, timer);
+
+        if (timer < duration)
+            return;
+
+        var fsm = bb.Self.GetComponent<AIStateMachine>();
+        if (fsm != null)
+            fsm.ForceReturnFromInterrupt();
+    }
+
+    public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params)
+    {
+        bb.Set(HitReactTimerKey, 0f);
+
+        var agent = FSMNavMesh.GetAgent(bb);
+        if (agent != null)
+            agent.isStopped = false;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIE STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Terminal death state: disables colliders, waits destroyDelay, then destroys the GameObject.
+/// </summary>
+public class DieStateHandler : IStateHandler
+{
+    const string DieTimerKey = "fsm.dieTimer";
+
+    public void OnEnter(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params)
+    {
+        bb.Set(DieTimerKey, 0f);
+
+        var agent = FSMNavMesh.GetAgent(bb);
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.enabled = false;
+        }
+
+        var colliders = bb.Self.GetComponentsInChildren<Collider>();
+        for (int i = 0; i < colliders.Length; i++)
+            colliders[i].enabled = false;
+    }
+
+    public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
+    {
+        var destroyDelay = FSMParamUtils.GetFloat(@params, "destroyDelay", 1f);
+        var timer = bb.Get<float>(DieTimerKey) + dt;
+        bb.Set(DieTimerKey, timer);
+
+        if (timer < destroyDelay)
+            return;
+
+        if (FSMParamUtils.GetBool(@params, "deactivateOnly", false))
+            bb.Self.gameObject.SetActive(false);
+        else
+            Object.Destroy(bb.Self.gameObject);
+    }
+
+    public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params) { }
+}

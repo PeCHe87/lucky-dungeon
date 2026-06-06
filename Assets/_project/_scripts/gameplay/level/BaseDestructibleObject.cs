@@ -5,7 +5,7 @@ using UnityEngine.Events;
 /// <summary>
 /// World object with HP; implements <see cref="IDamageable"/> so <see cref="MeleeWeapon"/> can destroy it.
 /// </summary>
-public sealed class BaseDestructibleObject : MonoBehaviour, IDamageable
+public sealed class BaseDestructibleObject : MonoBehaviour, IDamageable, IDefeatable
 {
     [SerializeField, Min(0.01f)] float maxHitPoints = 30f;
     [Tooltip("Seconds before the GameObject is destroyed after HP reaches zero (0 = end of frame).")]
