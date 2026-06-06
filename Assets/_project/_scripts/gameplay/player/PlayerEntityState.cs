@@ -33,6 +33,8 @@ public sealed class PlayerEntityState : MonoBehaviour
     public PlayerEntityStateKind Current { get; private set; }
     public PlayerEntityStateKind Previous { get; private set; }
 
+    public float MoveDeadzone => moveDeadzone;
+
     /// <summary>True while walking, running, or dashing; attack input should be ignored.</summary>
     public bool IsAttackInputBlocked =>
         Current == PlayerEntityStateKind.Walking

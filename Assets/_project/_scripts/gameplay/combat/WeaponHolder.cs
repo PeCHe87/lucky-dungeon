@@ -113,4 +113,10 @@ public sealed class WeaponHolder : MonoBehaviour
             return false;
         return _current.TryAttack(in ctx);
     }
+
+    public void CancelActiveAttack()
+    {
+        if (_current is IAttackActivity activity)
+            activity.CancelAttack();
+    }
 }

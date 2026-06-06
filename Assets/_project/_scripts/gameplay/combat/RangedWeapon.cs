@@ -30,6 +30,8 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
+    public void CancelAttack() => _attackActiveTimer = 0f;
+
     void Update()
     {
         if (_cooldownRemaining > 0f)

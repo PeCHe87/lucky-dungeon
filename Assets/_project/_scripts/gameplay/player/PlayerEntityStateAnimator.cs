@@ -4,8 +4,8 @@ using UnityEngine;
 /// <summary>
 /// Drives the player <see cref="Animator"/> from <see cref="PlayerEntityState"/> changes using
 /// code-side cross-fades (no animator controller transitions required).
-/// Attack combo clips advance on attack button press; presses during playback are queued so
-/// clips are never cancelled mid-swing.
+/// Attack combo clips advance on attack button press; presses during playback are queued.
+/// Movement input cancels an in-progress attack clip via <see cref="PlayerAttackController.AttackCancelled"/>.
 /// </summary>
 [DefaultExecutionOrder(112)]
 public sealed class PlayerEntityStateAnimator : MonoBehaviour
@@ -29,6 +29,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     [SerializeField] bool logAttackAnimation;
 
     MeleeWeapon _meleeWeapon;
+    IMoveIntentProvider _moveProvider;
     bool _meleeApproachAnimActive;
 
     readonly Dictionary<PlayerEntityStateKind, int> _stateHashes = new Dictionary<PlayerEntityStateKind, int>();
@@ -55,6 +56,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (combatFocusLock == null)
             combatFocusLock = GetComponent<CombatTargetFocusLock>();
 
+        _moveProvider = GetComponent<IMoveIntentProvider>();
         ResolveMeleeWeapon();
 
         if (animator == null)
@@ -94,6 +96,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (attackController != null)
         {
             attackController.AttackPressed += OnAttackPressed;
+            attackController.AttackCancelled += OnAttackCancelled;
             attackController.MeleeApproachStarted += OnMeleeApproachStarted;
             attackController.MeleeApproachCancelled += OnMeleeApproachCancelled;
         }
@@ -110,6 +113,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (attackController != null)
         {
             attackController.AttackPressed -= OnAttackPressed;
+            attackController.AttackCancelled -= OnAttackCancelled;
             attackController.MeleeApproachStarted -= OnMeleeApproachStarted;
             attackController.MeleeApproachCancelled -= OnMeleeApproachCancelled;
         }
@@ -215,6 +219,19 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
                 this);
     }
 
+    void OnAttackCancelled()
+    {
+        _queuedAttackPressCount = 0;
+        _locomotionSyncPending = false;
+        _attackComboIndex = 0;
+        _meleeApproachAnimActive = false;
+
+        if (playerEntityState == null || profile == null)
+            return;
+
+        PlayForState(playerEntityState.Current, force: false);
+    }
+
     void OnMeleeApproachCancelled()
     {
         EndMeleeApproachAnimation();
@@ -265,10 +282,24 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     bool ShouldSuppressLocomotionForHeldAttack()
     {
-        return attackController != null
-            && attackController.IsAttackInputHeld
-            && !_meleeApproachAnimActive
-            && !attackController.IsMeleeApproaching;
+        if (attackController == null || !attackController.IsAttackInputHeld)
+            return false;
+        if (_meleeApproachAnimActive || attackController.IsMeleeApproaching)
+            return false;
+        if (HasMoveIntentAboveDeadzone())
+            return false;
+
+        return true;
+    }
+
+    bool HasMoveIntentAboveDeadzone()
+    {
+        if (_moveProvider == null)
+            return false;
+
+        float deadzone = playerEntityState != null ? playerEntityState.MoveDeadzone : 0.08f;
+        Vector2 intent = _moveProvider.GetMoveIntent();
+        return intent.sqrMagnitude > deadzone * deadzone;
     }
 
     bool TryPlayNextAttack(int layer)

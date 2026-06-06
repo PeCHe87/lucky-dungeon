@@ -73,6 +73,13 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
+    public void CancelAttack()
+    {
+        _attackActiveTimer = 0f;
+        _hasArmedContext = false;
+        _hasPendingHitContext = false;
+    }
+
     public bool EnableApproachLunge => enableApproachLunge;
 
     /// <summary>Horizontal distance from target at which approach stops (matches in-range check).</summary>

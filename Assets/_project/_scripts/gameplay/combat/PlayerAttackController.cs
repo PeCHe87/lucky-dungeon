@@ -2,16 +2,19 @@ using System;
 using UnityEngine;
 
 /// <summary>Polls <see cref="IAttackIntentProvider"/> and forwards to <see cref="WeaponHolder"/>.</summary>
-[DefaultExecutionOrder(101)]
+[DefaultExecutionOrder(99)]
 public sealed class PlayerAttackController : MonoBehaviour
 {
     /// <param name="isUserPress">True for an explicit press; false for hold auto-repeat or post-approach follow-up.</param>
     public event Action<bool> AttackPressed;
     public event Action AttackPerformed;
+    public event Action AttackCancelled;
     public event Action<float> MeleeApproachStarted;
     public event Action MeleeApproachCancelled;
     [Tooltip("Implements IAttackIntentProvider. If unset, uses first IAttackIntentProvider on this GameObject.")]
     [SerializeField] MonoBehaviour attackIntentProvider;
+    [Tooltip("Implements IMoveIntentProvider. If unset, uses first IMoveIntentProvider on this GameObject.")]
+    [SerializeField] MonoBehaviour moveIntentProvider;
     [SerializeField] WeaponHolder weaponHolder;
     [SerializeField] NearestTargetQuery targetQuery;
     [Tooltip("If unset, uses this transform for attack facing (XZ forward).")]
@@ -26,10 +29,13 @@ public sealed class PlayerAttackController : MonoBehaviour
     [SerializeField] PlayerEntityStateAnimator entityStateAnimator;
 
     IAttackIntentProvider _attackProvider;
+    IMoveIntentProvider _moveProvider;
+    IDashIntentProvider _dashProvider;
     TopDownCharacterMovement _movement;
     bool _meleeApproachPending;
     bool _hasPendingMeleeContext;
     AttackContext _pendingMeleeContext;
+    bool _movementPriorityCancelActive;
 
     /// <summary>World position used as melee overlap origin (<see cref="AttackContext.attacker"/>).</summary>
     public Transform AttackOriginTransform => transform;
@@ -61,6 +67,27 @@ public sealed class PlayerAttackController : MonoBehaviour
 
         if (entityStateAnimator == null)
             entityStateAnimator = GetComponent<PlayerEntityStateAnimator>();
+
+        if (moveIntentProvider != null)
+            _moveProvider = moveIntentProvider as IMoveIntentProvider;
+        if (_moveProvider == null)
+            _moveProvider = GetComponent<IMoveIntentProvider>();
+
+        _dashProvider = GetComponent<IDashIntentProvider>();
+    }
+
+    void Update()
+    {
+        if (!HasMovementPriorityInput())
+        {
+            _movementPriorityCancelActive = false;
+            return;
+        }
+
+        if (!IsAttackInProgress())
+            return;
+
+        CancelAttackForMovementPriority();
     }
 
     void LateUpdate()
@@ -70,12 +97,6 @@ public sealed class PlayerAttackController : MonoBehaviour
 
         if (_meleeApproachPending)
         {
-            if (_movement != null && _movement.IsDashing)
-            {
-                CancelPendingMeleeApproach();
-                return;
-            }
-
             if (weaponHolder.Current is MeleeWeapon meleeCheck && !meleeCheck.EnableApproachLunge)
             {
                 CancelPendingMeleeApproach();
@@ -136,6 +157,7 @@ public sealed class PlayerAttackController : MonoBehaviour
 
         if (performed)
         {
+            _movementPriorityCancelActive = false;
             EngageCombatTargetIfNeeded(ctx.optionalTarget);
             AttackPerformed?.Invoke();
             LogProcessedAttackIfEnabled();
@@ -238,6 +260,7 @@ public sealed class PlayerAttackController : MonoBehaviour
             return;
         }
 
+        _movementPriorityCancelActive = false;
         EngageCombatTargetIfNeeded(ctx.optionalTarget);
         AttackPressed?.Invoke(false);
         AttackPerformed?.Invoke();
@@ -262,6 +285,53 @@ public sealed class PlayerAttackController : MonoBehaviour
             _movement.CancelApproachLunge();
         if (wasPending)
             MeleeApproachCancelled?.Invoke();
+    }
+
+    bool HasMovementPriorityInput()
+    {
+        if (_movement != null && _movement.IsDashing)
+            return true;
+
+        if (_dashProvider != null && _dashProvider.WasDashPressedThisFrame())
+            return true;
+
+        if (_moveProvider == null)
+            return false;
+
+        float deadzone = playerEntityState != null ? playerEntityState.MoveDeadzone : 0.08f;
+        Vector2 intent = _moveProvider.GetMoveIntent();
+        return intent.sqrMagnitude > deadzone * deadzone;
+    }
+
+    bool IsAttackInProgress()
+    {
+        if (_movementPriorityCancelActive)
+            return false;
+
+        if (_meleeApproachPending)
+            return true;
+
+        if (entityStateAnimator != null && entityStateAnimator.IsMeleeAttackClipPlaying)
+            return true;
+
+        if (weaponHolder != null
+            && weaponHolder.Current is IAttackActivity activity
+            && activity.IsAttackActive)
+            return true;
+
+        return _movement != null && _movement.IsLunging;
+    }
+
+    void CancelAttackForMovementPriority()
+    {
+        if (_meleeApproachPending)
+            CancelPendingMeleeApproach();
+        else if (_movement != null && _movement.IsLunging)
+            _movement.CancelApproachLunge();
+
+        weaponHolder?.CancelActiveAttack();
+        _movementPriorityCancelActive = true;
+        AttackCancelled?.Invoke();
     }
 
     void LogProcessedAttackIfEnabled()
