@@ -75,6 +75,9 @@ public class TopDownCharacterMovement : MonoBehaviour
     {
         Vector2 intent = _provider != null ? _provider.GetMoveIntent() : Vector2.zero;
         Vector3 moveDir = GetHorizontalMoveDirection(intent);
+        Vector3 velocityDir = moveDir;
+        if (velocityDir.sqrMagnitude > 1e-8f)
+            velocityDir.Normalize();
 
         bool dashing = _dashTimeRemaining > 0f;
 
@@ -98,7 +101,7 @@ public class TopDownCharacterMovement : MonoBehaviour
         float activeDashSpeed = _useOverrideDashParams ? _overrideDashSpeed : dashSpeed;
         Vector3 horizontal = dashing ? _dashDirection * activeDashSpeed
             : lunging ? _lungeDirection * _lungeSpeed
-            : moveDir * moveSpeed;
+            : velocityDir * moveSpeed;
 
         float deadzoneSqRot = rotationInputDeadzone * rotationInputDeadzone;
         if (!dashing && moveDir.sqrMagnitude > deadzoneSqRot)

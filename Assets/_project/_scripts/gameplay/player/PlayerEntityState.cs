@@ -194,7 +194,7 @@ public sealed class PlayerEntityState : MonoBehaviour
         public bool TryResolve(in PlayerStateContext ctx, out PlayerEntityStateKind state)
         {
             float mag = ctx.MoveMagnitude;
-            if (mag > ctx.MoveDeadzone && mag >= ctx.RunThreshold)
+            if (mag > ctx.MoveDeadzone)
             {
                 state = PlayerEntityStateKind.Running;
                 return true;
