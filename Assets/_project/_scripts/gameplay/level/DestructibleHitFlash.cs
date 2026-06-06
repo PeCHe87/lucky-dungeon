@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Subscribes to <see cref="BaseDestructibleObject.Damaged"/> and applies a short tint blink via
+/// Subscribes to <see cref="CombatEntityHealth.Damaged"/> or <see cref="BaseDestructibleObject.Damaged"/>
+/// (prefers entity health when both are present) and applies a short tint blink via
 /// <see cref="MaterialPropertyBlock"/> on child renderers (URP Lit: <c>_BaseColor</c>, fallback <c>_Color</c>).
 /// Optionally replays an attached hit-damage <see cref="ParticleSystem"/> when enabled.
 /// </summary>
@@ -16,11 +17,13 @@ public sealed class DestructibleHitFlash : MonoBehaviour
     [SerializeField, Min(0.01f)] float flashDuration = 0.15f;
     [SerializeField, Min(0f)] float blinksPerSecond = 12f;
     [SerializeField] Color flashColor = Color.white;
+    [SerializeField] bool playMaterialFlash = true;
 
     [Header("Hit damage VFX")]
     [SerializeField] bool playHitVfx;
     [SerializeField] ParticleSystem hitDamageVfx;
 
+    CombatEntityHealth _entityHealth;
     BaseDestructibleObject _destructible;
     FlashRenderer[] _flashRenderers;
     float _flashTimeRemaining;
@@ -43,20 +46,26 @@ public sealed class DestructibleHitFlash : MonoBehaviour
 
     void Awake()
     {
-        _destructible = GetComponent<BaseDestructibleObject>();
+        _entityHealth = GetComponent<CombatEntityHealth>();
+        if (_entityHealth == null)
+            _destructible = GetComponent<BaseDestructibleObject>();
         BuildFlashTargets();
         PrepareHitVfxIdle();
     }
 
     void OnEnable()
     {
-        if (_destructible != null)
+        if (_entityHealth != null)
+            _entityHealth.Damaged += OnDamaged;
+        else if (_destructible != null)
             _destructible.Damaged += OnDamaged;
     }
 
     void OnDisable()
     {
-        if (_destructible != null)
+        if (_entityHealth != null)
+            _entityHealth.Damaged -= OnDamaged;
+        else if (_destructible != null)
             _destructible.Damaged -= OnDamaged;
         _flashTimeRemaining = 0f;
         _wasFlashing = false;
@@ -65,7 +74,8 @@ public sealed class DestructibleHitFlash : MonoBehaviour
 
     void OnDamaged(float _)
     {
-        _flashTimeRemaining = flashDuration;
+        if (playMaterialFlash)
+            _flashTimeRemaining = flashDuration;
         PlayHitVfx();
     }
 
