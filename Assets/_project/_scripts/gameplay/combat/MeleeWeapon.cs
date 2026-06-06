@@ -320,6 +320,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                     continue;
                 if (!(mb is IDamageable dmg))
                     continue;
+                if (mb is BaseDestructibleObject destructible && destructible.IsDefeated)
+                    return false;
                 int id = mb.GetInstanceID();
                 if (!damagedComponents.Add(id))
                     return false;

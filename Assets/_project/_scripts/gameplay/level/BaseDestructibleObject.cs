@@ -19,6 +19,8 @@ public sealed class BaseDestructibleObject : MonoBehaviour, IDamageable
     float _currentHitPoints;
     bool _broken;
 
+    public bool IsDefeated => _broken;
+
     /// <summary>Fired after HP is reduced by a valid hit; argument is damage amount applied this frame.</summary>
     public event Action<float> Damaged;
 

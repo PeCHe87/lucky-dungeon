@@ -128,6 +128,7 @@ public class NearestTargetQuery : MonoBehaviour
     void LateUpdate()
     {
         UpdatePostAttackHoldTimer();
+        TryInvalidateDeadCombatTargets();
 
         if (_engagedCombatTarget == null)
             return;
@@ -172,7 +173,11 @@ public class NearestTargetQuery : MonoBehaviour
         if (target == null)
             return;
 
-        _engagedCombatTarget = NormalizeEngagedTransform(target);
+        Transform normalized = NormalizeEngagedTransform(target);
+        if (!IsCombatTargetAlive(normalized))
+            return;
+
+        _engagedCombatTarget = normalized;
         SyncStickyAndFrozenFromEngaged();
     }
 
@@ -190,7 +195,7 @@ public class NearestTargetQuery : MonoBehaviour
         if (_engagedCombatTarget == null)
             return false;
 
-        if (!_engagedCombatTarget.gameObject.activeInHierarchy)
+        if (!IsCombatTargetAlive(_engagedCombatTarget))
         {
             ClearEngagedCombatTarget();
             return false;
@@ -225,8 +230,12 @@ public class NearestTargetQuery : MonoBehaviour
         target = null;
         if (_frozenCombatTarget == null)
             return false;
-        if (!_frozenCombatTarget.gameObject.activeInHierarchy)
+        if (!IsCombatTargetAlive(_frozenCombatTarget))
+        {
+            ClearFrozenAndStickyTargets();
             return false;
+        }
+
         target = _frozenCombatTarget;
         return true;
     }
@@ -238,6 +247,7 @@ public class NearestTargetQuery : MonoBehaviour
 
         UpdatePostAttackHoldTimer();
         UpdateDetectionSuspensionState();
+        TryInvalidateDeadCombatTargets();
 
         if (TryGetEngagedCombatTarget(out nearest))
         {
@@ -245,15 +255,10 @@ public class NearestTargetQuery : MonoBehaviour
             return true;
         }
 
-        if (IsDetectionSuspended)
+        if (IsDetectionSuspended && TryGetFrozenCombatTarget(out nearest))
         {
-            if (TryGetFrozenCombatTarget(out nearest))
-            {
-                TryResolveFrozenColliderForDebug();
-                return true;
-            }
-
-            return false;
+            TryResolveFrozenColliderForDebug();
+            return true;
         }
 
         Vector3 planar = PlanarOrigin;
@@ -350,11 +355,13 @@ public class NearestTargetQuery : MonoBehaviour
 
         if (_wasMeleeCombatTargetingLocked)
         {
-            _postAttackHoldExpireTime = Time.time + postAttackDetectionHoldSeconds;
+            if (HasValidLatchedCombatTarget())
+                _postAttackHoldExpireTime = Time.time + postAttackDetectionHoldSeconds;
             _wasMeleeCombatTargetingLocked = false;
         }
 
         if (Time.time < _postAttackHoldExpireTime
+            && HasValidLatchedCombatTarget()
             && attackController != null
             && attackController.IsAttackInputHeld
             && heldAttackHoldBonusSeconds > 0f)
@@ -432,6 +439,12 @@ public class NearestTargetQuery : MonoBehaviour
             return false;
 
         if (!_stickyTarget.gameObject.activeInHierarchy)
+        {
+            ClearStickyTarget();
+            return false;
+        }
+
+        if (!IsCombatTargetAlive(_stickyTarget))
         {
             ClearStickyTarget();
             return false;
@@ -544,6 +557,78 @@ public class NearestTargetQuery : MonoBehaviour
         if (_engagedCombatTarget == null)
             return;
         CommitEngagedAsCurrentTarget(_engagedCombatTarget);
+    }
+
+    bool TryInvalidateDeadCombatTargets()
+    {
+        if (_engagedCombatTarget != null)
+        {
+            if (IsCombatTargetAlive(_engagedCombatTarget))
+                return false;
+
+            ClearEngagedCombatTarget();
+            CancelPostAttackHoldOnDeath();
+            return true;
+        }
+
+        if (_frozenCombatTarget != null && !IsCombatTargetAlive(_frozenCombatTarget))
+        {
+            ClearFrozenAndStickyTargets();
+            CancelPostAttackHoldOnDeath();
+            return true;
+        }
+
+        if (_stickyTarget != null && !IsCombatTargetAlive(_stickyTarget))
+        {
+            _stickyTarget = null;
+            _stickyCollider = null;
+            CancelPostAttackHoldOnDeath();
+            return true;
+        }
+
+        return false;
+    }
+
+    void CancelPostAttackHoldOnDeath()
+    {
+        _postAttackHoldExpireTime = 0f;
+        _wasMeleeCombatTargetingLocked = false;
+    }
+
+    void ClearFrozenAndStickyTargets()
+    {
+        _frozenCombatTarget = null;
+        _stickyTarget = null;
+        _stickyCollider = null;
+    }
+
+    static bool IsCombatTargetAlive(Transform target)
+    {
+        if (target == null)
+            return false;
+        if (!target.gameObject.activeInHierarchy)
+            return false;
+
+        Transform current = target;
+        while (current != null)
+        {
+            if (current.TryGetComponent(out BaseDestructibleObject destructible) && destructible.IsDefeated)
+                return false;
+            current = current.parent;
+        }
+
+        return true;
+    }
+
+    bool HasValidLatchedCombatTarget()
+    {
+        if (_engagedCombatTarget != null && IsCombatTargetAlive(_engagedCombatTarget))
+            return true;
+        if (_frozenCombatTarget != null && IsCombatTargetAlive(_frozenCombatTarget))
+            return true;
+        if (_stickyTarget != null && IsCombatTargetAlive(_stickyTarget))
+            return true;
+        return false;
     }
 
     bool TryCancelEngagedFromPlayerInput()
@@ -664,6 +749,8 @@ public class NearestTargetQuery : MonoBehaviour
         for (int i = 0; i < _candidates.Count; i++)
         {
             Collider c = _candidates[i].Collider;
+            if (!IsCombatTargetAlive(c.transform))
+                continue;
             if (!HasLineOfSight(c))
                 continue;
             if (viewConeOnly && !IsPointWithinFrontCone(planarOrigin, c.transform.position))
@@ -777,6 +864,8 @@ public class NearestTargetQuery : MonoBehaviour
             if (!MatchesTargetTags(c))
                 continue;
             if (!NavMeshChaseDriver.IsWithinXZRadius(planar, c.transform.position, searchRadius))
+                continue;
+            if (!IsCombatTargetAlive(c.transform))
                 continue;
 
             float distSq = NavMeshChaseDriver.FlatDistanceSq(planar, c.transform.position);

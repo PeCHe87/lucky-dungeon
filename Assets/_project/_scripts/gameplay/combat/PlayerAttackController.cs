@@ -150,13 +150,7 @@ public sealed class PlayerAttackController : MonoBehaviour
         Transform optionalTarget = null;
         if (targetQuery != null)
         {
-            if (targetQuery.TryGetEngagedCombatTarget(out Transform engaged))
-                optionalTarget = engaged;
-            else if (targetQuery.IsDetectionSuspended && targetQuery.TryGetFrozenCombatTarget(out Transform frozen))
-                optionalTarget = frozen;
-            else if (targetQuery.TryGetNearestTransform(out Transform t))
-                optionalTarget = t;
-
+            targetQuery.TryGetNearestTransform(out optionalTarget);
             EngageCombatTargetIfNeeded(optionalTarget);
         }
 
