@@ -66,9 +66,6 @@ public sealed class PlayerTargetDetectionBroadcaster : MonoBehaviour
         if (assistant == null || nearestTargetQuery == null)
             return;
 
-        if (nearestTargetQuery.IsDetectionSuspended)
-            return;
-
         bool found = nearestTargetQuery.TryGetNearestTransform(out Transform nearest);
         if (found)
         {
@@ -104,7 +101,7 @@ public sealed class PlayerTargetDetectionBroadcaster : MonoBehaviour
             && nearestTargetQuery.ShouldHoldCombatTarget()
             && _lastTarget != null
             && target != null
-            && target != _lastTarget)
+            && !NearestTargetQuery.AreSameCombatEntity(_lastTarget, target))
             return;
 
         _lastTarget = target;

@@ -47,6 +47,7 @@ public class TopDownCharacterMovement : MonoBehaviour
 
     float _lungeTimeRemaining;
     Vector3 _lungeDirection;
+    float _combatFacingOverrideUntil;
     float _lungeSpeed;
     Transform _approachLungeTarget;
     float _approachStopDistanceFromTarget;
@@ -150,6 +151,18 @@ public class TopDownCharacterMovement : MonoBehaviour
         _useOverrideDashParams = true;
         _dashPushApplied.Clear();
         return true;
+    }
+
+    public bool IsCombatFacingOverrideActive => Time.time < _combatFacingOverrideUntil;
+
+    /// <summary>Suppresses combat focus-lock rotation cancel after attack-driven facing snaps.</summary>
+    public void NotifyCombatFacingOverride(float durationSeconds = 0.05f)
+    {
+        if (durationSeconds <= 0f)
+            return;
+        float until = Time.time + durationSeconds;
+        if (until > _combatFacingOverrideUntil)
+            _combatFacingOverrideUntil = until;
     }
 
     public Vector3 GetFacingHorizontalDirection()
@@ -260,6 +273,7 @@ public class TopDownCharacterMovement : MonoBehaviour
         if (modelForwardYawOffset != 0f)
             targetRot *= Quaternion.Euler(0f, modelForwardYawOffset, 0f);
         faceTransform.rotation = targetRot;
+        NotifyCombatFacingOverride();
     }
 
     Vector3 GetHorizontalMoveDirection(Vector2 input)

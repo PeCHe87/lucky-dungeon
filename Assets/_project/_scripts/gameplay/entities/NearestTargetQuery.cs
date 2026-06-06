@@ -6,7 +6,10 @@ using UnityEngine.Serialization;
 /// <summary>
 /// Discovers colliders in a horizontal-range (XZ) cylinder via broad-phase box overlap, filters by tag(s) and layers,
 /// requires line-of-sight, and resolves the nearest visible target.
+/// Once the player engages a target in melee, <see cref="TryGetNearestTransform"/> keeps that target until it leaves
+/// melee damage range, dies, or the player moves/dashes.
 /// </summary>
+[DefaultExecutionOrder(99)]
 public class NearestTargetQuery : MonoBehaviour
 {
     struct Candidate : IComparable<Candidate>
@@ -70,6 +73,22 @@ public class NearestTargetQuery : MonoBehaviour
     [SerializeField] PlayerEntityStateAnimator meleeAnimator;
     [Tooltip("While melee combat targeting is locked, skip overlap/LOS queries and return the latched attack focus target only.")]
     [SerializeField] bool suspendDetectionDuringMeleeAnimation = true;
+    [Tooltip("After melee combat targeting unlocks, keep detection suspended for this many seconds.")]
+    [SerializeField, Min(0f)] float postAttackDetectionHoldSeconds = 0.5f;
+    [Tooltip("While attack input is held during post-attack hold, extend hold by this many seconds from now.")]
+    [SerializeField, Min(0f)] float heldAttackHoldBonusSeconds = 0.15f;
+
+    [Header("Melee engagement")]
+    [Tooltip("Implements IMoveIntentProvider. If unset, uses first on this GameObject.")]
+    [SerializeField] MonoBehaviour moveIntentProvider;
+    [Tooltip("Implements IDashIntentProvider. If unset, uses first on this GameObject.")]
+    [SerializeField] MonoBehaviour dashIntentProvider;
+    [Tooltip("If unset, resolved on this GameObject in Awake.")]
+    [SerializeField] PlayerAttackController attackController;
+    [SerializeField, Min(0f)] float moveCancelDeadzone = 0.08f;
+    [SerializeField] bool clearEngagedOnDash = true;
+    [Tooltip("Extra XZ distance beyond melee damage radius before engagement clears (reduces lunge flicker).")]
+    [SerializeField, Min(0f)] float engagedReleaseRadiusBuffer = 0.2f;
 
     [Header("Debug gizmos")]
     [Tooltip("When selected in Play Mode, draws a wire sphere on the collider bounds of the current nearest visible target.")]
@@ -83,6 +102,12 @@ public class NearestTargetQuery : MonoBehaviour
     Collider _stickyCollider;
     Transform _frozenCombatTarget;
     bool _wasDetectionSuspended;
+    Transform _engagedCombatTarget;
+    float _postAttackHoldExpireTime;
+    bool _wasMeleeCombatTargetingLocked;
+
+    IMoveIntentProvider _moveProvider;
+    IDashIntentProvider _dashProvider;
 
     const float LosEpsilon = 1e-4f;
     const float RaycastSlop = 0.02f;
@@ -95,6 +120,22 @@ public class NearestTargetQuery : MonoBehaviour
             weaponHolder = GetComponent<WeaponHolder>();
         if (meleeAnimator == null)
             meleeAnimator = GetComponent<PlayerEntityStateAnimator>();
+        if (attackController == null)
+            attackController = GetComponent<PlayerAttackController>();
+        ResolveInputProviders();
+    }
+
+    void LateUpdate()
+    {
+        UpdatePostAttackHoldTimer();
+
+        if (_engagedCombatTarget == null)
+            return;
+
+        if (TryCancelEngagedFromPlayerInput())
+            ClearEngagedCombatTarget();
+        else if (!IsEngagedCombatTargetWithinMeleeRange(forRelease: true))
+            ClearEngagedCombatTarget();
     }
 
     void Reset()
@@ -120,16 +161,63 @@ public class NearestTargetQuery : MonoBehaviour
 
     Vector3 LosOriginWorld => OriginTransform.TransformPoint(losOriginOffset);
 
+    /// <summary>Primary XZ detection radius used for discovery and grace-range fallback.</summary>
+    public float DetectionRadius => radius;
+
+    public bool HasEngagedCombatTarget => _engagedCombatTarget != null;
+
+    /// <summary>Locks combat targeting on <paramref name="target"/> until release rules clear it.</summary>
+    public void EngageCombatTarget(Transform target)
+    {
+        if (target == null)
+            return;
+
+        _engagedCombatTarget = NormalizeEngagedTransform(target);
+        SyncStickyAndFrozenFromEngaged();
+    }
+
+    public void ClearEngagedCombatTarget()
+    {
+        _engagedCombatTarget = null;
+        _stickyTarget = null;
+        _stickyCollider = null;
+        _frozenCombatTarget = null;
+    }
+
+    public bool TryGetEngagedCombatTarget(out Transform target)
+    {
+        target = null;
+        if (_engagedCombatTarget == null)
+            return false;
+
+        if (!_engagedCombatTarget.gameObject.activeInHierarchy)
+        {
+            ClearEngagedCombatTarget();
+            return false;
+        }
+
+        if (!IsEngagedCombatTargetWithinMeleeRange(forRelease: false))
+        {
+            ClearEngagedCombatTarget();
+            return false;
+        }
+
+        target = _engagedCombatTarget;
+        return true;
+    }
+
     /// <summary>
     /// Returns the nearest transform (by horizontal XZ distance from the planar origin) that passes target tag(s), range, LOS,
     /// and optionally the view cone when view-cone filtering is active.
     /// Target stickiness applies only here, not in <see cref="CollectTargets"/>.
     /// </summary>
-    /// <summary>True while melee attack animation locks targeting; queries return the frozen focus target only.</summary>
+    bool IsMeleeCombatTargetingLocked =>
+        meleeAnimator != null && meleeAnimator.IsMeleeCombatTargetingLocked;
+
+    /// <summary>True while melee targeting or post-attack hold blocks geometric retargeting.</summary>
     public bool IsDetectionSuspended =>
         suspendDetectionDuringMeleeAnimation
-        && meleeAnimator != null
-        && meleeAnimator.IsMeleeCombatTargetingLocked;
+        && (IsMeleeCombatTargetingLocked || Time.time < _postAttackHoldExpireTime);
 
     /// <summary>Returns the latched combat focus target used while <see cref="IsDetectionSuspended"/>.</summary>
     public bool TryGetFrozenCombatTarget(out Transform target)
@@ -148,7 +236,14 @@ public class NearestTargetQuery : MonoBehaviour
         _debugLosWinner = null;
         nearest = null;
 
+        UpdatePostAttackHoldTimer();
         UpdateDetectionSuspensionState();
+
+        if (TryGetEngagedCombatTarget(out nearest))
+        {
+            CommitEngagedAsCurrentTarget(nearest);
+            return true;
+        }
 
         if (IsDetectionSuspended)
         {
@@ -238,15 +333,51 @@ public class NearestTargetQuery : MonoBehaviour
         _stickyTarget = null;
         _stickyCollider = null;
         _frozenCombatTarget = null;
+        ClearEngagedCombatTarget();
+    }
+
+    void UpdatePostAttackHoldTimer()
+    {
+        if (!suspendDetectionDuringMeleeAnimation)
+            return;
+
+        bool locked = IsMeleeCombatTargetingLocked;
+        if (locked)
+        {
+            _wasMeleeCombatTargetingLocked = true;
+            return;
+        }
+
+        if (_wasMeleeCombatTargetingLocked)
+        {
+            _postAttackHoldExpireTime = Time.time + postAttackDetectionHoldSeconds;
+            _wasMeleeCombatTargetingLocked = false;
+        }
+
+        if (Time.time < _postAttackHoldExpireTime
+            && attackController != null
+            && attackController.IsAttackInputHeld
+            && heldAttackHoldBonusSeconds > 0f)
+        {
+            float desiredEnd = Time.time + postAttackDetectionHoldSeconds + heldAttackHoldBonusSeconds;
+            if (desiredEnd > _postAttackHoldExpireTime)
+                _postAttackHoldExpireTime = desiredEnd;
+        }
     }
 
     void UpdateDetectionSuspensionState()
     {
         bool suspended = IsDetectionSuspended;
-        if (suspended && !_wasDetectionSuspended && _stickyTarget != null)
-            _frozenCombatTarget = _stickyTarget;
+        if (suspended && !_wasDetectionSuspended)
+        {
+            if (_engagedCombatTarget != null)
+                _frozenCombatTarget = _engagedCombatTarget;
+            else if (_stickyTarget != null)
+                _frozenCombatTarget = _stickyTarget;
+        }
         else if (!suspended && _wasDetectionSuspended)
             _frozenCombatTarget = null;
+
         _wasDetectionSuspended = suspended;
     }
 
@@ -264,6 +395,9 @@ public class NearestTargetQuery : MonoBehaviour
     /// <summary>True while melee swing or short weapon attack-active window should freeze sticky retargeting.</summary>
     public bool ShouldHoldCombatTarget()
     {
+        if (HasEngagedCombatTarget)
+            return true;
+
         if (weaponHolder != null
             && weaponHolder.Current is IAttackActivity activity
             && activity.IsAttackActive)
@@ -326,6 +460,8 @@ public class NearestTargetQuery : MonoBehaviour
         return true;
     }
 
+    public static bool AreSameCombatEntity(Transform a, Transform b) => IsSameTargetTransform(a, b);
+
     static bool IsSameTargetTransform(Transform a, Transform b)
     {
         if (a == b)
@@ -384,9 +520,138 @@ public class NearestTargetQuery : MonoBehaviour
     {
         if (!enableTargetStickiness)
             return;
-        if (ShouldHoldCombatTarget() && _stickyTarget != null)
+        if (HasEngagedCombatTarget || (ShouldHoldCombatTarget() && _stickyTarget != null))
             return;
         ClearStickyTarget();
+    }
+
+    void CommitEngagedAsCurrentTarget(Transform engaged)
+    {
+        _frozenCombatTarget = engaged;
+        if (!enableTargetStickiness)
+            return;
+
+        Transform previousSticky = _stickyTarget;
+        _stickyTarget = engaged;
+        if (TryResolveStickyCollider(out Collider col))
+            _debugLosWinner = col;
+        else
+            _stickyTarget = previousSticky;
+    }
+
+    void SyncStickyAndFrozenFromEngaged()
+    {
+        if (_engagedCombatTarget == null)
+            return;
+        CommitEngagedAsCurrentTarget(_engagedCombatTarget);
+    }
+
+    bool TryCancelEngagedFromPlayerInput()
+    {
+        ResolveInputProviders();
+        if (_moveProvider != null)
+        {
+            Vector2 intent = _moveProvider.GetMoveIntent();
+            float deadzone = moveCancelDeadzone;
+            if (intent.sqrMagnitude > deadzone * deadzone)
+                return true;
+        }
+
+        return clearEngagedOnDash
+            && _dashProvider != null
+            && _dashProvider.WasDashPressedThisFrame();
+    }
+
+    bool IsEngagedCombatTargetWithinMeleeRange(bool forRelease)
+    {
+        if (_engagedCombatTarget == null)
+            return false;
+
+        float meleeRadius = GetMeleeDamageRadius();
+        if (meleeRadius <= 0f)
+            return true;
+
+        float limit = meleeRadius + (forRelease ? engagedReleaseRadiusBuffer : 0f);
+        Vector3 origin = GetMeleeRangeOrigin();
+        Vector3 targetPoint = GetEngagedTargetWorldPoint(_engagedCombatTarget);
+        return NavMeshChaseDriver.IsWithinXZRadius(origin, targetPoint, limit);
+    }
+
+    float GetMeleeDamageRadius()
+    {
+        if (weaponHolder != null && weaponHolder.Current is MeleeWeapon melee)
+            return melee.DamageOverlapRadius;
+        return 0f;
+    }
+
+    Vector3 GetMeleeRangeOrigin()
+    {
+        if (attackController != null)
+            return attackController.AttackOriginTransform.position;
+        return PlanarOrigin;
+    }
+
+    Vector3 GetEngagedTargetWorldPoint(Transform engaged)
+    {
+        Transform previousSticky = _stickyTarget;
+        _stickyTarget = engaged;
+        if (TryResolveStickyCollider(out Collider col))
+        {
+            Vector3 point = col.bounds.center;
+            _stickyTarget = previousSticky;
+            return point;
+        }
+
+        _stickyTarget = previousSticky;
+        return engaged.position;
+    }
+
+    static Transform NormalizeEngagedTransform(Transform source)
+    {
+        if (source == null)
+            return null;
+
+        Transform best = source;
+        Transform current = source;
+        while (current != null)
+        {
+            if (HasDamageableOnTransform(current))
+                best = current;
+            current = current.parent;
+        }
+
+        return best;
+    }
+
+    static bool HasDamageableOnTransform(Transform tr)
+    {
+        MonoBehaviour[] components = tr.GetComponents<MonoBehaviour>();
+        for (int i = 0; i < components.Length; i++)
+        {
+            if (components[i] is IDamageable)
+                return true;
+        }
+
+        return false;
+    }
+
+    void ResolveInputProviders()
+    {
+        if (_moveProvider == null)
+        {
+            if (moveIntentProvider != null)
+                _moveProvider = moveIntentProvider as IMoveIntentProvider;
+            if (_moveProvider == null)
+                _moveProvider = GetComponent<IMoveIntentProvider>();
+        }
+
+        if (_dashProvider == null)
+        {
+            if (dashIntentProvider != null)
+                _dashProvider = dashIntentProvider as IDashIntentProvider;
+            if (_dashProvider == null)
+                _dashProvider = GetComponent<IDashIntentProvider>();
+        }
     }
 
     bool UsesViewConeFilter() =>

@@ -18,6 +18,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     [SerializeField] PlayerEntityStateAnimationProfile profile;
     [Tooltip("If unset, uses WeaponHolder on this GameObject.")]
     [SerializeField] WeaponHolder weaponHolder;
+    [SerializeField] CombatTargetFocusLock combatFocusLock;
 
     [Header("Melee approach")]
     [Tooltip("Used when the animation profile has no MeleeApproaching entry.")]
@@ -38,6 +39,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     float _lastAttackPressTime = float.NegativeInfinity;
     int _queuedAttackPressCount;
     bool _locomotionSyncPending;
+    bool _wasMeleeCombatTargetingLocked;
 
     void Awake()
     {
@@ -49,6 +51,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
         if (weaponHolder == null)
             weaponHolder = GetComponent<WeaponHolder>();
+
+        if (combatFocusLock == null)
+            combatFocusLock = GetComponent<CombatTargetFocusLock>();
 
         ResolveMeleeWeapon();
 
@@ -126,6 +131,15 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         int layer = GetAttackLayer();
         DrainQueuedAttackPresses(layer);
         TryApplyPendingLocomotion(layer);
+        UpdateCombatFocusLockGrace();
+    }
+
+    void UpdateCombatFocusLockGrace()
+    {
+        bool locked = IsMeleeCombatTargetingLocked;
+        if (_wasMeleeCombatTargetingLocked && !locked)
+            combatFocusLock?.NotifyMeleeCombatLockEnded();
+        _wasMeleeCombatTargetingLocked = locked;
     }
 
     void OnAttackPressed(bool isUserPress)

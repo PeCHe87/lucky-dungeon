@@ -136,6 +136,7 @@ public sealed class PlayerAttackController : MonoBehaviour
 
         if (performed)
         {
+            EngageCombatTargetIfNeeded(ctx.optionalTarget);
             AttackPerformed?.Invoke();
             LogProcessedAttackIfEnabled();
         }
@@ -149,10 +150,14 @@ public sealed class PlayerAttackController : MonoBehaviour
         Transform optionalTarget = null;
         if (targetQuery != null)
         {
-            if (targetQuery.IsDetectionSuspended && targetQuery.TryGetFrozenCombatTarget(out Transform frozen))
+            if (targetQuery.TryGetEngagedCombatTarget(out Transform engaged))
+                optionalTarget = engaged;
+            else if (targetQuery.IsDetectionSuspended && targetQuery.TryGetFrozenCombatTarget(out Transform frozen))
                 optionalTarget = frozen;
             else if (targetQuery.TryGetNearestTransform(out Transform t))
                 optionalTarget = t;
+
+            EngageCombatTargetIfNeeded(optionalTarget);
         }
 
         if (snapFacingToNearestTargetBeforeAttack && optionalTarget != null)
@@ -211,6 +216,7 @@ public sealed class PlayerAttackController : MonoBehaviour
         _pendingMeleeContext = ctx;
         _hasPendingMeleeContext = true;
         _meleeApproachPending = true;
+        EngageCombatTargetIfNeeded(target);
 
         if (melee.TryGetApproachLungeDuration(origin, target.position, out float approachDuration))
             MeleeApproachStarted?.Invoke(approachDuration);
@@ -238,9 +244,17 @@ public sealed class PlayerAttackController : MonoBehaviour
             return;
         }
 
+        EngageCombatTargetIfNeeded(ctx.optionalTarget);
         AttackPressed?.Invoke(false);
         AttackPerformed?.Invoke();
         LogProcessedAttackIfEnabled();
+    }
+
+    void EngageCombatTargetIfNeeded(Transform target)
+    {
+        if (targetQuery == null || target == null)
+            return;
+        targetQuery.EngageCombatTarget(target);
     }
 
     void EndApproachPresentation() => MeleeApproachCancelled?.Invoke();
@@ -258,6 +272,7 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     void LogProcessedAttackIfEnabled()
     {
+#if UNITY_EDITOR
         if (!logProcessedAttack)
             return;
 
@@ -267,5 +282,6 @@ public sealed class PlayerAttackController : MonoBehaviour
             ? $"'{wmb.name}' ({wmb.GetType().Name})"
             : (w != null ? $"({w.GetType().Name})" : "<none>");
         Debug.Log($"{nameof(PlayerAttackController)} on {name}: attack processed with <color=yellow>{label}</color>", this);
+#endif
     }
 }
