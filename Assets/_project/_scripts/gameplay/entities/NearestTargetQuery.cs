@@ -41,7 +41,7 @@ public class NearestTargetQuery : MonoBehaviour
     [Tooltip("Include blocking geometry and targets so the first hit is authoritative.")]
     [SerializeField] LayerMask losLayers = ~0;
     [SerializeField] QueryTriggerInteraction losQueryTriggerInteraction = QueryTriggerInteraction.Ignore;
-    [Tooltip("If set, colliders on this transform or its children are ignored during discovery.")]
+    [Tooltip("Colliders on this transform or its children are ignored during discovery and line-of-sight. Defaults to this GameObject.")]
     [SerializeField] Transform colliderIgnoreRoot;
 
     [Header("View cone")]
@@ -111,10 +111,13 @@ public class NearestTargetQuery : MonoBehaviour
 
     const float LosEpsilon = 1e-4f;
     const float RaycastSlop = 0.02f;
+    const float LosPenetrationStep = 0.01f;
+    const int MaxLosPenetrationSteps = 8;
 
     void Awake()
     {
         TryMigrateLegacyTargetTag();
+        EnsureColliderIgnoreRoot();
         _overlapBuffer = new Collider[overlapMaxHits];
         if (weaponHolder == null)
             weaponHolder = GetComponent<WeaponHolder>();
@@ -143,6 +146,14 @@ public class NearestTargetQuery : MonoBehaviour
     {
         if (queryOrigin == null)
             queryOrigin = transform;
+        if (colliderIgnoreRoot == null)
+            colliderIgnoreRoot = transform;
+    }
+
+    void EnsureColliderIgnoreRoot()
+    {
+        if (colliderIgnoreRoot == null)
+            colliderIgnoreRoot = transform;
     }
 
     void OnValidate()
@@ -897,19 +908,44 @@ public class NearestTargetQuery : MonoBehaviour
         if (candidate == null)
             return false;
 
+        EnsureColliderIgnoreRoot();
+
         Vector3 from = LosOriginWorld;
-        Vector3 aim = candidate.ClosestPoint(from);
+        Vector3 aim = candidate.bounds.center;
         Vector3 to = aim - from;
         float dist = to.magnitude;
         if (dist <= LosEpsilon)
             return true;
 
         Vector3 dir = to / dist;
-        float castDistance = dist + RaycastSlop;
-        if (!Physics.Raycast(from, dir, out RaycastHit hit, castDistance, losLayers, losQueryTriggerInteraction))
+        float remaining = dist + RaycastSlop;
+        Vector3 origin = from;
+
+        for (int step = 0; step < MaxLosPenetrationSteps && remaining > LosEpsilon; step++)
+        {
+            if (!Physics.Raycast(origin, dir, out RaycastHit hit, remaining, losLayers, losQueryTriggerInteraction))
+                return true;
+
+            if (ShouldIgnoreForLos(hit.collider))
+            {
+                float advance = Mathf.Max(hit.distance + LosPenetrationStep, LosPenetrationStep);
+                origin += dir * advance;
+                remaining -= advance;
+                continue;
+            }
+
+            return IsHitFromCandidate(hit, candidate);
+        }
+
+        return remaining <= LosEpsilon;
+    }
+
+    bool ShouldIgnoreForLos(Collider c)
+    {
+        if (c == null || colliderIgnoreRoot == null)
             return false;
 
-        return IsHitFromCandidate(hit, candidate);
+        return c.transform == colliderIgnoreRoot || c.transform.IsChildOf(colliderIgnoreRoot);
     }
 
     static bool IsHitFromCandidate(RaycastHit hit, Collider candidate)
@@ -983,7 +1019,7 @@ public class NearestTargetQuery : MonoBehaviour
         if (drawLosDebug)
         {
             Vector3 los = LosOriginWorld;
-            Vector3 aim = _debugLosWinner.ClosestPoint(los);
+            Vector3 aim = _debugLosWinner.bounds.center;
             Gizmos.color = Color.yellow;
             Gizmos.DrawLine(los, aim);
         }

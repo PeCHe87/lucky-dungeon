@@ -1210,7 +1210,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   losQueryTriggerInteraction: 1
-  colliderIgnoreRoot: {fileID: 0}
+  colliderIgnoreRoot: {fileID: 2555463186198603948}
   requireTargetsInViewCone: 0
   prioritizeFrontTargets: 0
   frontViewAngle: 90

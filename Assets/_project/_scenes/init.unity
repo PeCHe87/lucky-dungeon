@@ -408,6 +408,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: base_combat_entity_chaser (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 2000000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2000000000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 28
@@ -6278,6 +6282,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: base_combat_entity_chaser (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 2000000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2000000000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 31.2
@@ -9125,7 +9133,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8000000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_Speed
-      value: 5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8000000000000000003, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: detectionRadius
