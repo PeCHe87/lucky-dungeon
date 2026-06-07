@@ -1005,6 +1005,7 @@ GameObject:
   - component: {fileID: 9012345678901234513}
   - component: {fileID: 9012345678901234514}
   - component: {fileID: 264572587212465167}
+  - component: {fileID: 9012345678901234521}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1054,6 +1055,25 @@ CharacterController:
   m_SkinWidth: 0.04
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &9012345678901234521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b791060a9d7216141aad2d60bb017cac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatEntityHealth
+  maxHitPoints: 100
+  alignment: 1
+  stateMachine: {fileID: 0}
+  takeDamageState: {fileID: 0}
+  dieState: {fileID: 0}
+  damageNumberAnchor: {fileID: 0}
+  damageNumberHeightOffset: 1.5
 --- !u!114 &2798365246320322531
 MonoBehaviour:
   m_ObjectHideFlags: 0

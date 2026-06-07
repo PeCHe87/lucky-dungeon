@@ -20,6 +20,10 @@ public class FieldOfViewComponent : MonoBehaviour
     public float DetectionRadius => detectionRadius;
     public float ViewAngle => viewAngle;
 
+    public void SetTarget(Transform t) => target = t;
+
+    public void ClearTarget() => target = null;
+
     void Reset()
     {
         if (moveRoot == null)

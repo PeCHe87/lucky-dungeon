@@ -19,8 +19,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
     [SerializeField] float samplePositionRadius = 2f;
 
     [Header("Debug")]
+    [SerializeField] bool debugLog;
     [Tooltip("Log horizontal (XZ) distance to target while searching. Throttled by Distance Log Interval.")]
-    [SerializeField] bool logDistanceToTargetWhileSearching = true;
+    [SerializeField] bool logDistanceToTargetWhileSearching;
     [Tooltip("Seconds between distance logs. Set to 0 to disable logging.")]
     [SerializeField] float distanceLogInterval = 0.5f;
 
@@ -100,8 +101,27 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
                 TickChasing(agent, origin);
                 break;
             case Phase.Arrived:
-                agent.isStopped = true;
+                TickArrived(agent, origin);
                 break;
+        }
+    }
+
+    void TickArrived(NavMeshAgent agent, Vector3 origin)
+    {
+        agent.isStopped = true;
+
+        if (!fieldOfView.HasTarget)
+        {
+            _phase = Phase.Searching;
+            return;
+        }
+
+        Vector3 targetPos = fieldOfView.Target.position;
+        if (!NavMeshChaseDriver.IsWithinXZRadius(origin, targetPos, arrivalRadius))
+        {
+            _phase = Phase.Chasing;
+            _hasChaseSample = false;
+            agent.isStopped = false;
         }
     }
 
@@ -114,7 +134,8 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
 
         if (fieldOfView.IsTargetInDetectionRange(origin))
         {
-            Debug.Log("target detected!");
+            if (debugLog)
+                Debug.Log("target detected!", this);
             agent.ResetPath();
             _phase = Phase.Pausing;
             _pauseRemaining = pauseDuration;
@@ -129,6 +150,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
             return;
 
         _nextDistanceLogTime = Time.time + distanceLogInterval;
+
+        if (!debugLog)
+            return;
 
         if (!fieldOfView.HasTarget)
         {
@@ -154,7 +178,8 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
         if (_pauseRemaining > 0f)
             return;
 
-        Debug.Log("chase it!");
+        if (debugLog)
+            Debug.Log("chase it!", this);
         _phase = Phase.Chasing;
         _hasChaseSample = false;
     }
@@ -163,7 +188,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
     {
         if (!fieldOfView.HasTarget)
         {
-            _phase = Phase.Arrived;
+            _phase = Phase.Searching;
             agent.isStopped = true;
             agent.ResetPath();
             return;
