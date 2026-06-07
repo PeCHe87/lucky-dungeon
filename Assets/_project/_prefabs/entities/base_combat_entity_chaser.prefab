@@ -307,6 +307,7 @@ GameObject:
   - component: {fileID: 8000000000000000003}
   - component: {fileID: 8000000000000000004}
   - component: {fileID: 6597230395025050176}
+  - component: {fileID: 8354807184729222541}
   m_Layer: 8
   m_Name: base_combat_entity_chaser
   m_TagString: Entity
@@ -534,6 +535,27 @@ MonoBehaviour:
   scanRate: 5
   lossRadiusMultiplier: 1.2
   overlapMaxHits: 32
+--- !u!114 &8354807184729222541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4f89fc8b29ce5e4e881b5ee239d285d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityNavLocomotionAnimator
+  agent: {fileID: 8000000000000000001}
+  animator: {fileID: 7533446042223888342}
+  stateMachine: {fileID: 2000000000000000005}
+  locomotionFsmStateId: Idle
+  idleStateName: Idle
+  runStateName: Run
+  crossFadeSeconds: 0.15
+  moveSpeedThreshold: 0.05
+  remainingDistanceBuffer: 0.05
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0
@@ -631,7 +653,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 5520041ed251892409726d211eb36323, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0

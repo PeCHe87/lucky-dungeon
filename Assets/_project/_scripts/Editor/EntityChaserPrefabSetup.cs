@@ -26,6 +26,7 @@ public static class EntityChaserPrefabSetup
             return;
         }
 
+        EntityCombatControllerSetup.EnsureRunState();
         SetupChaserEntityPrefab();
     }
 
@@ -44,6 +45,7 @@ public static class EntityChaserPrefabSetup
     [MenuItem("Tools/Entities/Setup All Chaser Dependencies")]
     public static void SetupAllMenu()
     {
+        EntityCombatControllerSetup.EnsureRunState();
         SetupPlayerAlignment();
         SetupChaserEntityPrefab(applyDefaults: true);
     }
@@ -93,6 +95,25 @@ public static class EntityChaserPrefabSetup
                 finderAdded = true;
                 changed = true;
             }
+
+            var locomotionAnimator = root.GetComponent<EntityNavLocomotionAnimator>();
+            if (locomotionAnimator == null)
+            {
+                locomotionAnimator = root.AddComponent<EntityNavLocomotionAnimator>();
+                changed = true;
+            }
+
+            var stateMachine = root.GetComponent<AIStateMachine>();
+            var animator = root.GetComponentInChildren<Animator>(true);
+            if (animator != null && animator.applyRootMotion)
+            {
+                animator.applyRootMotion = false;
+                changed = true;
+            }
+
+            changed |= SetReferenceIfNull(locomotionAnimator, "agent", agent);
+            changed |= SetReferenceIfNull(locomotionAnimator, "animator", animator);
+            changed |= SetReferenceIfNull(locomotionAnimator, "stateMachine", stateMachine);
 
             if (applyDefaults)
             {
