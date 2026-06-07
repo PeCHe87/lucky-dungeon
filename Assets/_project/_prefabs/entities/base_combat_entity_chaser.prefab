@@ -308,6 +308,9 @@ GameObject:
   - component: {fileID: 8000000000000000004}
   - component: {fileID: 6597230395025050176}
   - component: {fileID: 8354807184729222541}
+  - component: {fileID: 2181995466581678434}
+  - component: {fileID: 296380223609299007}
+  - component: {fileID: 7219873542029174614}
   m_Layer: 8
   m_Name: base_combat_entity_chaser
   m_TagString: Entity
@@ -331,6 +334,7 @@ Transform:
   - {fileID: 2000000000000000012}
   - {fileID: 3689118446056951229}
   - {fileID: 1256412049056589936}
+  - {fileID: 3341646303080476549}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &8000000000000000001
@@ -508,6 +512,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NavMeshDetectChaseBehavior
   fieldOfView: {fileID: 8000000000000000003}
+  attackController: {fileID: 296380223609299007}
   pauseDuration: 0.5
   arrivalRadius: 1
   samplePositionRadius: 2
@@ -550,12 +555,64 @@ MonoBehaviour:
   agent: {fileID: 8000000000000000001}
   animator: {fileID: 7533446042223888342}
   stateMachine: {fileID: 2000000000000000005}
+  attackController: {fileID: 296380223609299007}
   locomotionFsmStateId: Idle
   idleStateName: Idle
   runStateName: Run
   crossFadeSeconds: 0.15
   moveSpeedThreshold: 0.05
   remainingDistanceBuffer: 0.05
+--- !u!114 &2181995466581678434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
+  startingWeapon: {fileID: 5496652954333487408}
+  meleeWeapon: {fileID: 5496652954333487408}
+  rangedWeapon: {fileID: 0}
+  logEquippedWeaponChanges: 0
+--- !u!114 &296380223609299007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44448b591d960f4cac9bc03081740a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityAttackController
+  weaponHolder: {fileID: 2181995466581678434}
+  attackAnimator: {fileID: 7219873542029174614}
+  facingRoot: {fileID: 2000000000000000002}
+  snapFacingToTargetBeforeAttack: 1
+--- !u!114 &7219873542029174614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57615cb79c4680a4ba9b3c3b59de0673, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityAttackAnimator
+  attackController: {fileID: 296380223609299007}
+  weaponHolder: {fileID: 2181995466581678434}
+  animator: {fileID: 7533446042223888342}
+  attackStateName: Attack1
+  attackLayer: 0
+  crossFadeSeconds: 0.08
+  attackCompletionNormalizedTime: 0.95
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0
@@ -616,6 +673,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2361307363113549395}
   - component: {fileID: 7533446042223888342}
+  - component: {fileID: 53271408383358240}
   m_Layer: 0
   m_Name: Stander
   m_TagString: Untagged
@@ -662,6 +720,21 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &53271408383358240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101021371559285172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a06f67a4c0caf8b4ca03f74444494454, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeAttackAnimationEventReceiver
+  meleeWeapon: {fileID: 5496652954333487408}
+  weaponHolder: {fileID: 2181995466581678434}
+  logHitFrameEvents: 0
 --- !u!1 &2208579742325603245
 GameObject:
   m_ObjectHideFlags: 0
@@ -999,6 +1072,74 @@ Transform:
   - {fileID: 8800958829395177815}
   m_Father: {fileID: 7645095089657270936}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4052421407934029514
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3341646303080476549}
+  - component: {fileID: 5496652954333487408}
+  m_Layer: 0
+  m_Name: melee_weapon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3341646303080476549
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4052421407934029514}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2000000000000000002}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5496652954333487408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4052421407934029514}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
+  damage: 10
+  cooldown: 0.35
+  range: 2.5
+  moveForwardDistance: 0
+  moveForwardDuration: 0.15
+  coneAngle: 120
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxTargetsPerSwing: 8
+  overlapQueryTriggerInteraction: 1
+  onAttackPerformed:
+    m_PersistentCalls:
+      m_Calls: []
+  attackActiveDuration: 0.15
+  damageElement: 0
+  criticalStrikeChance: 0
+  equippedVisualRoots: []
+  enableApproachLunge: 0
+  approachStopBuffer: 0.3
+  maxApproachLungeDistance: 6
+  approachLungeSpeed: 12
+  logDamagePipeline: 0
+  drawDamageRadiusGizmo: 1
 --- !u!1 &4239662670382762756
 GameObject:
   m_ObjectHideFlags: 0

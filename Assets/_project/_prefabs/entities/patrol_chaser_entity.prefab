@@ -107,6 +107,9 @@ GameObject:
   - component: {fileID: 1111000000000000007}
   - component: {fileID: 552753662525098990}
   - component: {fileID: 9203005207536923825}
+  - component: {fileID: 6408473538318378073}
+  - component: {fileID: 9221508378852647739}
+  - component: {fileID: 7909843700672913149}
   m_Layer: 8
   m_Name: patrol_chaser_entity
   m_TagString: Entity
@@ -129,6 +132,7 @@ Transform:
   m_Children:
   - {fileID: 7911341691687546883}
   - {fileID: 226931860995908589}
+  - {fileID: 6630802023611594116}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &1111000000000000003
@@ -215,6 +219,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NavMeshPatrolUntilChaseBehavior
   patrolBehavior: {fileID: 1111000000000000006}
   fieldOfView: {fileID: 1111000000000000007}
+  attackController: {fileID: 9221508378852647739}
   pauseDuration: 0.5
   arrivalRadius: 0.5
   samplePositionRadius: 2
@@ -243,6 +248,57 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &6408473538318378073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
+  startingWeapon: {fileID: 4943947797326889369}
+  meleeWeapon: {fileID: 4943947797326889369}
+  rangedWeapon: {fileID: 0}
+  logEquippedWeaponChanges: 0
+--- !u!114 &9221508378852647739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44448b591d960f4cac9bc03081740a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityAttackController
+  weaponHolder: {fileID: 6408473538318378073}
+  attackAnimator: {fileID: 7909843700672913149}
+  facingRoot: {fileID: 1111000000000000002}
+  snapFacingToTargetBeforeAttack: 1
+--- !u!114 &7909843700672913149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57615cb79c4680a4ba9b3c3b59de0673, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityAttackAnimator
+  attackController: {fileID: 9221508378852647739}
+  weaponHolder: {fileID: 6408473538318378073}
+  animator: {fileID: 0}
+  attackStateName: Attack1
+  attackLayer: 0
+  crossFadeSeconds: 0.08
+  attackCompletionNormalizedTime: 0.95
 --- !u!1 &1818898600157083646
 GameObject:
   m_ObjectHideFlags: 0
@@ -420,6 +476,74 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!1 &3692343014274969103
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6630802023611594116}
+  - component: {fileID: 4943947797326889369}
+  m_Layer: 0
+  m_Name: melee_weapon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6630802023611594116
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3692343014274969103}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1111000000000000002}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4943947797326889369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3692343014274969103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
+  damage: 10
+  cooldown: 0.35
+  range: 2.5
+  moveForwardDistance: 0
+  moveForwardDuration: 0.15
+  coneAngle: 120
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxTargetsPerSwing: 8
+  overlapQueryTriggerInteraction: 1
+  onAttackPerformed:
+    m_PersistentCalls:
+      m_Calls: []
+  attackActiveDuration: 0.15
+  damageElement: 0
+  criticalStrikeChance: 0
+  equippedVisualRoots: []
+  enableApproachLunge: 1
+  approachStopBuffer: 0.3
+  maxApproachLungeDistance: 6
+  approachLungeSpeed: 12
+  logDamagePipeline: 0
+  drawDamageRadiusGizmo: 1
 --- !u!1 &5484967360521513086
 GameObject:
   m_ObjectHideFlags: 0

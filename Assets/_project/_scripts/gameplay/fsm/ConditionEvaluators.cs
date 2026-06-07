@@ -107,6 +107,59 @@ public class TargetReachedEvaluator : IConditionEvaluator
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TARGET IN ATTACK RANGE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// True when bb.Target is within the equipped weapon's attack radius on <see cref="EntityAttackController"/>.
+/// </summary>
+public class TargetInAttackRangeEvaluator : IConditionEvaluator
+{
+    public bool Evaluate(Condition condition, EntityBlackboard bb)
+    {
+        if (bb.Target == null)
+            return false;
+
+        var attack = bb.Self.GetComponent<EntityAttackController>();
+        if (attack == null)
+            return false;
+
+        if (condition.debugLog)
+            Debug.Log($"[FSM] {bb.name} Condition={condition.type} inAttackRange={attack.IsTargetInAttackRange(bb.Target)}", bb);
+
+        return attack.IsTargetInAttackRange(bb.Target);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TARGET BEYOND ATTACK RANGE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// True when bb.Target is beyond weapon attack range and no attack swing is in progress.
+/// </summary>
+public class TargetBeyondAttackRangeEvaluator : IConditionEvaluator
+{
+    public bool Evaluate(Condition condition, EntityBlackboard bb)
+    {
+        if (bb.Target == null)
+            return false;
+
+        var attack = bb.Self.GetComponent<EntityAttackController>();
+        if (attack == null)
+            return true;
+
+        if (attack.IsBusy)
+            return false;
+
+        if (condition.debugLog)
+            Debug.Log($"[FSM] {bb.name} Condition={condition.type} beyondAttackEngagement={attack.IsTargetBeyondAttackEngagement(bb.Target)}", bb);
+
+        return attack.IsTargetBeyondAttackEngagement(bb.Target);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TARGET NULL
 // ─────────────────────────────────────────────────────────────────────────────
 

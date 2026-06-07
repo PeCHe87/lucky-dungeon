@@ -32,9 +32,9 @@ public static class AISystemBootstrap
         StateHandlerRegistry.Register("Chase",      new ChaseStateHandler());
         StateHandlerRegistry.Register("TakeDamage", new TakeDamageStateHandler());
         StateHandlerRegistry.Register("Die",        new DieStateHandler());
+        StateHandlerRegistry.Register("Attack",     new AttackStateHandler());
 
         // ← Add new handlers here as the game grows
-        // StateHandlerRegistry.Register("Attack",  new AttackStateHandler());
         // StateHandlerRegistry.Register("Retreat", new RetreatStateHandler());
         // StateHandlerRegistry.Register("Stunned", new StunnedStateHandler());
     }
@@ -47,6 +47,8 @@ public static class AISystemBootstrap
         ConditionEvaluatorRegistry.Register("TargetLost",     new TargetLostEvaluator());
         ConditionEvaluatorRegistry.Register("TargetReached",  new TargetReachedEvaluator());
         ConditionEvaluatorRegistry.Register("TargetNull",     new TargetNullEvaluator());
+        ConditionEvaluatorRegistry.Register("TargetInAttackRange", new TargetInAttackRangeEvaluator());
+        ConditionEvaluatorRegistry.Register("TargetBeyondAttackRange", new TargetBeyondAttackRangeEvaluator());
         ConditionEvaluatorRegistry.Register("BlackboardBool", new BlackboardBoolEvaluator());
         ConditionEvaluatorRegistry.Register("AlwaysTrue",     new AlwaysTrueEvaluator());
 

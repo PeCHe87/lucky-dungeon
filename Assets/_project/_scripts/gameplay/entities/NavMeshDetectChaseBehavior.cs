@@ -9,10 +9,12 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
         Searching,
         Pausing,
         Chasing,
-        Arrived
+        Arrived,
+        Attacking,
     }
 
     [SerializeField] FieldOfViewComponent fieldOfView;
+    [SerializeField] EntityAttackController attackController;
     [SerializeField] float pauseDuration = 0.5f;
     [SerializeField] float arrivalRadius = 0.5f;
     [Tooltip("How far to search for a valid NavMesh point around the chase target.")]
@@ -36,6 +38,8 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
     {
         if (fieldOfView == null)
             fieldOfView = GetComponent<FieldOfViewComponent>();
+        if (attackController == null)
+            attackController = GetComponent<EntityAttackController>();
     }
 
     void Reset()
@@ -103,25 +107,45 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
             case Phase.Arrived:
                 TickArrived(agent, origin);
                 break;
+            case Phase.Attacking:
+                TickAttacking(agent, origin);
+                break;
         }
     }
 
     void TickArrived(NavMeshAgent agent, Vector3 origin)
     {
-        agent.isStopped = true;
-
         if (!fieldOfView.HasTarget)
         {
             _phase = Phase.Searching;
             return;
         }
 
-        Vector3 targetPos = fieldOfView.Target.position;
-        if (!NavMeshChaseDriver.IsWithinXZRadius(origin, targetPos, arrivalRadius))
+        if (EntityNavChaseAttackSupport.TryBeginAttackPhase(attackController, fieldOfView.Target, agent))
         {
-            _phase = Phase.Chasing;
-            _hasChaseSample = false;
-            agent.isStopped = false;
+            _phase = Phase.Attacking;
+            return;
+        }
+
+        _phase = Phase.Chasing;
+        _hasChaseSample = false;
+        agent.isStopped = false;
+    }
+
+    void TickAttacking(NavMeshAgent agent, Vector3 origin)
+    {
+        switch (EntityNavChaseAttackSupport.TickAttackPhase(attackController, fieldOfView, agent, origin))
+        {
+            case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
+                _phase = Phase.Searching;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
+                _phase = Phase.Chasing;
+                _hasChaseSample = false;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayAttacking:
+                _phase = Phase.Attacking;
+                break;
         }
     }
 
@@ -196,11 +220,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
 
         Vector3 targetPos = fieldOfView.Target.position;
 
-        if (NavMeshChaseDriver.IsWithinXZRadius(origin, targetPos, arrivalRadius))
+        if (EntityNavChaseAttackSupport.TryBeginAttackPhase(attackController, fieldOfView.Target, agent))
         {
-            _phase = Phase.Arrived;
-            agent.isStopped = true;
-            agent.ResetPath();
+            _phase = Phase.Attacking;
             return;
         }
 

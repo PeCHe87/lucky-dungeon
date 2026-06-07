@@ -152,10 +152,21 @@ public class ChaseStateHandler : IStateHandler
     {
         if (bb.Target == null) return;
 
+        var agent = FSMNavMesh.GetAgent(bb);
+
+        var attack = bb.Self.GetComponent<EntityAttackController>();
+        if (attack != null && attack.IsTargetInAttackRange(bb.Target))
+        {
+            if (agent != null)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            return;
+        }
+
         var speed = FSMParamUtils.GetFloat(@params, "speed", 4f);
         var stoppingDistance = FSMParamUtils.GetFloat(@params, "stoppingDistance", 1f);
-
-        var agent = FSMNavMesh.GetAgent(bb);
 
         if (agent == null)
         {
@@ -172,6 +183,58 @@ public class ChaseStateHandler : IStateHandler
         agent.speed = speed;
         agent.stoppingDistance = stoppingDistance;
         agent.SetDestination(bb.Target.position);
+    }
+
+    public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params) { }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ATTACK STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Stands still and attacks bb.Target via <see cref="EntityAttackController"/>.
+/// Exits via FSM transitions (TargetLost, TargetBeyondAttackRange, etc.).
+/// </summary>
+public class AttackStateHandler : IStateHandler
+{
+    EntityAttackController GetAttackController(EntityBlackboard bb) =>
+        bb.Self.GetComponent<EntityAttackController>();
+
+    public void OnEnter(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params)
+    {
+        var agent = FSMNavMesh.GetAgent(bb);
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        var attack = GetAttackController(bb);
+        if (attack != null && bb.Target != null)
+            attack.TryAttackTarget(bb.Target);
+    }
+
+    public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
+    {
+        if (bb.Target == null)
+            return;
+
+        var attack = GetAttackController(bb);
+        if (attack == null)
+            return;
+
+        var agent = FSMNavMesh.GetAgent(bb);
+        if (agent != null)
+            agent.isStopped = true;
+
+        attack.FaceTarget(bb.Target);
+
+        if (attack.IsBusy)
+            return;
+
+        if (attack.IsTargetInAttackRange(bb.Target))
+            attack.TryAttackTarget(bb.Target);
     }
 
     public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params) { }

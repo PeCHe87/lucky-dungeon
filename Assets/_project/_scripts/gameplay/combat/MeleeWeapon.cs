@@ -7,7 +7,7 @@ using UnityEngine.Events;
 /// <see cref="TryAttack"/> begins the swing (cooldown, lunge); damage runs when
 /// <see cref="ApplyPendingDamage"/> is called from an animation event.
 /// </summary>
-public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity
+public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAttackRange
 {
     [SerializeField] float damage = 10f;
     [SerializeField] float cooldown = 0.35f;
@@ -92,6 +92,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     public bool IsTargetWithinDamageRadius(Vector3 origin, Vector3 targetWorldPos)
     {
         return NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos) <= ApproachStopDistanceFromTarget;
+    }
+
+    /// <inheritdoc cref="IWeaponAttackRange"/>
+    public bool IsTargetWithinAttackRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
+    {
+        return IsTargetWithinDamageRadius(origin, targetWorldPos);
     }
 
     /// <summary>True when target is inside the damage overlap sphere radius; ignores cone.</summary>

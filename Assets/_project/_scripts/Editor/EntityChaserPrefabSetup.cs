@@ -11,6 +11,8 @@ using UnityEngine.AI;
 public static class EntityChaserPrefabSetup
 {
     const string ChaserPrefabPath = "Assets/_project/_prefabs/entities/base_combat_entity_chaser.prefab";
+    const string PatrolChaserPrefabPath = "Assets/_project/_prefabs/entities/patrol_chaser_entity.prefab";
+    const string FsmPatrolPrefabPath = "Assets/_project/_prefabs/entities/fsm_patrol_entity.prefab";
     const string PlayerPrefabPath = "Assets/_project/_prefabs/entities/player.prefab";
 
     static EntityChaserPrefabSetup()
@@ -27,7 +29,12 @@ public static class EntityChaserPrefabSetup
         }
 
         EntityCombatControllerSetup.EnsureRunState();
+        EntityCombatControllerSetup.EnsureAttackState();
+        EntityCombatControllerSetup.EnsureAttackProfileEntry();
+        EntityFsmAttackSetup.SetupFsmAttackState();
         SetupChaserEntityPrefab();
+        SetupPatrolChaserEntityPrefab();
+        SetupFsmPatrolEntityPrefab();
     }
 
     [MenuItem("Tools/Entities/Setup Chaser Entity Prefab")]
@@ -46,8 +53,56 @@ public static class EntityChaserPrefabSetup
     public static void SetupAllMenu()
     {
         EntityCombatControllerSetup.EnsureRunState();
+        EntityCombatControllerSetup.EnsureAttackState();
+        EntityCombatControllerSetup.EnsureAttackProfileEntry();
+        EntityFsmAttackSetup.SetupFsmAttackState();
         SetupPlayerAlignment();
         SetupChaserEntityPrefab(applyDefaults: true);
+        SetupPatrolChaserEntityPrefab(applyDefaults: true);
+        SetupFsmPatrolEntityPrefab(applyDefaults: true);
+    }
+
+    [MenuItem("Tools/Entities/Setup Patrol Chaser Entity Prefab")]
+    public static void SetupPatrolChaserEntityPrefabMenu()
+    {
+        SetupPatrolChaserEntityPrefab(applyDefaults: true);
+    }
+
+    [MenuItem("Tools/Entities/Setup FSM Patrol Entity Prefab")]
+    public static void SetupFsmPatrolEntityPrefabMenu()
+    {
+        SetupFsmPatrolEntityPrefab(applyDefaults: true);
+    }
+
+    public static void SetupPatrolChaserEntityPrefab(bool applyDefaults = false)
+    {
+        SetupEntityPrefabWithAttack(PatrolChaserPrefabPath, applyDefaults);
+    }
+
+    public static void SetupFsmPatrolEntityPrefab(bool applyDefaults = false)
+    {
+        SetupEntityPrefabWithAttack(FsmPatrolPrefabPath, applyDefaults);
+    }
+
+    static void SetupEntityPrefabWithAttack(string prefabPath, bool applyDefaults)
+    {
+        GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
+        try
+        {
+            bool changed = EntityAttackPrefabSetup.SetupEntityAttackComponents(root, applyDefaults);
+            if (!changed)
+            {
+                Debug.Log("[EntityChaserPrefabSetup] No changes needed for " + prefabPath);
+                return;
+            }
+
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Debug.Log("[EntityChaserPrefabSetup] Updated " + prefabPath);
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
     }
 
     public static void SetupChaserEntityPrefab(bool applyDefaults = false)
@@ -150,6 +205,8 @@ public static class EntityChaserPrefabSetup
                 if (finderAdded)
                     changed |= SetEnum(finder, "targetAlignment", (int)EntityAlignment.Ally);
             }
+
+            changed |= EntityAttackPrefabSetup.SetupEntityAttackComponents(root, applyDefaults);
 
             if (!changed)
             {

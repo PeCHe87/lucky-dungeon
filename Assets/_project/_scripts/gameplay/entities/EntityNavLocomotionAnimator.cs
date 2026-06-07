@@ -13,6 +13,7 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
     [SerializeField] NavMeshAgent agent;
     [SerializeField] Animator animator;
     [SerializeField] AIStateMachine stateMachine;
+    [SerializeField] EntityAttackController attackController;
     [SerializeField] string locomotionFsmStateId = DefaultLocomotionFsmStateId;
     [SerializeField] string idleStateName = "Idle";
     [SerializeField] string runStateName = "Run";
@@ -30,6 +31,8 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
             agent = GetComponent<NavMeshAgent>();
         if (stateMachine == null)
             stateMachine = GetComponent<AIStateMachine>();
+        if (attackController == null)
+            attackController = GetComponent<EntityAttackController>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
 
@@ -46,6 +49,12 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
             return;
 
         if (!CanDriveLocomotion())
+        {
+            _lastPlayedHash = int.MinValue;
+            return;
+        }
+
+        if (attackController != null && attackController.IsBusy)
         {
             _lastPlayedHash = int.MinValue;
             return;
