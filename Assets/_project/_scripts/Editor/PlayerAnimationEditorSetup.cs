@@ -50,6 +50,14 @@ static class PlayerAnimationEditorSetup
         var meleeWeapon = prefabRoot.GetComponentInChildren<MeleeWeapon>(true);
         var movement = prefabRoot.GetComponent<TopDownCharacterMovement>();
         var animator = prefabRoot.GetComponentInChildren<Animator>(true);
+        if (prefabRoot.GetComponent<PushbackReceiver>() == null)
+        {
+            var receiver = prefabRoot.AddComponent<PushbackReceiver>();
+            var receiverSo = new SerializedObject(receiver);
+            receiverSo.FindProperty("pushbackResistance").floatValue = 0.2f;
+            receiverSo.ApplyModifiedPropertiesWithoutUndo();
+            dirty = true;
+        }
         if (animator != null)
         {
             if (animator.applyRootMotion)

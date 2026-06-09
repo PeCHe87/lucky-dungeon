@@ -27,6 +27,10 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     [Header("Damage presentation")]
     [SerializeField] DamageElement damageElement = DamageElement.Physical;
     [SerializeField, Range(0f, 1f)] float criticalStrikeChance;
+    [Header("Pushback")]
+    [Tooltip("Horizontal travel applied to victims along attacker forward on hit. 0 = none.")]
+    [SerializeField, Min(0f)] float pushbackDistance = 0.8f;
+    [SerializeField, Min(0.01f)] float pushbackDuration = 0.1f;
     [Header("Equipped presentation")]
     [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
     [SerializeField] GameObject[] equippedVisualRoots;
@@ -304,7 +308,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                 continue;
 
             candidatesInCone++;
-            if (TryDamageFirstOnHierarchy(col.gameObject, damage, damagedComponents, in ctx))
+            if (TryDamageFirstOnHierarchy(col.gameObject, damage, damagedComponents, in ctx, forward))
                 damagedCount++;
         }
 
@@ -320,7 +324,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     }
 
     /// <summary>Walks up from the hit object and applies damage to the first <see cref="IDamageable"/> found.</summary>
-    bool TryDamageFirstOnHierarchy(GameObject hitObject, float amount, HashSet<int> damagedComponents, in AttackContext ctx)
+    bool TryDamageFirstOnHierarchy(
+        GameObject hitObject,
+        float amount,
+        HashSet<int> damagedComponents,
+        in AttackContext ctx,
+        Vector3 pushbackDirection)
     {
         Transform tr = hitObject.transform;
         while (tr != null)
@@ -341,6 +350,17 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                 DamageElement element = ctx.damageElementOverride ?? damageElement;
                 bool isCrit = ctx.forceCritical || (criticalStrikeChance > 0f && Random.value < criticalStrikeChance);
                 dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit));
+
+                if (pushbackDistance > 0f)
+                {
+                    PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
+                    {
+                        direction = pushbackDirection,
+                        distance = pushbackDistance,
+                        duration = pushbackDuration,
+                    });
+                }
+
                 return true;
             }
             tr = tr.parent;

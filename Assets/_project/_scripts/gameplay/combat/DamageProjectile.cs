@@ -14,6 +14,8 @@ public sealed class DamageProjectile : MonoBehaviour
     float _traveled;
     LayerMask _hitLayers;
     DamageNumberStyle _style;
+    float _pushbackDistance;
+    float _pushbackDuration;
     bool _released;
 
     public void Initialize(
@@ -27,7 +29,9 @@ public sealed class DamageProjectile : MonoBehaviour
         float maxLifetime,
         float maxTravelDistance,
         LayerMask hitLayers,
-        in DamageNumberStyle style)
+        in DamageNumberStyle style,
+        float pushbackDistance,
+        float pushbackDuration)
     {
         _pool = pool;
         _owner = owner;
@@ -45,6 +49,8 @@ public sealed class DamageProjectile : MonoBehaviour
         _traveled = 0f;
         _hitLayers = hitLayers;
         _style = style;
+        _pushbackDistance = Mathf.Max(0f, pushbackDistance);
+        _pushbackDuration = Mathf.Max(0.01f, pushbackDuration);
         _released = false;
 
         transform.SetPositionAndRotation(worldPosition, worldRotation);
@@ -112,6 +118,17 @@ public sealed class DamageProjectile : MonoBehaviour
                 if (mb is IDamageable dmg)
                 {
                     dmg.TakeDamage(_damage, _style);
+
+                    if (_pushbackDistance > 0f)
+                    {
+                        PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
+                        {
+                            direction = _direction,
+                            distance = _pushbackDistance,
+                            duration = _pushbackDuration,
+                        });
+                    }
+
                     return;
                 }
             }

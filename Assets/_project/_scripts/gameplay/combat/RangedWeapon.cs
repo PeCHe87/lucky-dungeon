@@ -21,6 +21,10 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
     [Header("Damage presentation")]
     [SerializeField] DamageElement damageElement = DamageElement.Physical;
     [SerializeField, Range(0f, 1f)] float criticalStrikeChance;
+    [Header("Pushback")]
+    [Tooltip("Horizontal travel applied to victims along attacker forward on hit. 0 = none.")]
+    [SerializeField, Min(0f)] float pushbackDistance = 0.4f;
+    [SerializeField, Min(0.01f)] float pushbackDuration = 0.08f;
     [Header("Equipped presentation")]
     [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
     [SerializeField] GameObject[] equippedVisualRoots;
@@ -98,7 +102,9 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
             projectileLifetime,
             projectileMaxDistance,
             hitLayers,
-            in style);
+            in style,
+            pushbackDistance,
+            pushbackDuration);
 
         shot.SetActive(true);
 

@@ -311,6 +311,7 @@ GameObject:
   - component: {fileID: 2181995466581678434}
   - component: {fileID: 296380223609299007}
   - component: {fileID: 7219873542029174614}
+  - component: {fileID: 5943193764982946597}
   m_Layer: 8
   m_Name: base_combat_entity_chaser
   m_TagString: Entity
@@ -613,6 +614,19 @@ MonoBehaviour:
   attackLayer: 0
   crossFadeSeconds: 0.08
   attackCompletionNormalizedTime: 0.95
+--- !u!114 &5943193764982946597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89bb05aced02c374f80129096ae089ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PushbackReceiver
+  pushbackResistance: 0
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0
@@ -1133,6 +1147,8 @@ MonoBehaviour:
   attackActiveDuration: 0.15
   damageElement: 0
   criticalStrikeChance: 0
+  pushbackDistance: 0.8
+  pushbackDuration: 0.1
   equippedVisualRoots: []
   enableApproachLunge: 0
   approachStopBuffer: 0.3

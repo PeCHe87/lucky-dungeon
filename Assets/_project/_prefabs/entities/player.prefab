@@ -170,6 +170,8 @@ MonoBehaviour:
   attackActiveDuration: 0.2
   damageElement: 0
   criticalStrikeChance: 0
+  pushbackDistance: 0.4
+  pushbackDuration: 0.08
   equippedVisualRoots:
   - {fileID: 6685292332853155031}
 --- !u!1 &1827364555011111101
@@ -1006,6 +1008,7 @@ GameObject:
   - component: {fileID: 9012345678901234514}
   - component: {fileID: 264572587212465167}
   - component: {fileID: 9012345678901234521}
+  - component: {fileID: 8356094001360696364}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1055,25 +1058,6 @@ CharacterController:
   m_SkinWidth: 0.04
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
---- !u!114 &9012345678901234521
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7257487282284125000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b791060a9d7216141aad2d60bb017cac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CombatEntityHealth
-  maxHitPoints: 100
-  alignment: 1
-  stateMachine: {fileID: 0}
-  takeDamageState: {fileID: 0}
-  dieState: {fileID: 0}
-  damageNumberAnchor: {fileID: 0}
-  damageNumberHeightOffset: 1.5
 --- !u!114 &2798365246320322531
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1278,9 +1262,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAttackController
   attackIntentProvider: {fileID: 2009791332878126513}
+  moveIntentProvider: {fileID: 0}
   weaponHolder: {fileID: 9012345678901234504}
   targetQuery: {fileID: 2598074907052417657}
-  combatFocusLock: {fileID: 0}
   facingRoot: {fileID: 3936869161901732676}
   snapFacingToNearestTargetBeforeAttack: 1
   logProcessedAttack: 0
@@ -1438,6 +1422,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatTargetFocusLock
   nearestTargetQuery: {fileID: 2598074907052417657}
+--- !u!114 &9012345678901234521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b791060a9d7216141aad2d60bb017cac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatEntityHealth
+  maxHitPoints: 100
+  alignment: 1
+  stateMachine: {fileID: 0}
+  takeDamageState: {fileID: 0}
+  dieState: {fileID: 0}
+  damageNumberAnchor: {fileID: 0}
+  damageNumberHeightOffset: 1.5
+--- !u!114 &8356094001360696364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89bb05aced02c374f80129096ae089ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PushbackReceiver
+  pushbackResistance: 0.2
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0
@@ -1603,6 +1619,8 @@ MonoBehaviour:
   attackActiveDuration: 0.15
   damageElement: 0
   criticalStrikeChance: 0
+  pushbackDistance: 0.8
+  pushbackDuration: 0.1
   equippedVisualRoots:
   - {fileID: 4196078650961484826}
   enableApproachLunge: 1

@@ -213,6 +213,17 @@ public class TopDownCharacterMovement : MonoBehaviour
 
     public void StartAttackLunge(Vector3 direction, float speed, float duration)
     {
+        StartDirectedLunge(direction, speed, duration);
+    }
+
+    /// <summary>Horizontal displacement from being hit; uses the same lunge channel as attack movement.</summary>
+    public void StartKnockback(Vector3 direction, float speed, float duration)
+    {
+        StartDirectedLunge(direction, speed, duration);
+    }
+
+    void StartDirectedLunge(Vector3 direction, float speed, float duration)
+    {
         if (direction.sqrMagnitude < 1e-8f || speed <= 0f || duration <= 0f)
             return;
         ClearApproachLungeTracking();

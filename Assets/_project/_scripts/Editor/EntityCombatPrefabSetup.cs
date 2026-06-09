@@ -81,6 +81,12 @@ public static class EntityCombatPrefabSetup
                 }
             }
 
+            if (root.GetComponent<PushbackReceiver>() == null)
+            {
+                root.AddComponent<PushbackReceiver>();
+                changed = true;
+            }
+
             var shake = root.GetComponentInChildren<EntityDamagedShake>(true);
             if (shake != null && shake.enabled)
             {
