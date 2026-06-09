@@ -61,19 +61,14 @@ public static class EntityNavChaseAttackSupport
         if (attackController == null)
             return AttackTickResult.ResumeChasing;
 
-        if (!fieldOfView.HasTarget)
-            return AttackTickResult.ResumeSearching;
-
-        Transform target = fieldOfView.Target;
-        attackController.FaceTarget(target);
-
-        if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
-            return abortResult;
+        Transform target = fieldOfView.HasTarget ? fieldOfView.Target : null;
+        if (target != null)
+            attackController.FaceTarget(target);
 
         if (attackController.IsTelegraphing)
             return AttackTickResult.StayPreAttacking;
 
-        attackController.TryAttackTarget(target);
+        attackController.TryCommitStrike(target);
         return AttackTickResult.StayAttacking;
     }
 
@@ -89,14 +84,47 @@ public static class EntityNavChaseAttackSupport
         if (attackController == null)
             return AttackTickResult.ResumeChasing;
 
-        if (!fieldOfView.HasTarget)
-            return AttackTickResult.ResumeSearching;
+        Transform target = fieldOfView.HasTarget ? fieldOfView.Target : null;
+        if (target != null)
+            attackController.FaceTarget(target);
 
-        Transform target = fieldOfView.Target;
-        attackController.FaceTarget(target);
+        if (attackController.IsAttackCommitActive)
+        {
+            if (attackController.IsBusy)
+                return AttackTickResult.StayAttacking;
+
+            attackController.CompleteAttackCommit();
+            return EvaluatePostAttackEngagement(attackController, fieldOfView, agent, target);
+        }
 
         if (attackController.IsBusy)
             return AttackTickResult.StayAttacking;
+
+        if (!fieldOfView.HasTarget)
+            return AttackTickResult.ResumeSearching;
+
+        if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
+            return abortResult;
+
+        if (attackController.IsTargetInAttackRange(target))
+        {
+            if (attackController.EnablePreAttackTelegraph && attackController.TryBeginPreAttack(target))
+                return AttackTickResult.StayPreAttacking;
+
+            attackController.TryAttackTarget(target);
+        }
+
+        return AttackTickResult.StayAttacking;
+    }
+
+    static AttackTickResult EvaluatePostAttackEngagement(
+        EntityAttackController attackController,
+        FieldOfViewComponent fieldOfView,
+        NavMeshAgent agent,
+        Transform target)
+    {
+        if (!fieldOfView.HasTarget)
+            return AttackTickResult.ResumeSearching;
 
         if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
             return abortResult;

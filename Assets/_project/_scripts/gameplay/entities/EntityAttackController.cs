@@ -27,6 +27,7 @@ public sealed class EntityAttackController : MonoBehaviour
     CombatEntityHealth _health;
     float _attackBlockedUntil;
     float _telegraphUntil;
+    bool _isAttackCommitActive;
 
     /// <summary>Raised after <see cref="WeaponHolder.TryAttack"/> succeeds.</summary>
     public event Action AttackStarted;
@@ -39,6 +40,8 @@ public sealed class EntityAttackController : MonoBehaviour
     public bool IsAttackBlocked => Time.time < _attackBlockedUntil;
 
     public bool IsTelegraphing => Time.time < _telegraphUntil;
+
+    public bool IsAttackCommitActive => _isAttackCommitActive;
 
     public bool IsBusy =>
         IsAttackBlocked
@@ -142,8 +145,40 @@ public sealed class EntityAttackController : MonoBehaviour
             return false;
 
         _telegraphUntil = Time.time + preAttackDuration;
+        _isAttackCommitActive = true;
         attackAnimator?.PlayPreAttackClip();
         return true;
+    }
+
+    /// <summary>Starts the strike for a committed telegraph without re-checking attack range.</summary>
+    public bool TryCommitStrike(Transform optionalTarget)
+    {
+        if (weaponHolder == null)
+            return false;
+
+        if (IsAttackBlocked || IsTelegraphing)
+            return false;
+
+        if (optionalTarget != null && snapFacingToTargetBeforeAttack)
+            SnapFacingToward(optionalTarget.position);
+
+        var ctx = new AttackContext
+        {
+            attacker = AttackOriginTransform,
+            facing = GetFlatForward(),
+            optionalTarget = optionalTarget,
+        };
+
+        if (!weaponHolder.TryAttack(in ctx))
+            return false;
+
+        AttackStarted?.Invoke();
+        return true;
+    }
+
+    public void CompleteAttackCommit()
+    {
+        _isAttackCommitActive = false;
     }
 
     public bool TryAttackTarget(Transform target)
@@ -184,6 +219,7 @@ public sealed class EntityAttackController : MonoBehaviour
     void CancelTelegraph()
     {
         _telegraphUntil = 0f;
+        _isAttackCommitActive = false;
         attackAnimator?.CancelPreAttackAnimation();
     }
 
