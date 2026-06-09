@@ -30,6 +30,7 @@ public static class EntityCombatControllerSetup
 
         EnsureRunState();
         EnsureAttackState();
+        EnsurePreAttackState();
         EnsureAttackProfileEntry();
     }
 
@@ -39,6 +40,9 @@ public static class EntityCombatControllerSetup
     [MenuItem("Tools/Entities/Ensure Entity Combat Attack Animation")]
     public static void EnsureAttackStateMenu() => EnsureAttackState();
 
+    [MenuItem("Tools/Entities/Ensure Entity Combat Pre-Attack Animation")]
+    public static void EnsurePreAttackStateMenu() => EnsurePreAttackState();
+
     public static bool EnsureRunState()
     {
         return EnsureAnimatorState("Run", LoadRunClip(), new Vector3(250f, 120f, 0f));
@@ -47,6 +51,12 @@ public static class EntityCombatControllerSetup
     public static bool EnsureAttackState()
     {
         return EnsureAnimatorState("Attack1", EntityAttackPrefabSetup.LoadAttackClip(), new Vector3(400f, 120f, 0f));
+    }
+
+    public static bool EnsurePreAttackState()
+    {
+        // Reuses the attack clip until a dedicated telegraph clip is assigned in the controller.
+        return EnsureAnimatorState("PreAttack1", EntityAttackPrefabSetup.LoadAttackClip(), new Vector3(520f, 120f, 0f));
     }
 
     public static bool EnsureAttackProfileEntry()

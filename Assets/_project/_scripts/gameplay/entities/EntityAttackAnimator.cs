@@ -10,6 +10,7 @@ public sealed class EntityAttackAnimator : MonoBehaviour
     [SerializeField] WeaponHolder weaponHolder;
     [SerializeField] Animator animator;
     [SerializeField] string attackStateName = "Attack1";
+    [SerializeField] string preAttackStateName = "PreAttack1";
     [SerializeField] int attackLayer;
     [SerializeField, Min(0f)] float crossFadeSeconds = 0.08f;
     [Tooltip("Treat attack clip as playing until normalized time reaches this value (0-1).")]
@@ -17,9 +18,11 @@ public sealed class EntityAttackAnimator : MonoBehaviour
     [SerializeField] string cancelToStateName = "Idle";
 
     int _attackStateHash;
+    int _preAttackStateHash;
     int _cancelToStateHash;
     MeleeWeapon _meleeWeapon;
     bool _attackClipCancelled;
+    bool _preAttackClipCancelled;
 
     public bool IsAttackClipPlaying
     {
@@ -52,6 +55,9 @@ public sealed class EntityAttackAnimator : MonoBehaviour
             animator.applyRootMotion = false;
 
         _attackStateHash = Animator.StringToHash(attackStateName);
+        _preAttackStateHash = string.IsNullOrWhiteSpace(preAttackStateName)
+            ? 0
+            : Animator.StringToHash(preAttackStateName);
         _cancelToStateHash = string.IsNullOrWhiteSpace(cancelToStateName)
             ? 0
             : Animator.StringToHash(cancelToStateName);
@@ -94,6 +100,25 @@ public sealed class EntityAttackAnimator : MonoBehaviour
     public void CancelAttackAnimation()
     {
         _attackClipCancelled = true;
+
+        if (animator == null || _cancelToStateHash == 0)
+            return;
+
+        animator.CrossFadeInFixedTime(_cancelToStateHash, crossFadeSeconds, attackLayer, 0f);
+    }
+
+    public void PlayPreAttackClip()
+    {
+        if (animator == null || _preAttackStateHash == 0)
+            return;
+
+        _preAttackClipCancelled = false;
+        animator.CrossFadeInFixedTime(_preAttackStateHash, crossFadeSeconds, attackLayer, 0f);
+    }
+
+    public void CancelPreAttackAnimation()
+    {
+        _preAttackClipCancelled = true;
 
         if (animator == null || _cancelToStateHash == 0)
             return;

@@ -10,6 +10,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
         Pausing,
         Chasing,
         Arrived,
+        PreAttacking,
         Attacking,
     }
 
@@ -107,6 +108,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
             case Phase.Arrived:
                 TickArrived(agent, origin);
                 break;
+            case Phase.PreAttacking:
+                TickPreAttacking(agent, origin);
+                break;
             case Phase.Attacking:
                 TickAttacking(agent, origin);
                 break;
@@ -121,15 +125,39 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
             return;
         }
 
-        if (EntityNavChaseAttackSupport.TryBeginAttackPhase(attackController, fieldOfView.Target, agent))
+        switch (EntityNavChaseAttackSupport.TryBeginPreAttackPhase(attackController, fieldOfView.Target, agent))
         {
-            _phase = Phase.Attacking;
-            return;
+            case EntityNavChaseAttackSupport.AttackPhaseBeginResult.PreAttacking:
+                _phase = Phase.PreAttacking;
+                return;
+            case EntityNavChaseAttackSupport.AttackPhaseBeginResult.Attacking:
+                _phase = Phase.Attacking;
+                return;
         }
 
         _phase = Phase.Chasing;
         _hasChaseSample = false;
         agent.isStopped = false;
+    }
+
+    void TickPreAttacking(NavMeshAgent agent, Vector3 origin)
+    {
+        switch (EntityNavChaseAttackSupport.TickPreAttackPhase(attackController, fieldOfView, agent, origin))
+        {
+            case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
+                _phase = Phase.Searching;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
+                _phase = Phase.Chasing;
+                _hasChaseSample = false;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayAttacking:
+                _phase = Phase.Attacking;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayPreAttacking:
+                _phase = Phase.PreAttacking;
+                break;
+        }
     }
 
     void TickAttacking(NavMeshAgent agent, Vector3 origin)
@@ -142,6 +170,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
                 _phase = Phase.Chasing;
                 _hasChaseSample = false;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayPreAttacking:
+                _phase = Phase.PreAttacking;
                 break;
             case EntityNavChaseAttackSupport.AttackTickResult.StayAttacking:
                 _phase = Phase.Attacking;
@@ -220,10 +251,14 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
 
         Vector3 targetPos = fieldOfView.Target.position;
 
-        if (EntityNavChaseAttackSupport.TryBeginAttackPhase(attackController, fieldOfView.Target, agent))
+        switch (EntityNavChaseAttackSupport.TryBeginPreAttackPhase(attackController, fieldOfView.Target, agent))
         {
-            _phase = Phase.Attacking;
-            return;
+            case EntityNavChaseAttackSupport.AttackPhaseBeginResult.PreAttacking:
+                _phase = Phase.PreAttacking;
+                return;
+            case EntityNavChaseAttackSupport.AttackPhaseBeginResult.Attacking:
+                _phase = Phase.Attacking;
+                return;
         }
 
         agent.stoppingDistance = arrivalRadius;

@@ -13,6 +13,11 @@ public sealed class EntityAttackController : MonoBehaviour
     [SerializeField] Transform facingRoot;
     [SerializeField] bool snapFacingToTargetBeforeAttack = true;
 
+    [Header("Pre-attack telegraph")]
+    [Tooltip("When enabled, nav attack phases wind up for Pre Attack Duration before striking.")]
+    [SerializeField] bool enablePreAttackTelegraph = true;
+    [SerializeField, Min(0.01f)] float preAttackDuration = 0.4f;
+
     [Header("Damage interrupt")]
     [Tooltip("When enabled, cancels the in-progress attack when this entity takes damage.")]
     [SerializeField] bool cancelAttackOnDamage = true;
@@ -21,6 +26,7 @@ public sealed class EntityAttackController : MonoBehaviour
 
     CombatEntityHealth _health;
     float _attackBlockedUntil;
+    float _telegraphUntil;
 
     /// <summary>Raised after <see cref="WeaponHolder.TryAttack"/> succeeds.</summary>
     public event Action AttackStarted;
@@ -28,10 +34,15 @@ public sealed class EntityAttackController : MonoBehaviour
     public Transform AttackOriginTransform => facingRoot != null ? facingRoot : transform;
     public Transform AttackFacingTransform => AttackOriginTransform;
 
+    public bool EnablePreAttackTelegraph => enablePreAttackTelegraph;
+
     public bool IsAttackBlocked => Time.time < _attackBlockedUntil;
+
+    public bool IsTelegraphing => Time.time < _telegraphUntil;
 
     public bool IsBusy =>
         IsAttackBlocked
+        || IsTelegraphing
         || IsWeaponAttackActive
         || (attackAnimator != null && attackAnimator.IsAttackClipPlaying);
 
@@ -115,12 +126,32 @@ public sealed class EntityAttackController : MonoBehaviour
         return !IsTargetInAttackRange(target);
     }
 
+    /// <summary>Begins a timed windup facing <paramref name="target"/>; strike is started separately via <see cref="TryAttackTarget"/>.</summary>
+    public bool TryBeginPreAttack(Transform target)
+    {
+        if (!enablePreAttackTelegraph || target == null)
+            return false;
+
+        if (IsAttackBlocked || IsTelegraphing)
+            return false;
+
+        if (snapFacingToTargetBeforeAttack)
+            SnapFacingToward(target.position);
+
+        if (!IsTargetInAttackRange(target))
+            return false;
+
+        _telegraphUntil = Time.time + preAttackDuration;
+        attackAnimator?.PlayPreAttackClip();
+        return true;
+    }
+
     public bool TryAttackTarget(Transform target)
     {
         if (target == null || weaponHolder == null)
             return false;
 
-        if (IsAttackBlocked)
+        if (IsAttackBlocked || IsTelegraphing)
             return false;
 
         if (snapFacingToTargetBeforeAttack)
@@ -145,8 +176,15 @@ public sealed class EntityAttackController : MonoBehaviour
 
     public void CancelActiveAttack()
     {
+        CancelTelegraph();
         weaponHolder?.CancelActiveAttack();
         attackAnimator?.CancelAttackAnimation();
+    }
+
+    void CancelTelegraph()
+    {
+        _telegraphUntil = 0f;
+        attackAnimator?.CancelPreAttackAnimation();
     }
 
     public void FaceTarget(Transform target)

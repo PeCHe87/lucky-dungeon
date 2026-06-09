@@ -71,12 +71,15 @@ public static class EntityAttackPrefabSetup
         {
             changed |= SetBool(attackController, "cancelAttackOnDamage", true);
             changed |= SetFloat(attackController, "attackCooldownAfterDamage", 0.4f);
+            changed |= SetBool(attackController, "enablePreAttackTelegraph", true);
+            changed |= SetFloat(attackController, "preAttackDuration", 0.4f);
         }
 
         changed |= SetSerializedReference(attackAnimator, "attackController", attackController);
         changed |= SetSerializedReference(attackAnimator, "weaponHolder", weaponHolder);
         changed |= SetSerializedReference(attackAnimator, "animator", animator);
         changed |= SetString(attackAnimator, "attackStateName", "Attack1");
+        changed |= SetString(attackAnimator, "preAttackStateName", "PreAttack1");
 
         if (animator != null)
         {
