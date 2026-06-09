@@ -31,6 +31,7 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
     [SerializeField] DamageInvulnerability invulnerability;
     [SerializeField] DashMotionTrailEffect trailEffect;
     [SerializeField] DashCooldownRingView cooldownRing;
+    [SerializeField] PlayerEntityState playerEntityState;
 
     bool _gestureActive;
     float _gestureDownTime;
@@ -55,6 +56,8 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
             trailEffect = GetComponent<DashMotionTrailEffect>();
         if (cooldownRing == null)
             cooldownRing = GetComponent<DashCooldownRingView>();
+        if (playerEntityState == null)
+            playerEntityState = GetComponent<PlayerEntityState>();
     }
 
     void OnEnable()
@@ -169,6 +172,8 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
 
     void TryStartDash(Vector2 normalizedOffset)
     {
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            return;
         if (!CanAcceptDashInput())
             return;
 

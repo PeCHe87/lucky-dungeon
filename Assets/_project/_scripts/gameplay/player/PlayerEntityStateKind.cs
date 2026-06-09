@@ -6,4 +6,5 @@ public enum PlayerEntityStateKind
     Dashing,
     Attacking,
     MeleeApproaching,
+    TakingDamage,
 }

@@ -34,6 +34,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     readonly Dictionary<PlayerEntityStateKind, int> _stateHashes = new Dictionary<PlayerEntityStateKind, int>();
     readonly HashSet<int> _attackStateHashes = new HashSet<int>();
+    int _hitReactStateHash;
+    float _hitReactCompletionThreshold = 0.95f;
     int _lastPlayedHash = int.MinValue;
     int _lastPlayedLayer;
     int _attackComboIndex;
@@ -133,7 +135,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return;
 
         int layer = GetAttackLayer();
-        DrainQueuedAttackPresses(layer);
+        if (playerEntityState == null || playerEntityState.Current != PlayerEntityStateKind.TakingDamage)
+            DrainQueuedAttackPresses(layer);
         TryApplyPendingLocomotion(layer);
         UpdateCombatFocusLockGrace();
     }
@@ -172,6 +175,15 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     void OnStateChanged(PlayerEntityStateKind previous, PlayerEntityStateKind current)
     {
+        if (current == PlayerEntityStateKind.TakingDamage)
+        {
+            _queuedAttackPressCount = 0;
+            _locomotionSyncPending = false;
+            _meleeApproachAnimActive = false;
+            PlayForState(current, force: true);
+            return;
+        }
+
         int layer = GetAttackLayer();
         if (IsAttackClipPlaying(layer))
         {
@@ -271,7 +283,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return;
 
         _locomotionSyncPending = false;
-        if (playerEntityState == null || playerEntityState.Current == PlayerEntityStateKind.Attacking)
+        if (playerEntityState == null
+            || playerEntityState.Current == PlayerEntityStateKind.Attacking
+            || playerEntityState.Current == PlayerEntityStateKind.TakingDamage)
             return;
 
         if (ShouldSuppressLocomotionForHeldAttack())
@@ -365,6 +379,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     /// <summary>True while a melee attack state is playing and has not reached the combo completion threshold.</summary>
     public bool IsMeleeAttackClipPlaying => IsAttackClipPlaying(GetAttackLayer());
 
+    /// <summary>True while the hurt-react clip is playing and has not reached completion.</summary>
+    public bool IsHitReactClipPlaying => IsHitReactClipPlayingOnLayer(GetHitReactLayer());
+
     /// <summary>True during attack clips, attack-layer transitions, or queued combo inputs.</summary>
     public bool IsMeleeCombatTargetingLocked =>
         IsMeleeAttackClipPlaying
@@ -388,6 +405,29 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return false;
 
         return info.normalizedTime < GetAttackCompletionThreshold();
+    }
+
+    int GetHitReactLayer()
+    {
+        if (profile != null
+            && profile.TryGetEntry(PlayerEntityStateKind.TakingDamage, out PlayerEntityStateAnimationEntry entry))
+        {
+            return entry.layer;
+        }
+
+        return 0;
+    }
+
+    bool IsHitReactClipPlayingOnLayer(int layer)
+    {
+        if (animator == null || _hitReactStateHash == 0)
+            return false;
+
+        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(layer);
+        if (info.shortNameHash != _hitReactStateHash)
+            return false;
+
+        return info.normalizedTime < _hitReactCompletionThreshold;
     }
 
     void ResolveMeleeWeapon()
@@ -435,6 +475,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     {
         _stateHashes.Clear();
         _attackStateHashes.Clear();
+        _hitReactStateHash = 0;
         if (profile == null)
             return;
 
@@ -444,6 +485,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
                 continue;
 
             _stateHashes[kind] = Animator.StringToHash(entry.animatorStateName);
+            if (kind == PlayerEntityStateKind.TakingDamage)
+                _hitReactStateHash = _stateHashes[kind];
         }
 
         MeleeAttackAnimationSequence sequence = profile.MeleeAttackSequence;

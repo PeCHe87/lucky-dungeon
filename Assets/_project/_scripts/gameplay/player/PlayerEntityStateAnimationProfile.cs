@@ -128,6 +128,13 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
                 crossFadeSeconds = 0.1f,
                 layer = 0,
             },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.TakingDamage,
+                animatorStateName = "Hit",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
         };
         profile.meleeAttackSequence = new MeleeAttackAnimationSequence
         {

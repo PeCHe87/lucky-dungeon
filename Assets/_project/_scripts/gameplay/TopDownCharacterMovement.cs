@@ -7,6 +7,7 @@ public class TopDownCharacterMovement : MonoBehaviour
     [Header("Control")]
     [Tooltip("Implements IMoveIntentProvider (e.g. PlayerInputMoveIntentProvider). If unset, uses first IMoveIntentProvider on this GameObject.")]
     [SerializeField] MonoBehaviour moveIntentProvider;
+    [SerializeField] PlayerEntityState playerEntityState;
 
     [Header("Movement")]
     [SerializeField] float moveSpeed = 6f;
@@ -69,11 +70,16 @@ public class TopDownCharacterMovement : MonoBehaviour
             _provider = moveIntentProvider as IMoveIntentProvider;
         if (_provider == null)
             _provider = GetComponent<IMoveIntentProvider>();
+
+        if (playerEntityState == null)
+            playerEntityState = GetComponent<PlayerEntityState>();
     }
 
     void Update()
     {
         Vector2 intent = _provider != null ? _provider.GetMoveIntent() : Vector2.zero;
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            intent = Vector2.zero;
         Vector3 moveDir = GetHorizontalMoveDirection(intent);
         Vector3 velocityDir = moveDir;
         if (velocityDir.sqrMagnitude > 1e-8f)
@@ -136,8 +142,16 @@ public class TopDownCharacterMovement : MonoBehaviour
     /// <summary>
     /// Starts a directed burst dash (e.g. joystick double-tap). Does not use keyboard dash cooldown on movement.
     /// </summary>
+    public void CancelDash()
+    {
+        _dashTimeRemaining = 0f;
+        _useOverrideDashParams = false;
+    }
+
     public bool TryStartDirectedDash(Vector3 worldDirection, float duration, float speed)
     {
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            return false;
         if (_dashTimeRemaining > 0f)
             return false;
         if (requireGroundedToStartDash && !_characterController.isGrounded)

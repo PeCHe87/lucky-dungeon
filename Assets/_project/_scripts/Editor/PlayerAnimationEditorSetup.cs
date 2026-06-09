@@ -50,6 +50,9 @@ static class PlayerAnimationEditorSetup
         var meleeWeapon = prefabRoot.GetComponentInChildren<MeleeWeapon>(true);
         var movement = prefabRoot.GetComponent<TopDownCharacterMovement>();
         var animator = prefabRoot.GetComponentInChildren<Animator>(true);
+        var health = prefabRoot.GetComponent<CombatEntityHealth>();
+        var invulnerability = prefabRoot.GetComponent<DamageInvulnerability>();
+        var dashController = prefabRoot.GetComponent<DashJoystickDoubleTapController>();
         if (prefabRoot.GetComponent<PushbackReceiver>() == null)
         {
             var receiver = prefabRoot.AddComponent<PushbackReceiver>();
@@ -118,6 +121,81 @@ static class PlayerAnimationEditorSetup
         if (animatorSo.ApplyModifiedPropertiesWithoutUndo())
             dirty = true;
 
+        var hitReact = prefabRoot.GetComponent<PlayerHitReact>();
+        if (hitReact == null)
+        {
+            hitReact = prefabRoot.AddComponent<PlayerHitReact>();
+            dirty = true;
+        }
+
+        var hitReactSo = new SerializedObject(hitReact);
+        if (hitReactSo.FindProperty("invulnerabilityDuration").floatValue != 0.5f)
+        {
+            hitReactSo.FindProperty("invulnerabilityDuration").floatValue = 0.5f;
+            dirty = true;
+        }
+
+        if (health != null
+            && hitReactSo.FindProperty("health").objectReferenceValue != health)
+        {
+            hitReactSo.FindProperty("health").objectReferenceValue = health;
+            dirty = true;
+        }
+
+        if (invulnerability != null
+            && hitReactSo.FindProperty("invulnerability").objectReferenceValue != invulnerability)
+        {
+            hitReactSo.FindProperty("invulnerability").objectReferenceValue = invulnerability;
+            dirty = true;
+        }
+
+        if (attackController != null
+            && hitReactSo.FindProperty("attackController").objectReferenceValue != attackController)
+        {
+            hitReactSo.FindProperty("attackController").objectReferenceValue = attackController;
+            dirty = true;
+        }
+
+        if (movement != null
+            && hitReactSo.FindProperty("movement").objectReferenceValue != movement)
+        {
+            hitReactSo.FindProperty("movement").objectReferenceValue = movement;
+            dirty = true;
+        }
+
+        if (stateAnimator != null
+            && hitReactSo.FindProperty("entityStateAnimator").objectReferenceValue != stateAnimator)
+        {
+            hitReactSo.FindProperty("entityStateAnimator").objectReferenceValue = stateAnimator;
+            dirty = true;
+        }
+
+        if (hitReactSo.ApplyModifiedPropertiesWithoutUndo())
+            dirty = true;
+
+        var entityStateSo = new SerializedObject(entityState);
+        if (hitReact != null
+            && entityStateSo.FindProperty("hitReact").objectReferenceValue != hitReact)
+        {
+            entityStateSo.FindProperty("hitReact").objectReferenceValue = hitReact;
+            dirty = true;
+        }
+
+        if (entityStateSo.ApplyModifiedPropertiesWithoutUndo())
+            dirty = true;
+
+        if (dashController != null)
+        {
+            var dashSo = new SerializedObject(dashController);
+            if (entityState != null
+                && dashSo.FindProperty("playerEntityState").objectReferenceValue != entityState)
+            {
+                dashSo.FindProperty("playerEntityState").objectReferenceValue = entityState;
+                if (dashSo.ApplyModifiedPropertiesWithoutUndo())
+                    dirty = true;
+            }
+        }
+
         if (animator != null)
         {
             var receiver = animator.GetComponent<MeleeAttackAnimationEventReceiver>();
@@ -146,16 +224,25 @@ static class PlayerAnimationEditorSetup
                 dirty = true;
         }
 
-        if (movement != null && animator != null)
+        if (movement != null)
         {
             var movementSo = new SerializedObject(movement);
-            var rotationTarget = movementSo.FindProperty("rotationTarget");
-            if (rotationTarget.objectReferenceValue != animator.transform)
+            if (entityState != null
+                && movementSo.FindProperty("playerEntityState").objectReferenceValue != entityState)
             {
-                rotationTarget.objectReferenceValue = animator.transform;
-                if (movementSo.ApplyModifiedPropertiesWithoutUndo())
-                    dirty = true;
+                movementSo.FindProperty("playerEntityState").objectReferenceValue = entityState;
+                dirty = true;
             }
+
+            if (animator != null)
+            {
+                var rotationTarget = movementSo.FindProperty("rotationTarget");
+                if (rotationTarget.objectReferenceValue != animator.transform)
+                    rotationTarget.objectReferenceValue = animator.transform;
+            }
+
+            if (movementSo.ApplyModifiedPropertiesWithoutUndo())
+                dirty = true;
         }
 
         if (dirty)

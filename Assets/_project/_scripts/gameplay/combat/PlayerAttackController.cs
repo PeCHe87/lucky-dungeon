@@ -78,6 +78,9 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     void Update()
     {
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            return;
+
         if (!HasMovementPriorityInput())
         {
             _movementPriorityCancelActive = false;
@@ -125,6 +128,8 @@ public sealed class PlayerAttackController : MonoBehaviour
         bool pressed = _attackProvider.WasAttackPressedThisFrame();
         bool held = _attackProvider.IsAttackHeld();
         if (!pressed && !held)
+            return;
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
             return;
         if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
             return;
@@ -320,6 +325,11 @@ public sealed class PlayerAttackController : MonoBehaviour
             return true;
 
         return _movement != null && _movement.IsLunging;
+    }
+
+    public void CancelAttackForInterrupt()
+    {
+        CancelAttackForMovementPriority();
     }
 
     void CancelAttackForMovementPriority()

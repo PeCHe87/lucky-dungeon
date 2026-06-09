@@ -1009,6 +1009,7 @@ GameObject:
   - component: {fileID: 264572587212465167}
   - component: {fileID: 9012345678901234521}
   - component: {fileID: 8356094001360696364}
+  - component: {fileID: -6368343191736498815}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1071,6 +1072,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCharacterMovement
   moveIntentProvider: {fileID: 2009791332878126513}
+  playerEntityState: {fileID: 9012345678901234506}
   moveSpeed: 5
   cameraTransform: {fileID: 0}
   useWorldSpaceAxes: 0
@@ -1286,6 +1288,7 @@ MonoBehaviour:
   movement: {fileID: 2798365246320322531}
   weaponHolder: {fileID: 9012345678901234504}
   attackController: {fileID: 0}
+  hitReact: {fileID: -6368343191736498815}
   moveDeadzone: 0.08
   runThreshold: 0.75
   debugLogState: 0
@@ -1391,6 +1394,7 @@ MonoBehaviour:
   invulnerability: {fileID: 9012345678901234511}
   trailEffect: {fileID: 9012345678901234512}
   cooldownRing: {fileID: 9012345678901234510}
+  playerEntityState: {fileID: 9012345678901234506}
 --- !u!114 &9012345678901234514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1454,6 +1458,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PushbackReceiver
   pushbackResistance: 0.2
+  pushbackBlockLayers:
+    serializedVersion: 2
+    m_Bits: 0
+--- !u!114 &-6368343191736498815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11e11af2a6194fe4fb0b9d886dba3e97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHitReact
+  invulnerabilityDuration: 0.5
+  hitReactFallbackDuration: 0.3
+  health: {fileID: 9012345678901234521}
+  invulnerability: {fileID: 9012345678901234511}
+  attackController: {fileID: 9012345678901234505}
+  movement: {fileID: 2798365246320322531}
+  entityStateAnimator: {fileID: -4037862818332867988}
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0

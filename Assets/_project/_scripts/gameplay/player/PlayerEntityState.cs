@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Read-only observer of the player's locomotion/combat state from input and existing gameplay components.
-/// Priority: MeleeApproaching > Attacking > Dashing > Running > Walking > Idle.
+/// Priority: TakingDamage > MeleeApproaching > Attacking > Dashing > Running > Walking > Idle.
 /// Extend by adding <see cref="PlayerEntityStateKind"/> values and <see cref="IPlayerStateRule"/> implementations.
 /// </summary>
 [DefaultExecutionOrder(100)]
@@ -15,6 +15,7 @@ public sealed class PlayerEntityState : MonoBehaviour
     [SerializeField] TopDownCharacterMovement movement;
     [SerializeField] WeaponHolder weaponHolder;
     [SerializeField] PlayerAttackController attackController;
+    [SerializeField] PlayerHitReact hitReact;
 
     [Header("Locomotion thresholds")]
     [SerializeField] float moveDeadzone = 0.08f;
@@ -35,9 +36,13 @@ public sealed class PlayerEntityState : MonoBehaviour
 
     public float MoveDeadzone => moveDeadzone;
 
-    /// <summary>True while walking, running, or dashing; attack input should be ignored.</summary>
+    /// <summary>True during hit-react; all player input should be ignored.</summary>
+    public bool IsInputBlocked => Current == PlayerEntityStateKind.TakingDamage;
+
+    /// <summary>True while walking, running, dashing, or taking damage; attack input should be ignored.</summary>
     public bool IsAttackInputBlocked =>
-        Current == PlayerEntityStateKind.Walking
+        IsInputBlocked
+        || Current == PlayerEntityStateKind.Walking
         || Current == PlayerEntityStateKind.Running
         || Current == PlayerEntityStateKind.Dashing;
 
@@ -58,6 +63,9 @@ public sealed class PlayerEntityState : MonoBehaviour
 
         if (attackController == null)
             attackController = GetComponent<PlayerAttackController>();
+
+        if (hitReact == null)
+            hitReact = GetComponent<PlayerHitReact>();
 
         _rules = BuildRules();
         Current = PlayerEntityStateKind.Idle;
@@ -85,7 +93,7 @@ public sealed class PlayerEntityState : MonoBehaviour
 
     PlayerEntityStateKind ResolveState()
     {
-        var ctx = new PlayerStateContext(_moveProvider, movement, weaponHolder, attackController, moveDeadzone, runThreshold);
+        var ctx = new PlayerStateContext(_moveProvider, movement, weaponHolder, attackController, hitReact, moveDeadzone, runThreshold);
         for (int i = 0; i < _rules.Length; i++)
         {
             if (_rules[i].TryResolve(in ctx, out PlayerEntityStateKind state))
@@ -99,6 +107,7 @@ public sealed class PlayerEntityState : MonoBehaviour
     {
         return new IPlayerStateRule[]
         {
+            new TakingDamageStateRule(),
             new MeleeApproachingStateRule(),
             new AttackingStateRule(),
             new DashingStateRule(),
@@ -114,6 +123,7 @@ public sealed class PlayerEntityState : MonoBehaviour
         public readonly TopDownCharacterMovement Movement;
         public readonly WeaponHolder WeaponHolder;
         public readonly PlayerAttackController AttackController;
+        public readonly PlayerHitReact HitReact;
         public readonly float MoveDeadzone;
         public readonly float RunThreshold;
 
@@ -122,6 +132,7 @@ public sealed class PlayerEntityState : MonoBehaviour
             TopDownCharacterMovement movement,
             WeaponHolder weaponHolder,
             PlayerAttackController attackController,
+            PlayerHitReact hitReact,
             float moveDeadzone,
             float runThreshold)
         {
@@ -129,6 +140,7 @@ public sealed class PlayerEntityState : MonoBehaviour
             Movement = movement;
             WeaponHolder = weaponHolder;
             AttackController = attackController;
+            HitReact = hitReact;
             MoveDeadzone = moveDeadzone;
             RunThreshold = runThreshold;
         }
@@ -140,6 +152,21 @@ public sealed class PlayerEntityState : MonoBehaviour
     interface IPlayerStateRule
     {
         bool TryResolve(in PlayerStateContext ctx, out PlayerEntityStateKind state);
+    }
+
+    sealed class TakingDamageStateRule : IPlayerStateRule
+    {
+        public bool TryResolve(in PlayerStateContext ctx, out PlayerEntityStateKind state)
+        {
+            if (ctx.HitReact != null && ctx.HitReact.IsActive)
+            {
+                state = PlayerEntityStateKind.TakingDamage;
+                return true;
+            }
+
+            state = default;
+            return false;
+        }
     }
 
     sealed class MeleeApproachingStateRule : IPlayerStateRule
