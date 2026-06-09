@@ -595,6 +595,8 @@ MonoBehaviour:
   attackAnimator: {fileID: 7219873542029174614}
   facingRoot: {fileID: 2000000000000000002}
   snapFacingToTargetBeforeAttack: 1
+  cancelAttackOnDamage: 1
+  attackCooldownAfterDamage: 0.4
 --- !u!114 &7219873542029174614
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -614,6 +616,7 @@ MonoBehaviour:
   attackLayer: 0
   crossFadeSeconds: 0.08
   attackCompletionNormalizedTime: 0.95
+  cancelToStateName: Idle
 --- !u!114 &5943193764982946597
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1130,7 +1133,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
-  damage: 10
+  damage: 1
   cooldown: 0.35
   range: 2.5
   moveForwardDistance: 0
@@ -1147,7 +1150,7 @@ MonoBehaviour:
   attackActiveDuration: 0.15
   damageElement: 0
   criticalStrikeChance: 0
-  pushbackDistance: 0.8
+  pushbackDistance: 1.5
   pushbackDuration: 0.1
   equippedVisualRoots: []
   enableApproachLunge: 0

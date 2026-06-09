@@ -13,7 +13,14 @@ public sealed class EntityAttackController : MonoBehaviour
     [SerializeField] Transform facingRoot;
     [SerializeField] bool snapFacingToTargetBeforeAttack = true;
 
+    [Header("Damage interrupt")]
+    [Tooltip("When enabled, cancels the in-progress attack when this entity takes damage.")]
+    [SerializeField] bool cancelAttackOnDamage = true;
+    [Tooltip("Blocks starting new attacks for this many seconds after taking damage. 0 = no block (cancel only).")]
+    [SerializeField, Min(0f)] float attackCooldownAfterDamage = 0.4f;
+
     CombatEntityHealth _health;
+    float _attackBlockedUntil;
 
     /// <summary>Raised after <see cref="WeaponHolder.TryAttack"/> succeeds.</summary>
     public event Action AttackStarted;
@@ -21,8 +28,11 @@ public sealed class EntityAttackController : MonoBehaviour
     public Transform AttackOriginTransform => facingRoot != null ? facingRoot : transform;
     public Transform AttackFacingTransform => AttackOriginTransform;
 
+    public bool IsAttackBlocked => Time.time < _attackBlockedUntil;
+
     public bool IsBusy =>
-        IsWeaponAttackActive
+        IsAttackBlocked
+        || IsWeaponAttackActive
         || (attackAnimator != null && attackAnimator.IsAttackClipPlaying);
 
     bool IsWeaponAttackActive =>
@@ -54,7 +64,18 @@ public sealed class EntityAttackController : MonoBehaviour
             _health.Damaged -= OnDamaged;
     }
 
-    void OnDamaged(float _) => CancelActiveAttack();
+    void OnDamaged(float _)
+    {
+        if (cancelAttackOnDamage)
+            CancelActiveAttack();
+
+        if (attackCooldownAfterDamage > 0f)
+        {
+            float until = Time.time + attackCooldownAfterDamage;
+            if (until > _attackBlockedUntil)
+                _attackBlockedUntil = until;
+        }
+    }
 
     public bool IsTargetInAttackRange(Transform target)
     {
@@ -97,6 +118,9 @@ public sealed class EntityAttackController : MonoBehaviour
     public bool TryAttackTarget(Transform target)
     {
         if (target == null || weaponHolder == null)
+            return false;
+
+        if (IsAttackBlocked)
             return false;
 
         if (snapFacingToTargetBeforeAttack)

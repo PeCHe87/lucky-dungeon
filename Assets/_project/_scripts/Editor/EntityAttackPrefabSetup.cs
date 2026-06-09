@@ -67,6 +67,12 @@ public static class EntityAttackPrefabSetup
         changed |= SetSerializedReference(attackController, "attackAnimator", attackAnimator);
         changed |= SetSerializedReference(attackController, "facingRoot", root.transform);
 
+        if (applyDefaults)
+        {
+            changed |= SetBool(attackController, "cancelAttackOnDamage", true);
+            changed |= SetFloat(attackController, "attackCooldownAfterDamage", 0.4f);
+        }
+
         changed |= SetSerializedReference(attackAnimator, "attackController", attackController);
         changed |= SetSerializedReference(attackAnimator, "weaponHolder", weaponHolder);
         changed |= SetSerializedReference(attackAnimator, "animator", animator);

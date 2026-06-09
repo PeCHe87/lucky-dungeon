@@ -14,14 +14,20 @@ public sealed class EntityAttackAnimator : MonoBehaviour
     [SerializeField, Min(0f)] float crossFadeSeconds = 0.08f;
     [Tooltip("Treat attack clip as playing until normalized time reaches this value (0-1).")]
     [SerializeField, Range(0.5f, 1f)] float attackCompletionNormalizedTime = 0.95f;
+    [SerializeField] string cancelToStateName = "Idle";
 
     int _attackStateHash;
+    int _cancelToStateHash;
     MeleeWeapon _meleeWeapon;
+    bool _attackClipCancelled;
 
     public bool IsAttackClipPlaying
     {
         get
         {
+            if (_attackClipCancelled)
+                return false;
+
             if (animator == null || _attackStateHash == 0)
                 return false;
 
@@ -46,6 +52,9 @@ public sealed class EntityAttackAnimator : MonoBehaviour
             animator.applyRootMotion = false;
 
         _attackStateHash = Animator.StringToHash(attackStateName);
+        _cancelToStateHash = string.IsNullOrWhiteSpace(cancelToStateName)
+            ? 0
+            : Animator.StringToHash(cancelToStateName);
         ResolveMeleeWeapon();
     }
 
@@ -84,7 +93,12 @@ public sealed class EntityAttackAnimator : MonoBehaviour
 
     public void CancelAttackAnimation()
     {
-        // Locomotion animator resumes on next LateUpdate when IsBusy clears.
+        _attackClipCancelled = true;
+
+        if (animator == null || _cancelToStateHash == 0)
+            return;
+
+        animator.CrossFadeInFixedTime(_cancelToStateHash, crossFadeSeconds, attackLayer, 0f);
     }
 
     void PlayAttackClip()
@@ -92,6 +106,7 @@ public sealed class EntityAttackAnimator : MonoBehaviour
         if (animator == null || string.IsNullOrWhiteSpace(attackStateName))
             return;
 
+        _attackClipCancelled = false;
         ResolveMeleeWeapon();
         animator.CrossFadeInFixedTime(_attackStateHash, crossFadeSeconds, attackLayer, 0f);
         _meleeWeapon?.ArmHitForCurrentSwing();
