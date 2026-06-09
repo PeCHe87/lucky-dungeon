@@ -47,6 +47,29 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
             attackController = GetComponent<EntityAttackController>();
     }
 
+    void OnEnable()
+    {
+        if (attackController == null)
+            attackController = GetComponent<EntityAttackController>();
+        if (attackController != null)
+            attackController.DamageInterruptStarted += OnDamageInterruptStarted;
+    }
+
+    void OnDisable()
+    {
+        if (attackController != null)
+            attackController.DamageInterruptStarted -= OnDamageInterruptStarted;
+    }
+
+    void OnDamageInterruptStarted()
+    {
+        _phase = Phase.Chasing;
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent == null)
+            agent = GetComponentInParent<NavMeshAgent>();
+        EntityNavChaseAttackSupport.ResetToChaseAfterDamageInterrupt(agent, ref _hasChaseSample);
+    }
+
     void Start()
     {
         EntityNavBehaviorHost host = GetComponentInParent<EntityNavBehaviorHost>();

@@ -32,6 +32,9 @@ public sealed class EntityAttackController : MonoBehaviour
     /// <summary>Raised after <see cref="WeaponHolder.TryAttack"/> succeeds.</summary>
     public event Action AttackStarted;
 
+    /// <summary>Raised after this entity takes damage and attack cancel/block are applied.</summary>
+    public event Action DamageInterruptStarted;
+
     public Transform AttackOriginTransform => facingRoot != null ? facingRoot : transform;
     public Transform AttackFacingTransform => AttackOriginTransform;
 
@@ -42,6 +45,13 @@ public sealed class EntityAttackController : MonoBehaviour
     public bool IsTelegraphing => Time.time < _telegraphUntil;
 
     public bool IsAttackCommitActive => _isAttackCommitActive;
+
+    public bool IsOnlyDamageBlocked =>
+        IsAttackBlocked
+        && !IsTelegraphing
+        && !IsAttackCommitActive
+        && !IsWeaponAttackActive
+        && (attackAnimator == null || !attackAnimator.IsAttackClipPlaying);
 
     public bool IsBusy =>
         IsAttackBlocked
@@ -89,6 +99,8 @@ public sealed class EntityAttackController : MonoBehaviour
             if (until > _attackBlockedUntil)
                 _attackBlockedUntil = until;
         }
+
+        DamageInterruptStarted?.Invoke();
     }
 
     public bool IsTargetInAttackRange(Transform target)

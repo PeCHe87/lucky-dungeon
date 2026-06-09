@@ -19,6 +19,13 @@ public static class EntityNavChaseAttackSupport
         ResumeSearching,
     }
 
+    public static void ResetToChaseAfterDamageInterrupt(NavMeshAgent agent, ref bool hasChaseSample)
+    {
+        hasChaseSample = false;
+        if (agent != null)
+            agent.isStopped = false;
+    }
+
     public static bool TryBeginAttackPhase(
         EntityAttackController attackController,
         Transform target,
@@ -43,8 +50,14 @@ public static class EntityNavChaseAttackSupport
         if (!TryBeginAttackPhase(attackController, target, agent))
             return AttackPhaseBeginResult.Failed;
 
-        if (attackController.EnablePreAttackTelegraph && attackController.TryBeginPreAttack(target))
-            return AttackPhaseBeginResult.PreAttacking;
+        if (attackController.EnablePreAttackTelegraph)
+        {
+            if (attackController.TryBeginPreAttack(target))
+                return AttackPhaseBeginResult.PreAttacking;
+
+            if (attackController.IsAttackBlocked)
+                return AttackPhaseBeginResult.Failed;
+        }
 
         return AttackPhaseBeginResult.Attacking;
     }
@@ -55,11 +68,18 @@ public static class EntityNavChaseAttackSupport
         NavMeshAgent agent,
         Vector3 origin)
     {
-        if (agent != null)
-            agent.isStopped = true;
-
         if (attackController == null)
             return AttackTickResult.ResumeChasing;
+
+        if (attackController.IsOnlyDamageBlocked)
+        {
+            if (agent != null)
+                agent.isStopped = false;
+            return AttackTickResult.ResumeChasing;
+        }
+
+        if (agent != null)
+            agent.isStopped = true;
 
         Transform target = fieldOfView.HasTarget ? fieldOfView.Target : null;
         if (target != null)
@@ -78,11 +98,18 @@ public static class EntityNavChaseAttackSupport
         NavMeshAgent agent,
         Vector3 origin)
     {
-        if (agent != null)
-            agent.isStopped = true;
-
         if (attackController == null)
             return AttackTickResult.ResumeChasing;
+
+        if (attackController.IsOnlyDamageBlocked)
+        {
+            if (agent != null)
+                agent.isStopped = false;
+            return AttackTickResult.ResumeChasing;
+        }
+
+        if (agent != null)
+            agent.isStopped = true;
 
         Transform target = fieldOfView.HasTarget ? fieldOfView.Target : null;
         if (target != null)
