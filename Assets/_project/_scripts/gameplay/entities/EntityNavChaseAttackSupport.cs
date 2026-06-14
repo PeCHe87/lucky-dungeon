@@ -1,9 +1,25 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>Nav behaviors that cache chase destinations implement this so FSM hit-react can invalidate after <see cref="NavMeshAgent.ResetPath"/>.</summary>
+public interface IEntityNavChaseDestinationCache
+{
+    void InvalidateChaseDestinationCache();
+}
+
 /// <summary>Shared attack-phase helpers for nav detect/chase behaviors.</summary>
 public static class EntityNavChaseAttackSupport
 {
+    public static void InvalidateChaseDestinationCaches(GameObject entityRoot)
+    {
+        if (entityRoot == null)
+            return;
+
+        var caches = entityRoot.GetComponents<IEntityNavChaseDestinationCache>();
+        for (int i = 0; i < caches.Length; i++)
+            caches[i].InvalidateChaseDestinationCache();
+    }
+
     public enum AttackPhaseBeginResult
     {
         Failed,

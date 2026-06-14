@@ -36,6 +36,7 @@ public class IdleStateHandler : IStateHandler
         {
             agent.isStopped = true;
             agent.ResetPath();
+            EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
         }
     }
 
@@ -261,6 +262,7 @@ public class TakeDamageStateHandler : IStateHandler
         {
             agent.isStopped = true;
             agent.ResetPath();
+            EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
         }
     }
 
@@ -285,6 +287,8 @@ public class TakeDamageStateHandler : IStateHandler
         var agent = FSMNavMesh.GetAgent(bb);
         if (agent != null)
             agent.isStopped = false;
+
+        EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
     }
 }
 

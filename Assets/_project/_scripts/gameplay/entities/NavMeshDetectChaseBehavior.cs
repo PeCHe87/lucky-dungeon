@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(FieldOfViewComponent))]
-public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
+public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEntityNavChaseDestinationCache
 {
     enum Phase
     {
@@ -56,6 +56,8 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior
         if (attackController != null)
             attackController.DamageInterruptStarted -= OnDamageInterruptStarted;
     }
+
+    public void InvalidateChaseDestinationCache() => _hasChaseSample = false;
 
     void OnDamageInterruptStarted()
     {

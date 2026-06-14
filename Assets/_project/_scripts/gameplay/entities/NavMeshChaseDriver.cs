@@ -36,7 +36,14 @@ public static class NavMeshChaseDriver
         ref bool hasSampledGoal,
         float resampleMinFlatDistanceSq = 0.01f)
     {
-        if (!hasSampledGoal || FlatDistanceSq(lastSampledGoal, targetPosition) > resampleMinFlatDistanceSq)
+        if (agent == null)
+            return;
+
+        bool targetMoved = hasSampledGoal
+            && FlatDistanceSq(lastSampledGoal, targetPosition) > resampleMinFlatDistanceSq;
+        bool pathWasCleared = !agent.hasPath;
+
+        if (!hasSampledGoal || targetMoved || pathWasCleared)
         {
             SetDestinationSampled(agent, targetPosition, samplePositionRadius);
             lastSampledGoal = targetPosition;

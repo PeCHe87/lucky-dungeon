@@ -3,7 +3,7 @@ using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshWaypointPatrolBehavior))]
 [RequireComponent(typeof(FieldOfViewComponent))]
-public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
+public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEntityNavChaseDestinationCache
 {
     enum Phase
     {
@@ -60,6 +60,8 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
         if (attackController != null)
             attackController.DamageInterruptStarted -= OnDamageInterruptStarted;
     }
+
+    public void InvalidateChaseDestinationCache() => _hasChaseSample = false;
 
     void OnDamageInterruptStarted()
     {
