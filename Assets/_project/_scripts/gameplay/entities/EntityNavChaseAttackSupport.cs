@@ -248,4 +248,54 @@ public static class EntityNavChaseAttackSupport
         result = AttackTickResult.ResumeChasing;
         return true;
     }
+
+    public enum TargetDetectedTickResult
+    {
+        Continue,
+        Complete,
+        Cancelled,
+    }
+
+    public static void BeginTargetDetected(
+        EntityTargetDetectedTelegraph telegraph,
+        Transform target,
+        ref float fallbackRemaining)
+    {
+        if (telegraph != null)
+            telegraph.Begin(target);
+        else
+            fallbackRemaining = EntityTargetDetectedTelegraph.FallbackDetectionDuration;
+    }
+
+    public static TargetDetectedTickResult TickTargetDetectedPhase(
+        NavMeshAgent agent,
+        FieldOfViewComponent fieldOfView,
+        EntityTargetDetectedTelegraph telegraph,
+        ref float fallbackRemaining)
+    {
+        if (agent != null)
+            agent.isStopped = true;
+
+        if (fieldOfView == null || !fieldOfView.HasTarget)
+        {
+            telegraph?.Cancel();
+            return TargetDetectedTickResult.Cancelled;
+        }
+
+        if (telegraph != null)
+        {
+            if (telegraph.Tick(Time.deltaTime))
+            {
+                telegraph.FinishPhase();
+                return TargetDetectedTickResult.Complete;
+            }
+
+            return TargetDetectedTickResult.Continue;
+        }
+
+        fallbackRemaining -= Time.deltaTime;
+        return fallbackRemaining <= 0f
+            ? TargetDetectedTickResult.Complete
+            : TargetDetectedTickResult.Continue;
+    }
 }

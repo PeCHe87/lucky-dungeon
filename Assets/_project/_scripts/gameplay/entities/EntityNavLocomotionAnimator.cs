@@ -14,6 +14,7 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
     [SerializeField] Animator animator;
     [SerializeField] AIStateMachine stateMachine;
     [SerializeField] EntityAttackController attackController;
+    [SerializeField] EntityTargetDetectedTelegraph targetDetectedTelegraph;
     [SerializeField] string locomotionFsmStateId = DefaultLocomotionFsmStateId;
     [SerializeField] string idleStateName = "Idle";
     [SerializeField] string runStateName = "Run";
@@ -33,6 +34,8 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
             stateMachine = GetComponent<AIStateMachine>();
         if (attackController == null)
             attackController = GetComponent<EntityAttackController>();
+        if (targetDetectedTelegraph == null)
+            targetDetectedTelegraph = GetComponent<EntityTargetDetectedTelegraph>();
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
 
@@ -55,6 +58,12 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
         }
 
         if (attackController != null && attackController.IsBusy)
+        {
+            _lastPlayedHash = int.MinValue;
+            return;
+        }
+
+        if (targetDetectedTelegraph != null && targetDetectedTelegraph.IsActive)
         {
             _lastPlayedHash = int.MinValue;
             return;

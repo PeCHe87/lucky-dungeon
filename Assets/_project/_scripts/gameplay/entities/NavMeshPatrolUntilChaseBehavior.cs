@@ -3,12 +3,13 @@ using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshWaypointPatrolBehavior))]
 [RequireComponent(typeof(FieldOfViewComponent))]
+[RequireComponent(typeof(EntityTargetDetectedTelegraph))]
 public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEntityNavChaseDestinationCache
 {
     enum Phase
     {
         Patrolling,
-        Pausing,
+        TargetDetected,
         Chasing,
         Arrived,
         PreAttacking,
@@ -19,7 +20,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
     [SerializeField] NavMeshWaypointPatrolBehavior patrolBehavior;
     [SerializeField] FieldOfViewComponent fieldOfView;
     [SerializeField] EntityAttackController attackController;
-    [SerializeField] float pauseDuration = 0.5f;
+    [SerializeField] EntityTargetDetectedTelegraph targetDetectedTelegraph;
     [SerializeField] float arrivalRadius = 0.5f;
     [Tooltip("How far to search for a valid NavMesh point around the chase target.")]
     [SerializeField] float samplePositionRadius = 2f;
@@ -31,7 +32,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
     [SerializeField] float distanceLogInterval = 0.5f;
 
     Phase _phase = Phase.Patrolling;
-    float _pauseRemaining;
+    float _fallbackDetectedRemaining;
     Vector3 _lastChaseSample;
     bool _hasChaseSample;
     float _nextDistanceLogTime;
@@ -45,6 +46,8 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
             fieldOfView = GetComponent<FieldOfViewComponent>();
         if (attackController == null)
             attackController = GetComponent<EntityAttackController>();
+        if (targetDetectedTelegraph == null)
+            targetDetectedTelegraph = GetComponent<EntityTargetDetectedTelegraph>();
     }
 
     void OnEnable()
@@ -65,6 +68,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
 
     void OnDamageInterruptStarted()
     {
+        targetDetectedTelegraph?.Cancel();
         _phase = Phase.Chasing;
         NavMeshAgent agent = GetComponent<NavMeshAgent>();
         if (agent == null)
@@ -132,8 +136,8 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
             case Phase.Patrolling:
                 TickPatrolling(agent, origin);
                 break;
-            case Phase.Pausing:
-                TickPausing(agent);
+            case Phase.TargetDetected:
+                TickTargetDetected(agent);
                 break;
             case Phase.Chasing:
                 TickChasing(agent, origin);
@@ -217,15 +221,22 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
     {
         if (fieldOfView.HasTarget && fieldOfView.IsTargetInDetectionRange(origin))
         {
-            Debug.Log("target detected!");
-            _phase = Phase.Pausing;
-            _pauseRemaining = pauseDuration;
             agent.isStopped = true;
             agent.ResetPath();
+            EnterTargetDetected(fieldOfView.Target);
             return;
         }
 
         patrolBehavior.Tick(agent);
+    }
+
+    void EnterTargetDetected(Transform target)
+    {
+        _phase = Phase.TargetDetected;
+        EntityNavChaseAttackSupport.BeginTargetDetected(
+            targetDetectedTelegraph,
+            target,
+            ref _fallbackDetectedRemaining);
     }
 
     void LogPatrolDistanceIfDue(Vector3 origin)
@@ -253,17 +264,22 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
             this);
     }
 
-    void TickPausing(NavMeshAgent agent)
+    void TickTargetDetected(NavMeshAgent agent)
     {
-        agent.isStopped = true;
-
-        _pauseRemaining -= Time.deltaTime;
-        if (_pauseRemaining > 0f)
-            return;
-
-        Debug.Log("chase it!");
-        _phase = Phase.Chasing;
-        _hasChaseSample = false;
+        switch (EntityNavChaseAttackSupport.TickTargetDetectedPhase(
+            agent,
+            fieldOfView,
+            targetDetectedTelegraph,
+            ref _fallbackDetectedRemaining))
+        {
+            case EntityNavChaseAttackSupport.TargetDetectedTickResult.Cancelled:
+                _phase = Phase.Patrolling;
+                break;
+            case EntityNavChaseAttackSupport.TargetDetectedTickResult.Complete:
+                _phase = Phase.Chasing;
+                _hasChaseSample = false;
+                break;
+        }
     }
 
     void TickChasing(NavMeshAgent agent, Vector3 origin)
