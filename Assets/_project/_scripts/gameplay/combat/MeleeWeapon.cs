@@ -31,6 +31,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     [Tooltip("Horizontal travel applied to victims along attacker forward on hit. 0 = none.")]
     [SerializeField, Min(0f)] float pushbackDistance = 0.8f;
     [SerializeField, Min(0.01f)] float pushbackDuration = 0.1f;
+    [Tooltip("Min fraction of push travel that must be unobstructed; lower values allow partial wall clearance.")]
+    [SerializeField, Range(0f, 1f)] float minPushTravelFraction = PushbackGeometryProbe.DefaultMinPushTravelFraction;
     [Header("Equipped presentation")]
     [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
     [SerializeField] GameObject[] equippedVisualRoots;
@@ -91,6 +93,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     /// <summary>Radius used by damage overlap and range gizmo (<see cref="ApplyDamage"/>).</summary>
     public float DamageOverlapRadius => range;
+
+    public float PushbackDistance => pushbackDistance;
 
     /// <summary>True when target is within approach-stop distance (range minus buffer); ignores cone.</summary>
     public bool IsTargetWithinDamageRadius(Vector3 origin, Vector3 targetWorldPos)
@@ -351,7 +355,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                 bool isCrit = ctx.forceCritical || (criticalStrikeChance > 0f && Random.value < criticalStrikeChance);
                 dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit));
 
-                if (pushbackDistance > 0f)
+                if (pushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection))
                 {
                     PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
                     {
@@ -367,6 +371,20 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         }
 
         return false;
+    }
+
+    bool ShouldApplyPushback(Transform victimRoot, Vector3 pushDirection)
+    {
+        float resistance = PushbackGeometryProbe.ResolvePushbackResistance(victimRoot);
+        float probeDist = pushbackDistance * (1f - resistance);
+        LayerMask blockLayers = PushbackGeometryProbe.ResolveBlockLayers(victimRoot);
+
+        return PushbackGeometryProbe.ShouldApplyPushbackForce(
+            victimRoot,
+            pushDirection,
+            probeDist,
+            blockLayers,
+            minPushTravelFraction);
     }
 
     void TryMoveAttackerForward(Transform attacker, Vector3 forward)

@@ -24,6 +24,13 @@ public sealed class EntityAttackController : MonoBehaviour
     [Tooltip("Blocks starting new attacks for this many seconds after taking damage. 0 = no block (cancel only).")]
     [SerializeField, Min(0f)] float attackCooldownAfterDamage = 0.4f;
 
+    [Header("Melee engagement")]
+    [Tooltip("Max probe travel along push axis to still count as geometry-pinned.")]
+    [SerializeField, Min(0f)] float pinnedTravelThreshold = PushbackGeometryProbe.DefaultPinnedTravelThreshold;
+    [Tooltip("Extra horizontal distance beyond damage overlap while pinned before releasing to chase.")]
+    [SerializeField, Min(0f)] float pinEngagementSlack = 0.35f;
+    [SerializeField] bool debugLogEngagement;
+
     CombatEntityHealth _health;
     float _attackBlockedUntil;
     float _telegraphUntil;
@@ -108,6 +115,9 @@ public sealed class EntityAttackController : MonoBehaviour
         if (target == null || weaponHolder == null || weaponHolder.Current == null)
             return false;
 
+        if (weaponHolder.Current is MeleeWeapon)
+            return CanMaintainMeleeEngagement(target);
+
         Vector3 origin = AttackOriginTransform.position;
         Vector3 facing = GetFlatForward();
         Vector3 targetPos = target.position;
@@ -115,30 +125,94 @@ public sealed class EntityAttackController : MonoBehaviour
         if (weaponHolder.Current is IWeaponAttackRange rangeCheck)
             return rangeCheck.IsTargetWithinAttackRange(origin, facing, targetPos);
 
-        if (weaponHolder.Current is MeleeWeapon melee)
-            return melee.IsTargetWithinDamageRadius(origin, targetPos);
+        return false;
+    }
+
+    /// <summary>
+    /// True when melee should continue (within overlap radius or push-pinned at a wall).
+    /// </summary>
+    public bool CanMaintainMeleeEngagement(Transform target)
+    {
+        if (target == null || weaponHolder == null || weaponHolder.Current is not MeleeWeapon melee)
+            return false;
+
+        Vector3 origin = AttackOriginTransform.position;
+        Vector3 targetPos = target.position;
+        float distance = NavMeshChaseDriver.HorizontalDistance(origin, targetPos);
+
+        if (distance <= melee.DamageOverlapRadius)
+            return true;
+
+        if (IsTargetPushPinned(target, melee)
+            && distance <= melee.DamageOverlapRadius + pinEngagementSlack)
+        {
+            if (debugLogEngagement)
+                Debug.Log(
+                    $"[EntityAttackController] {name}: maintain melee engagement (pinned, dist={distance:F2}).",
+                    this);
+            return true;
+        }
 
         return false;
     }
 
     /// <summary>
-    /// True when the target has left melee engagement far enough to resume chasing (includes hysteresis).
+    /// True when a melee swing can reach the target (approach-stop distance + cone).
+    /// </summary>
+    public bool CanStrikeMeleeTarget(Transform target)
+    {
+        if (target == null || weaponHolder == null || weaponHolder.Current is not MeleeWeapon melee)
+            return false;
+
+        Vector3 origin = AttackOriginTransform.position;
+        Vector3 facing = GetFlatForward();
+        return melee.IsTargetWithinDamageRange(origin, facing, target.position);
+    }
+
+    /// <summary>True when the equipped weapon can strike <paramref name="target"/> this swing.</summary>
+    public bool CanStrikeTarget(Transform target) => IsInStrikeRange(target);
+
+    public bool IsMeleeWeaponEquipped => weaponHolder?.Current is MeleeWeapon;
+
+    /// <summary>NavMesh stopping distance while closing for a melee strike.</summary>
+    public float MeleeApproachStopDistance =>
+        weaponHolder?.Current is MeleeWeapon melee ? melee.ApproachStopDistanceFromTarget : 0f;
+
+    /// <summary>
+    /// True when melee should release to chase (beyond overlap and not geometry-pinned).
+    /// </summary>
+    public bool ShouldReleaseMeleeEngagement(Transform target) => !CanMaintainMeleeEngagement(target);
+
+    /// <summary>
+    /// True when the target has left melee engagement far enough to resume chasing.
     /// </summary>
     public bool IsTargetBeyondAttackEngagement(Transform target)
     {
         if (target == null || weaponHolder == null || weaponHolder.Current == null)
             return true;
 
-        Vector3 origin = AttackOriginTransform.position;
-        Vector3 targetPos = target.position;
-
-        if (weaponHolder.Current is MeleeWeapon melee)
-        {
-            float releaseRadius = melee.DamageOverlapRadius + 0.35f;
-            return NavMeshChaseDriver.HorizontalDistance(origin, targetPos) > releaseRadius;
-        }
+        if (weaponHolder.Current is MeleeWeapon)
+            return ShouldReleaseMeleeEngagement(target);
 
         return !IsTargetInAttackRange(target);
+    }
+
+    bool IsTargetPushPinned(Transform target, MeleeWeapon melee)
+    {
+        if (melee.PushbackDistance <= 0f)
+            return false;
+
+        Vector3 pushDir = GetFlatForward();
+        float resistance = PushbackGeometryProbe.ResolvePushbackResistance(target);
+        float probeDist = melee.PushbackDistance * (1f - resistance);
+        LayerMask blockLayers = PushbackGeometryProbe.ResolveBlockLayers(target);
+
+        return PushbackGeometryProbe.IsPushPinned(
+            target,
+            pushDir,
+            probeDist,
+            blockLayers,
+            pinnedTravelThreshold);
     }
 
     /// <summary>Begins a timed windup facing <paramref name="target"/>; strike is started separately via <see cref="TryAttackTarget"/>.</summary>
@@ -153,7 +227,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (snapFacingToTargetBeforeAttack)
             SnapFacingToward(target.position);
 
-        if (!IsTargetInAttackRange(target))
+        if (!IsInStrikeRange(target))
             return false;
 
         _telegraphUntil = Time.time + preAttackDuration;
@@ -204,7 +278,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (snapFacingToTargetBeforeAttack)
             SnapFacingToward(target.position);
 
-        if (!IsTargetInAttackRange(target))
+        if (!IsInStrikeRange(target))
             return false;
 
         var ctx = new AttackContext
@@ -219,6 +293,14 @@ public sealed class EntityAttackController : MonoBehaviour
 
         AttackStarted?.Invoke();
         return true;
+    }
+
+    bool IsInStrikeRange(Transform target)
+    {
+        if (weaponHolder?.Current is MeleeWeapon)
+            return CanStrikeMeleeTarget(target);
+
+        return IsTargetInAttackRange(target);
     }
 
     public void CancelActiveAttack()

@@ -213,7 +213,12 @@ public class AttackStateHandler : IStateHandler
 
         var attack = GetAttackController(bb);
         if (attack != null && bb.Target != null)
-            attack.TryAttackTarget(bb.Target);
+        {
+            EntityNavChaseAttackSupport.UpdateMeleeAttackApproach(attack, bb.Target, agent);
+            EntityNavChaseAttackSupport.HoldPositionIfNotMelee(attack, agent);
+            if (attack.CanStrikeTarget(bb.Target))
+                attack.TryAttackTarget(bb.Target);
+        }
     }
 
     public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
@@ -226,15 +231,19 @@ public class AttackStateHandler : IStateHandler
             return;
 
         var agent = FSMNavMesh.GetAgent(bb);
-        if (agent != null)
-            agent.isStopped = true;
-
         attack.FaceTarget(bb.Target);
 
         if (attack.IsBusy)
+        {
+            if (agent != null)
+                agent.isStopped = true;
             return;
+        }
 
-        if (attack.IsTargetInAttackRange(bb.Target))
+        EntityNavChaseAttackSupport.UpdateMeleeAttackApproach(attack, bb.Target, agent);
+        EntityNavChaseAttackSupport.HoldPositionIfNotMelee(attack, agent);
+
+        if (attack.CanStrikeTarget(bb.Target))
             attack.TryAttackTarget(bb.Target);
     }
 

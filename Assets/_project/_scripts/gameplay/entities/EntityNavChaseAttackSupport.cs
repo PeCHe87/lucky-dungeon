@@ -58,6 +58,38 @@ public static class EntityNavChaseAttackSupport
         return true;
     }
 
+    public static void UpdateMeleeAttackApproach(
+        EntityAttackController attackController,
+        Transform target,
+        NavMeshAgent agent)
+    {
+        if (attackController == null || target == null || agent == null)
+            return;
+
+        if (!attackController.IsMeleeWeaponEquipped)
+            return;
+
+        if (attackController.IsBusy)
+        {
+            agent.isStopped = true;
+            return;
+        }
+
+        if (attackController.CanStrikeMeleeTarget(target))
+        {
+            agent.isStopped = true;
+            return;
+        }
+
+        if (!attackController.CanMaintainMeleeEngagement(target))
+            return;
+
+        float stopDistance = attackController.MeleeApproachStopDistance;
+        agent.isStopped = false;
+        agent.stoppingDistance = stopDistance;
+        agent.SetDestination(target.position);
+    }
+
     public static AttackPhaseBeginResult TryBeginPreAttackPhase(
         EntityAttackController attackController,
         Transform target,
@@ -94,15 +126,16 @@ public static class EntityNavChaseAttackSupport
             return AttackTickResult.ResumeChasing;
         }
 
-        if (agent != null)
-            agent.isStopped = true;
-
         Transform target = fieldOfView.HasTarget ? fieldOfView.Target : null;
         if (target != null)
             attackController.FaceTarget(target);
 
         if (attackController.IsTelegraphing)
+        {
+            if (agent != null)
+                agent.isStopped = true;
             return AttackTickResult.StayPreAttacking;
+        }
 
         attackController.TryCommitStrike(target);
         return AttackTickResult.StayAttacking;
@@ -124,9 +157,6 @@ public static class EntityNavChaseAttackSupport
             return AttackTickResult.ResumeChasing;
         }
 
-        if (agent != null)
-            agent.isStopped = true;
-
         Transform target = fieldOfView.HasTarget ? fieldOfView.Target : null;
         if (target != null)
             attackController.FaceTarget(target);
@@ -141,7 +171,11 @@ public static class EntityNavChaseAttackSupport
         }
 
         if (attackController.IsBusy)
+        {
+            if (agent != null)
+                agent.isStopped = true;
             return AttackTickResult.StayAttacking;
+        }
 
         if (!fieldOfView.HasTarget)
             return AttackTickResult.ResumeSearching;
@@ -149,7 +183,10 @@ public static class EntityNavChaseAttackSupport
         if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
             return abortResult;
 
-        if (attackController.IsTargetInAttackRange(target))
+        UpdateMeleeAttackApproach(attackController, target, agent);
+        HoldPositionIfNotMelee(attackController, agent);
+
+        if (attackController.CanStrikeTarget(target))
         {
             if (attackController.EnablePreAttackTelegraph && attackController.TryBeginPreAttack(target))
                 return AttackTickResult.StayPreAttacking;
@@ -158,6 +195,14 @@ public static class EntityNavChaseAttackSupport
         }
 
         return AttackTickResult.StayAttacking;
+    }
+
+    public static void HoldPositionIfNotMelee(EntityAttackController attackController, NavMeshAgent agent)
+    {
+        if (attackController == null || agent == null || attackController.IsMeleeWeaponEquipped)
+            return;
+
+        agent.isStopped = true;
     }
 
     static AttackTickResult EvaluatePostAttackEngagement(
@@ -172,7 +217,10 @@ public static class EntityNavChaseAttackSupport
         if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
             return abortResult;
 
-        if (attackController.IsTargetInAttackRange(target))
+        UpdateMeleeAttackApproach(attackController, target, agent);
+        HoldPositionIfNotMelee(attackController, agent);
+
+        if (attackController.CanStrikeTarget(target))
         {
             if (attackController.EnablePreAttackTelegraph && attackController.TryBeginPreAttack(target))
                 return AttackTickResult.StayPreAttacking;

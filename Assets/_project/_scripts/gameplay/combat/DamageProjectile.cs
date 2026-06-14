@@ -119,7 +119,7 @@ public sealed class DamageProjectile : MonoBehaviour
                 {
                     dmg.TakeDamage(_damage, _style);
 
-                    if (_pushbackDistance > 0f)
+                    if (_pushbackDistance > 0f && ShouldApplyPushback(tr))
                     {
                         PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
                         {
@@ -134,6 +134,19 @@ public sealed class DamageProjectile : MonoBehaviour
             }
             tr = tr.parent;
         }
+    }
+
+    bool ShouldApplyPushback(Transform victimRoot)
+    {
+        float resistance = PushbackGeometryProbe.ResolvePushbackResistance(victimRoot);
+        float probeDist = _pushbackDistance * (1f - resistance);
+        LayerMask blockLayers = PushbackGeometryProbe.ResolveBlockLayers(victimRoot);
+
+        return PushbackGeometryProbe.ShouldApplyPushbackForce(
+            victimRoot,
+            _direction,
+            probeDist,
+            blockLayers);
     }
 
     void EnsurePhysicsForTriggers()
