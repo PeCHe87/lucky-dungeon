@@ -21,7 +21,6 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
 
     [Header("Dash")]
     [SerializeField] float dashCooldown = 2f;
-    [SerializeField] float invincibilityDuration = 0.2f;
     [SerializeField] float dashDuration = 0.2f;
     [SerializeField] float dashSpeed = 18f;
 
@@ -183,7 +182,7 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
 
         _cooldownRemaining = dashCooldown;
         if (invulnerability != null)
-            invulnerability.Grant(invincibilityDuration);
+            invulnerability.Grant(dashDuration);
         if (trailEffect != null)
             trailEffect.Play(dashDir, dashDuration);
         if (cooldownRing != null)

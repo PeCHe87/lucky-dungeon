@@ -54,6 +54,9 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
         if (TryGetComponent(out PlayerHitReact hitReact) && hitReact.IsActive)
             return;
 
+        if (TryGetComponent(out TopDownCharacterMovement movement) && movement.IsDashing)
+            return;
+
         _currentHitPoints -= amount;
         Damaged?.Invoke(amount);
         FloatingDamageTextPresenter.Instance?.Spawn(GetDamageNumberWorldPosition(), amount, style);
