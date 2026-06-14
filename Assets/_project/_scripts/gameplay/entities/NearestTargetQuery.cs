@@ -109,11 +109,6 @@ public class NearestTargetQuery : MonoBehaviour
     IMoveIntentProvider _moveProvider;
     IDashIntentProvider _dashProvider;
 
-    const float LosEpsilon = 1e-4f;
-    const float RaycastSlop = 0.02f;
-    const float LosPenetrationStep = 0.01f;
-    const int MaxLosPenetrationSteps = 8;
-
     void Awake()
     {
         TryMigrateLegacyTargetTag();
@@ -905,54 +900,13 @@ public class NearestTargetQuery : MonoBehaviour
 
     bool HasLineOfSight(Collider candidate)
     {
-        if (candidate == null)
-            return false;
-
         EnsureColliderIgnoreRoot();
-
-        Vector3 from = LosOriginWorld;
-        Vector3 aim = candidate.bounds.center;
-        Vector3 to = aim - from;
-        float dist = to.magnitude;
-        if (dist <= LosEpsilon)
-            return true;
-
-        Vector3 dir = to / dist;
-        float remaining = dist + RaycastSlop;
-        Vector3 origin = from;
-
-        for (int step = 0; step < MaxLosPenetrationSteps && remaining > LosEpsilon; step++)
-        {
-            if (!Physics.Raycast(origin, dir, out RaycastHit hit, remaining, losLayers, losQueryTriggerInteraction))
-                return true;
-
-            if (ShouldIgnoreForLos(hit.collider))
-            {
-                float advance = Mathf.Max(hit.distance + LosPenetrationStep, LosPenetrationStep);
-                origin += dir * advance;
-                remaining -= advance;
-                continue;
-            }
-
-            return IsHitFromCandidate(hit, candidate);
-        }
-
-        return remaining <= LosEpsilon;
-    }
-
-    bool ShouldIgnoreForLos(Collider c)
-    {
-        if (c == null || colliderIgnoreRoot == null)
-            return false;
-
-        return c.transform == colliderIgnoreRoot || c.transform.IsChildOf(colliderIgnoreRoot);
-    }
-
-    static bool IsHitFromCandidate(RaycastHit hit, Collider candidate)
-    {
-        if (hit.collider == candidate)
-            return true;
-        return hit.transform.IsChildOf(candidate.transform);
+        return LineOfSightProbe.HasLineOfSight(
+            LosOriginWorld,
+            candidate,
+            colliderIgnoreRoot,
+            losLayers,
+            losQueryTriggerInteraction);
     }
 
     Transform FacingTransform => facingRoot != null ? facingRoot : OriginTransform;

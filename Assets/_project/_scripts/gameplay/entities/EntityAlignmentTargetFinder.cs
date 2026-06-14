@@ -24,11 +24,22 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
     [SerializeField, Min(1f)] float lossRadiusMultiplier = 1.2f;
     [SerializeField, Min(8)] int overlapMaxHits = 32;
 
+    [Header("Hidden target loss")]
+    [Tooltip("Release latch when the target stays occluded, exceeds a time threshold, and moves away from the last detected position.")]
+    [SerializeField] bool enableHiddenTargetLoss = true;
+    [Tooltip("Seconds without full detection while line of sight is blocked before hidden loss can occur.")]
+    [SerializeField, Min(0f)] float hiddenLossDelaySeconds = 3f;
+    [Tooltip("Horizontal (XZ) distance the target must move from the last detected position to allow hidden loss.")]
+    [SerializeField, Min(0f)] float hiddenLossDistance = 3f;
+
     EntityBlackboard _blackboard;
     NavMeshAgent _agent;
     Transform _latchedTarget;
     float _scanTimer;
     Collider[] _overlapBuffer;
+    Vector3 _lastDetectedPosition;
+    float _lastDetectedTime;
+    bool _hasDetectionMemory;
 
     void Awake()
     {
@@ -68,16 +79,72 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
         Vector3 origin = fieldOfView.GetDetectionOrigin(_agent);
         float acquireRadius = fieldOfView.DetectionRadius;
         float lossRadius = acquireRadius * lossRadiusMultiplier;
+        Transform previousLatch = _latchedTarget;
 
         if (_latchedTarget != null && !IsTargetStillValid(_latchedTarget, origin, lossRadius))
             _latchedTarget = null;
 
-        Transform best = _latchedTarget;
-        if (best == null)
-            best = FindNearestCandidate(origin, acquireRadius);
+        if (_latchedTarget != null)
+        {
+            EnsureFieldOfViewTarget(_latchedTarget);
+            if (fieldOfView.IsTargetInDetectionRange(origin))
+                RecordDetection(_latchedTarget.position);
+            else if (ShouldLoseHiddenTarget(_latchedTarget))
+                _latchedTarget = null;
+        }
 
-        _latchedTarget = best;
-        ApplyTarget(best);
+        if (_latchedTarget == null)
+            _latchedTarget = FindNearestCandidate(origin, acquireRadius);
+
+        if (_latchedTarget != null && _latchedTarget != previousLatch)
+            RecordDetection(_latchedTarget.position);
+
+        ApplyTarget(_latchedTarget);
+    }
+
+    void EnsureFieldOfViewTarget(Transform latch)
+    {
+        if (fieldOfView.Target != latch)
+            fieldOfView.SetTarget(latch);
+    }
+
+    void RecordDetection(Vector3 worldPosition)
+    {
+        _lastDetectedPosition = worldPosition;
+        _lastDetectedTime = Time.time;
+        _hasDetectionMemory = true;
+    }
+
+    void ClearDetectionMemory()
+    {
+        _lastDetectedPosition = default;
+        _lastDetectedTime = 0f;
+        _hasDetectionMemory = false;
+    }
+
+    bool ShouldLoseHiddenTarget(Transform target)
+    {
+        if (!enableHiddenTargetLoss || target == null || fieldOfView == null)
+            return false;
+
+        if (!fieldOfView.RequireLineOfSightForDetection)
+            return false;
+
+        if (!fieldOfView.HasLineOfSightToTarget())
+        {
+            if (!_hasDetectionMemory)
+                return false;
+
+            if (Time.time - _lastDetectedTime < hiddenLossDelaySeconds)
+                return false;
+
+            if (hiddenLossDistance <= 0f)
+                return true;
+
+            return NavMeshChaseDriver.HorizontalDistance(_lastDetectedPosition, target.position) >= hiddenLossDistance;
+        }
+
+        return false;
     }
 
     Transform FindNearestCandidate(Vector3 origin, float acquireRadius)
@@ -138,6 +205,9 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
         if (requireVisionConeForAcquisition && !fieldOfView.IsPointWithinVisionCone(origin, targetPos))
             return false;
 
+        if (fieldOfView.RequireLineOfSightForDetection && !fieldOfView.HasLineOfSightToCollider(col))
+            return false;
+
         distSq = NavMeshChaseDriver.FlatDistanceSq(origin, targetPos);
         return true;
     }
@@ -159,7 +229,10 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
         if (target != null)
             fieldOfView.SetTarget(target);
         else
+        {
             fieldOfView.ClearTarget();
+            ClearDetectionMemory();
+        }
 
         if (_blackboard != null)
             _blackboard.Target = target;
@@ -183,6 +256,12 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
         {
             Gizmos.color = new Color(0.2f, 0.95f, 0.35f, 1f);
             Gizmos.DrawLine(origin, _latchedTarget.position);
+        }
+
+        if (_hasDetectionMemory)
+        {
+            Gizmos.color = new Color(1f, 0.55f, 0.15f, 0.9f);
+            Gizmos.DrawWireSphere(_lastDetectedPosition, 0.35f);
         }
     }
 }
