@@ -498,7 +498,7 @@ MonoBehaviour:
   target: {fileID: 0}
   moveRoot: {fileID: 2000000000000000002}
   detectionRadius: 8
-  viewAngle: 360
+  viewAngle: 90
   drawTargetVisibilityRay: 1
 --- !u!114 &8000000000000000004
 MonoBehaviour:
@@ -537,7 +537,7 @@ MonoBehaviour:
   scanLayers:
     serializedVersion: 2
     m_Bits: 1280
-  requireVisionCone: 0
+  requireVisionConeForAcquisition: 1
   scanRate: 5
   lossRadiusMultiplier: 1.2
   overlapMaxHits: 32

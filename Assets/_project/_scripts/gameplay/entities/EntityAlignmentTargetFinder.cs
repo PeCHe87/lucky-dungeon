@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Scans for the nearest <see cref="CombatEntityHealth"/> matching a configurable alignment within
@@ -14,8 +15,9 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
     [SerializeField] EntityAlignment targetAlignment = EntityAlignment.Enemy;
     [Tooltip("Layers scanned for colliders (Entity + Player by default).")]
     [SerializeField] LayerMask scanLayers;
-    [Tooltip("When true, candidates must also pass the FOV vision cone.")]
-    [SerializeField] bool requireVisionCone;
+    [Tooltip("When true, new targets must be inside the FOV vision cone. Retention uses distance only (cone is not re-checked after latch).")]
+    [SerializeField, FormerlySerializedAs("requireVisionCone")]
+    bool requireVisionConeForAcquisition = true;
     [Tooltip("How many times per second to run the overlap scan.")]
     [SerializeField, Min(0.1f)] float scanRate = 5f;
     [Tooltip("Latched target is released only when beyond detectionRadius × this multiplier.")]
@@ -133,7 +135,7 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
         if (!NavMeshChaseDriver.IsWithinXZRadius(origin, targetPos, acquireRadius))
             return false;
 
-        if (requireVisionCone && !fieldOfView.IsPointWithinVisionCone(origin, targetPos))
+        if (requireVisionConeForAcquisition && !fieldOfView.IsPointWithinVisionCone(origin, targetPos))
             return false;
 
         distSq = NavMeshChaseDriver.FlatDistanceSq(origin, targetPos);
@@ -149,13 +151,7 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
         if (health == null || health.Alignment != targetAlignment || health.IsDefeated)
             return false;
 
-        if (!NavMeshChaseDriver.IsWithinXZRadius(origin, target.position, lossRadius))
-            return false;
-
-        if (requireVisionCone && !fieldOfView.IsPointWithinVisionCone(origin, target.position))
-            return false;
-
-        return true;
+        return NavMeshChaseDriver.IsWithinXZRadius(origin, target.position, lossRadius);
     }
 
     void ApplyTarget(Transform target)

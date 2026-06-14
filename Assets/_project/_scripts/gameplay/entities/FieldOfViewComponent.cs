@@ -5,10 +5,13 @@ public class FieldOfViewComponent : MonoBehaviour
 {
     [Tooltip("Transform to detect. If unset, detection queries return false.")]
     [SerializeField] Transform target;
-    [Tooltip("Optional origin for detection distance. If unset, uses the NavMeshAgent transform when provided, else this transform.")]
+
+    [Header("Detection")]
+    [Tooltip("Origin and forward for cone checks. Uses this transform's position and facing on the XZ plane.")]
     [SerializeField] Transform moveRoot;
+    [Tooltip("Max horizontal (XZ) distance for target detection.")]
     [SerializeField] float detectionRadius = 8f;
-    [Tooltip("Horizontal vision cone in degrees around the forward direction (XZ plane). 360 = ignore angle (radius only).")]
+    [Tooltip("Total vision cone angle in degrees around forward (XZ plane). 360 = radius-only detection, no cone.")]
     [SerializeField, Range(1f, 360f)] float viewAngle = 90f;
 
     [Header("Debug gizmos")]
