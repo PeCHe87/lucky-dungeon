@@ -8,6 +8,8 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
     enum Phase
     {
         Searching,
+        Idle,
+        Patrolling,
         TargetDetected,
         Chasing,
         Arrived,
@@ -16,6 +18,8 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
     }
 
     [SerializeField] FieldOfViewComponent fieldOfView;
+    [Tooltip("Optional idle/patrol when no target. Disabled = stationary search (default). Waypoints: add NavMeshWaypointPatrolBehavior + waypoint transforms. Random Radius: set radius only.")]
+    [SerializeField] NavMeshIdlePatrolCycle idlePatrolCycle = new NavMeshIdlePatrolCycle();
     [SerializeField] EntityAttackController attackController;
     [SerializeField] EntityTargetDetectedTelegraph targetDetectedTelegraph;
     [SerializeField] float arrivalRadius = 0.5f;
@@ -44,6 +48,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             attackController = GetComponent<EntityAttackController>();
         if (targetDetectedTelegraph == null)
             targetDetectedTelegraph = GetComponent<EntityTargetDetectedTelegraph>();
+        idlePatrolCycle.ResolveReferences(this);
     }
 
     void OnEnable()
@@ -52,6 +57,17 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             attackController = GetComponent<EntityAttackController>();
         if (attackController != null)
             attackController.DamageInterruptStarted += OnDamageInterruptStarted;
+
+        if (idlePatrolCycle.IsEnabled)
+        {
+            NavMeshAgent agent = GetAgent();
+            idlePatrolCycle.EnterIdle(agent);
+            _phase = Phase.Idle;
+        }
+        else
+        {
+            _phase = Phase.Searching;
+        }
     }
 
     void OnDisable()
@@ -64,11 +80,27 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
 
     void OnDamageInterruptStarted()
     {
+        NavMeshAgent agent = GetAgent();
+
+        if (_phase is Phase.Searching or Phase.Idle or Phase.Patrolling)
+        {
+            if (idlePatrolCycle.IsEnabled)
+            {
+                idlePatrolCycle.CancelToIdle(agent);
+                _phase = Phase.Idle;
+            }
+            else
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+                _phase = Phase.Searching;
+            }
+
+            return;
+        }
+
         targetDetectedTelegraph?.Cancel();
         _phase = Phase.Chasing;
-        NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        if (agent == null)
-            agent = GetComponentInParent<NavMeshAgent>();
         EntityNavChaseAttackSupport.ResetToChaseAfterDamageInterrupt(agent, ref _hasChaseSample);
     }
 
@@ -93,12 +125,13 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
 
     void LateUpdate()
     {
-        if (!logDistanceToTargetWhileSearching || distanceLogInterval <= 0f || _phase != Phase.Searching)
+        if (!logDistanceToTargetWhileSearching || distanceLogInterval <= 0f)
             return;
 
-        NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        if (agent == null)
-            agent = GetComponentInParent<NavMeshAgent>();
+        if (_phase != Phase.Searching && _phase != Phase.Patrolling)
+            return;
+
+        NavMeshAgent agent = GetAgent();
 
         if (fieldOfView == null)
             return;
@@ -121,12 +154,20 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
         if (agent == null || !agent.isOnNavMesh || fieldOfView == null)
             return;
 
+        idlePatrolCycle.ResolveReferences(this);
+
         Vector3 origin = fieldOfView.GetDetectionOrigin(agent);
 
         switch (_phase)
         {
             case Phase.Searching:
                 TickSearching(agent, origin);
+                break;
+            case Phase.Idle:
+                TickIdle(agent, origin);
+                break;
+            case Phase.Patrolling:
+                TickPatrolling(agent, origin);
                 break;
             case Phase.TargetDetected:
                 TickTargetDetected(agent);
@@ -146,12 +187,40 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
         }
     }
 
+    void TickIdle(NavMeshAgent agent, Vector3 origin)
+    {
+        switch (idlePatrolCycle.TickIdle(Time.deltaTime, agent, fieldOfView, origin))
+        {
+            case NavMeshIdlePatrolTickResult.TargetDetected:
+                StopAndDetect(agent, fieldOfView.Target);
+                break;
+            case NavMeshIdlePatrolTickResult.IdleExpired:
+                idlePatrolCycle.EnterPatrol(agent);
+                _phase = Phase.Patrolling;
+                break;
+        }
+    }
+
+    void TickPatrolling(NavMeshAgent agent, Vector3 origin)
+    {
+        switch (idlePatrolCycle.TickPatrol(agent, fieldOfView, origin, Time.deltaTime))
+        {
+            case NavMeshIdlePatrolTickResult.TargetDetected:
+                StopAndDetect(agent, fieldOfView.Target);
+                return;
+            case NavMeshIdlePatrolTickResult.PatrolExpired:
+                idlePatrolCycle.EnterIdle(agent);
+                _phase = Phase.Idle;
+                return;
+        }
+    }
+
     void TickArrived(NavMeshAgent agent, Vector3 origin)
     {
         if (!fieldOfView.HasTarget)
         {
             EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
-            _phase = Phase.Searching;
+            ReturnToNoTargetPhase(agent);
             return;
         }
 
@@ -176,7 +245,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
         {
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
                 EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
-                _phase = Phase.Searching;
+                ReturnToNoTargetPhase(agent);
                 break;
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
                 _phase = Phase.Chasing;
@@ -197,7 +266,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
         {
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
                 EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
-                _phase = Phase.Searching;
+                ReturnToNoTargetPhase(agent);
                 break;
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
                 _phase = Phase.Chasing;
@@ -225,6 +294,32 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
                 Debug.Log("target detected!", this);
             agent.ResetPath();
             EnterTargetDetected(fieldOfView.Target);
+        }
+    }
+
+    void StopAndDetect(NavMeshAgent agent, Transform target)
+    {
+        agent.isStopped = true;
+        agent.ResetPath();
+        if (debugLog)
+            Debug.Log("target detected!", this);
+        EnterTargetDetected(target);
+    }
+
+    void ReturnToNoTargetPhase(NavMeshAgent agent)
+    {
+        idlePatrolCycle.ResetPatrolOnAggroLost();
+
+        if (idlePatrolCycle.IsEnabled)
+        {
+            idlePatrolCycle.EnterIdle(agent);
+            _phase = Phase.Idle;
+        }
+        else
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            _phase = Phase.Searching;
         }
     }
 
@@ -274,7 +369,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             ref _fallbackDetectedRemaining))
         {
             case EntityNavChaseAttackSupport.TargetDetectedTickResult.Cancelled:
-                _phase = Phase.Searching;
+                ReturnToNoTargetPhase(agent);
                 break;
             case EntityNavChaseAttackSupport.TargetDetectedTickResult.Complete:
                 if (debugLog)
@@ -290,7 +385,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
         if (!fieldOfView.HasTarget)
         {
             EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
-            _phase = Phase.Searching;
+            _phase = Phase.Arrived;
             agent.isStopped = true;
             agent.ResetPath();
             return;
@@ -316,5 +411,13 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             samplePositionRadius,
             ref _lastChaseSample,
             ref _hasChaseSample);
+    }
+
+    NavMeshAgent GetAgent()
+    {
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent == null)
+            agent = GetComponentInParent<NavMeshAgent>();
+        return agent;
     }
 }

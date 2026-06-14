@@ -120,11 +120,9 @@ public class PatrolStateHandler : IStateHandler
 
     private static void PickNewWaypoint(EntityBlackboard bb, NavMeshAgent agent, float radius)
     {
-        var angle          = Random.Range(0f, Mathf.PI * 2f);
-        var r              = Random.Range(0f, radius);
-        bb.PatrolTarget    = bb.PatrolCenter + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
-
-        if (agent != null) agent.SetDestination(bb.PatrolTarget);
+        bb.PatrolTarget = NavMeshIdlePatrolCycle.SampleRandomPointInRadius(bb.PatrolCenter, radius);
+        if (agent != null)
+            agent.SetDestination(bb.PatrolTarget);
     }
 }
 

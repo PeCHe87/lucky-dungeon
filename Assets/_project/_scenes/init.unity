@@ -505,6 +505,26 @@ PrefabInstance:
       propertyPath: pauseDuration
       value: 0.25
       objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.patrolMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.randomRadius
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.anchorToSpawnOnEnter
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.enableIdlePatrolCycle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.randomWaypointThreshold
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 8591119451767267003, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: maxHitPoints
       value: 150
@@ -1494,8 +1514,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcheroStyleCameraFollow
   target: {fileID: 2004952679}
   verticalOffset: 25
-  forwardOffset: 25
-  zoom: 0.55
+  forwardOffset: 30
+  zoom: 0.45
   baseFieldOfView: 36.5
   minFieldOfView: 10
   maxFieldOfView: 120
@@ -1503,7 +1523,7 @@ MonoBehaviour:
   minOrthographicSize: 2
   maxOrthographicSize: 24
   yawDegrees: -45
-  pitchDegrees: 50
+  pitchDegrees: 40
   positionSmoothTime: 0.15
 --- !u!1 &364741180
 GameObject:
@@ -9720,7 +9740,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2000000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_Name
-      value: base_combat_entity_chaser
+      value: base_combat_entity_chaser_patroller
       objectReference: {fileID: 0}
     - target: {fileID: 2000000000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -9825,6 +9845,26 @@ PrefabInstance:
     - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: pauseDuration
       value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.patrolMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.randomRadius
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.anchorToSpawnOnEnter
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.enableIdlePatrolCycle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000004, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: idlePatrolCycle.randomWaypointThreshold
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8591119451767267003, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: maxHitPoints

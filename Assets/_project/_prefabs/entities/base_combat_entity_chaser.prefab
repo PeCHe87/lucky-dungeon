@@ -555,6 +555,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NavMeshDetectChaseBehavior
   fieldOfView: {fileID: 8000000000000000003}
+  idlePatrolCycle:
+    enableIdlePatrolCycle: 0
+    idleDuration: 3
+    patrolDuration: 8
+    patrolMode: 0
+    waypointPatrol: {fileID: 0}
+    randomRadius: 5
+    randomWaypointThreshold: 0.3
+    anchorToSpawnOnEnter: 1
+    randomSampleRadius: 2
   attackController: {fileID: 296380223609299007}
   targetDetectedTelegraph: {fileID: 9100000000000000001}
   arrivalRadius: 1
@@ -700,7 +710,7 @@ MonoBehaviour:
   firstDetectionDuration: 3
   firstIndicatorDisplayDuration: 4
   repeatDetectionDuration: 1.25
-  repeatIndicatorDisplayDuration: 0.8
+  repeatIndicatorDisplayDuration: 2
   animator: {fileID: 7533446042223888342}
   detectionStateName: TargetDetected
   animatorLayer: 0
