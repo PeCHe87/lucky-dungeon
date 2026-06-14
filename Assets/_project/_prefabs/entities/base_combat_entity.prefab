@@ -494,7 +494,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba98669a785948e4d9d2817e34f4af1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityDamagedShake
-  target: {fileID: 2000000000000000002}
+  target: {fileID: 2000000000000000012}
   shakeDuration: 0.15
   shakeAmplitude: 0.04
   amplitudeBonusPerDamage: 0

@@ -256,6 +256,9 @@ public static class EntityNavChaseAttackSupport
         Cancelled,
     }
 
+    public static void NotifyAggroLost(EntityTargetDetectedTelegraph telegraph)
+        => telegraph?.NotifyAggroLost();
+
     public static void BeginTargetDetected(
         EntityTargetDetectedTelegraph telegraph,
         Transform target,

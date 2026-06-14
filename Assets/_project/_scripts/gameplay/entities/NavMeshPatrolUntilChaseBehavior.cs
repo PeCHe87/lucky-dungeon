@@ -158,6 +158,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
     {
         if (!fieldOfView.HasTarget)
         {
+            EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
             _phase = Phase.Patrolling;
             return;
         }
@@ -182,6 +183,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
         switch (EntityNavChaseAttackSupport.TickPreAttackPhase(attackController, fieldOfView, agent, origin))
         {
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
+                EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
                 _phase = Phase.Patrolling;
                 break;
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
@@ -202,6 +204,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
         switch (EntityNavChaseAttackSupport.TickAttackPhase(attackController, fieldOfView, agent, origin))
         {
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
+                EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
                 _phase = Phase.Patrolling;
                 break;
             case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
@@ -286,6 +289,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
     {
         if (!fieldOfView.HasTarget)
         {
+            EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
             _phase = Phase.Arrived;
             agent.isStopped = true;
             agent.ResetPath();

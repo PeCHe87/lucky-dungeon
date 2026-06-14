@@ -9803,7 +9803,7 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1103731065}
     - target: {fileID: 7818853260074379755, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
-      propertyPath: detectionDuration
+      propertyPath: firstDetectionDuration
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8000000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
@@ -9831,11 +9831,11 @@ PrefabInstance:
       value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 9100000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
-      propertyPath: detectionDuration
+      propertyPath: firstDetectionDuration
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 9100000000000000001, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
-      propertyPath: indicatorDisplayDuration
+      propertyPath: firstIndicatorDisplayDuration
       value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []

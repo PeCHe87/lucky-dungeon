@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Plays a detection animation and world-space indicator when an entity notices a target,
@@ -10,8 +11,18 @@ public sealed class EntityTargetDetectedTelegraph : MonoBehaviour
 {
     public const float FallbackDetectionDuration = 0.5f;
 
-    [Header("Timing")]
-    [SerializeField, Min(0f)] float detectionDuration = 1.25f;
+    [Header("First Detection")]
+    [FormerlySerializedAs("detectionDuration")]
+    [SerializeField, Min(0f)] float firstDetectionDuration = 1.25f;
+    [Tooltip("How long the gotcha indicator stays visible on first acquisition. 0 uses First Detection Duration.")]
+    [FormerlySerializedAs("indicatorDisplayDuration")]
+    [SerializeField, Min(0f)] float firstIndicatorDisplayDuration = 0.8f;
+
+    [Header("Repeat Detection")]
+    [Tooltip("Pre-chase pause after aggro was lost once. 0 uses First Detection Duration.")]
+    [SerializeField, Min(0f)] float repeatDetectionDuration = 0f;
+    [Tooltip("Gotcha indicator duration on repeat acquisition. 0 uses Repeat Detection Duration.")]
+    [SerializeField, Min(0f)] float repeatIndicatorDisplayDuration = 0f;
 
     [Header("Animation")]
     [SerializeField] Animator animator;
@@ -22,8 +33,6 @@ public sealed class EntityTargetDetectedTelegraph : MonoBehaviour
     [SerializeField] EntityAttackController attackController;
 
     [Header("Indicator")]
-    [Tooltip("How long the gotcha indicator stays visible. 0 uses Detection Duration.")]
-    [SerializeField, Min(0f)] float indicatorDisplayDuration = 0.8f;
     [SerializeField] GameObject indicatorRoot;
     [SerializeField] Transform indicatorAnchor;
     [SerializeField] Vector3 indicatorLocalOffset = new Vector3(0f, 2.2f, 0f);
@@ -36,8 +45,8 @@ public sealed class EntityTargetDetectedTelegraph : MonoBehaviour
     float _indicatorRemaining;
     int _detectionStateHash;
     bool _resolvedIndicator;
+    bool _useRepeatTimings;
 
-    public float DetectionDuration => detectionDuration > 0f ? detectionDuration : FallbackDetectionDuration;
     public bool IsActive => _remaining > 0f;
 
     void Awake()
@@ -56,14 +65,17 @@ public sealed class EntityTargetDetectedTelegraph : MonoBehaviour
         SetIndicatorVisible(false);
     }
 
-    void OnDisable() => Cancel();
+    void OnDisable()
+    {
+        Cancel();
+        _useRepeatTimings = false;
+    }
 
     public void Begin(Transform target)
     {
-        _remaining = DetectionDuration;
-        _indicatorRemaining = indicatorDisplayDuration > 0f
-            ? indicatorDisplayDuration
-            : DetectionDuration;
+        float detectionDuration = ResolveDetectionDuration();
+        _remaining = detectionDuration;
+        _indicatorRemaining = ResolveIndicatorDuration(detectionDuration);
 
         if (faceTargetDuringDetection && attackController != null && target != null)
             attackController.FaceTarget(target);
@@ -71,6 +83,8 @@ public sealed class EntityTargetDetectedTelegraph : MonoBehaviour
         PlayDetectionAnimation();
         SetIndicatorVisible(true);
     }
+
+    public void NotifyAggroLost() => _useRepeatTimings = true;
 
     public void Cancel() => FinishPhase();
 
@@ -95,6 +109,30 @@ public sealed class EntityTargetDetectedTelegraph : MonoBehaviour
 
         _remaining -= deltaTime;
         return _remaining <= 0f;
+    }
+
+    float ResolveDetectionDuration()
+    {
+        if (_useRepeatTimings)
+        {
+            if (repeatDetectionDuration > 0f)
+                return repeatDetectionDuration;
+            return ResolveFirstDetectionDuration();
+        }
+
+        return ResolveFirstDetectionDuration();
+    }
+
+    float ResolveFirstDetectionDuration()
+        => firstDetectionDuration > 0f ? firstDetectionDuration : FallbackDetectionDuration;
+
+    float ResolveIndicatorDuration(float detectionDuration)
+    {
+        float configured = _useRepeatTimings
+            ? repeatIndicatorDisplayDuration
+            : firstIndicatorDisplayDuration;
+
+        return configured > 0f ? configured : detectionDuration;
     }
 
     void PlayDetectionAnimation()

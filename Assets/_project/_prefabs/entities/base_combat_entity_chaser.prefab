@@ -697,14 +697,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 765e9d66b09e40a459f02f588e69d052, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityTargetDetectedTelegraph
-  detectionDuration: 2
+  firstDetectionDuration: 3
+  firstIndicatorDisplayDuration: 4
+  repeatDetectionDuration: 1.25
+  repeatIndicatorDisplayDuration: 0.8
   animator: {fileID: 7533446042223888342}
   detectionStateName: TargetDetected
   animatorLayer: 0
   crossFadeSeconds: 0.12
   faceTargetDuringDetection: 1
   attackController: {fileID: 296380223609299007}
-  indicatorDisplayDuration: 3
   indicatorRoot: {fileID: 1933649878073809047}
   indicatorAnchor: {fileID: 0}
   indicatorLocalOffset: {x: 0, y: 2.2, z: 0}
@@ -757,7 +759,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba98669a785948e4d9d2817e34f4af1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityDamagedShake
-  target: {fileID: 2000000000000000002}
+  target: {fileID: 2000000000000000012}
   shakeDuration: 0.15
   shakeAmplitude: 0.04
   amplitudeBonusPerDamage: 0

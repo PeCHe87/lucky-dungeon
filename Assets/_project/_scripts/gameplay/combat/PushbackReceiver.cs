@@ -14,6 +14,10 @@ public sealed class PushbackReceiver : MonoBehaviour
 
     Coroutine _activeKnockback;
     Collider[] _selfColliders;
+    int _agentKnockbackDepth;
+    bool _agentWasStopped;
+    bool _agentUpdatedPosition;
+    bool _agentUpdatedRotation;
 
     public float PushbackResistance => pushbackResistance;
 
@@ -30,6 +34,17 @@ public sealed class PushbackReceiver : MonoBehaviour
             pushbackBlockLayers = LayerMask.GetMask("Obstacle", "Default");
 
         _selfColliders = GetComponentsInChildren<Collider>();
+    }
+
+    void OnDisable()
+    {
+        if (_activeKnockback != null)
+        {
+            StopCoroutine(_activeKnockback);
+            _activeKnockback = null;
+        }
+
+        RestoreNavMeshAgentAfterKnockback();
     }
 
     public void ApplyPushback(in PushbackContext ctx)
@@ -54,64 +69,105 @@ public sealed class PushbackReceiver : MonoBehaviour
 
         if (_activeKnockback != null)
             StopCoroutine(_activeKnockback);
+
         _activeKnockback = StartCoroutine(ApplyKnockbackRoutine(direction, distance, speed, ctx.duration));
     }
 
     IEnumerator ApplyKnockbackRoutine(Vector3 direction, float totalDistance, float speed, float duration)
     {
-        float moved = 0f;
-        float elapsed = 0f;
-
         NavMeshAgent agent = GetComponent<NavMeshAgent>();
         CharacterController controller = GetComponent<CharacterController>();
         bool useAgent = agent != null && agent.enabled;
-        bool agentWasStopped = false;
-        bool agentUpdatedPosition = true;
-        bool agentUpdatedRotation = true;
 
-        if (useAgent)
+        BeginNavMeshAgentKnockback(agent, useAgent);
+
+        float moved = 0f;
+        float elapsed = 0f;
+
+        try
         {
-            agentWasStopped = agent.isStopped;
-            agentUpdatedPosition = agent.updatePosition;
-            agentUpdatedRotation = agent.updateRotation;
+            while (elapsed < duration && moved < totalDistance - 0.001f)
+            {
+                float dt = Time.deltaTime;
+                elapsed += dt;
+                float step = Mathf.Min(speed * dt, totalDistance - moved);
+                step = ClampStepByCollision(direction, step);
+                if (step <= 0.001f)
+                    break;
+
+                Vector3 delta = direction * step;
+                ApplyHorizontalDelta(delta, useAgent, agent, controller);
+
+                moved += step;
+                yield return null;
+            }
+        }
+        finally
+        {
+            EndNavMeshAgentKnockback(agent, useAgent);
+            _activeKnockback = null;
+        }
+    }
+
+    void BeginNavMeshAgentKnockback(NavMeshAgent agent, bool useAgent)
+    {
+        if (!useAgent)
+            return;
+
+        if (_agentKnockbackDepth == 0)
+        {
+            _agentWasStopped = agent.isStopped;
+            _agentUpdatedPosition = agent.updatePosition;
+            _agentUpdatedRotation = agent.updateRotation;
             agent.isStopped = true;
             agent.updatePosition = false;
             agent.updateRotation = false;
             agent.ResetPath();
         }
 
-        while (elapsed < duration && moved < totalDistance - 0.001f)
+        _agentKnockbackDepth++;
+    }
+
+    void EndNavMeshAgentKnockback(NavMeshAgent agent, bool useAgent)
+    {
+        if (!useAgent || _agentKnockbackDepth <= 0)
+            return;
+
+        _agentKnockbackDepth--;
+        if (_agentKnockbackDepth > 0)
+            return;
+
+        SyncAgentToTransform(agent);
+        agent.updatePosition = _agentUpdatedPosition;
+        agent.updateRotation = _agentUpdatedRotation;
+        agent.isStopped = _agentWasStopped;
+    }
+
+    void RestoreNavMeshAgentAfterKnockback()
+    {
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent == null || !agent.enabled || _agentKnockbackDepth <= 0)
         {
-            float dt = Time.deltaTime;
-            elapsed += dt;
-            float step = Mathf.Min(speed * dt, totalDistance - moved);
-            step = ClampStepByCollision(direction, step);
-            if (step <= 0.001f)
-                break;
-
-            Vector3 delta = direction * step;
-            ApplyHorizontalDelta(delta, useAgent, agent, controller);
-
-            moved += step;
-            yield return null;
+            _agentKnockbackDepth = 0;
+            return;
         }
 
-        if (useAgent)
+        SyncAgentToTransform(agent);
+        agent.updatePosition = _agentUpdatedPosition;
+        agent.updateRotation = _agentUpdatedRotation;
+        agent.isStopped = _agentWasStopped;
+        _agentKnockbackDepth = 0;
+    }
+
+    void SyncAgentToTransform(NavMeshAgent agent)
+    {
+        agent.nextPosition = transform.position;
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
         {
-            agent.nextPosition = transform.position;
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-            {
-                transform.position = hit.position;
-                agent.nextPosition = hit.position;
-                agent.Warp(hit.position);
-            }
-
-            agent.updatePosition = agentUpdatedPosition;
-            agent.updateRotation = agentUpdatedRotation;
-            agent.isStopped = agentWasStopped;
+            transform.position = hit.position;
+            agent.nextPosition = hit.position;
+            agent.Warp(hit.position);
         }
-
-        _activeKnockback = null;
     }
 
     void ApplyHorizontalDelta(Vector3 delta, bool useAgent, NavMeshAgent agent, CharacterController controller)

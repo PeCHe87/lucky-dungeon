@@ -1,7 +1,9 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Subscribes to <see cref="CombatEntityHealth.Damaged"/> and applies a short local-space shake on a target transform.
+/// Use a visual child — never the transform that owns <see cref="NavMeshAgent"/>.
 /// </summary>
 public sealed class EntityDamagedShake : MonoBehaviour
 {
@@ -16,12 +18,17 @@ public sealed class EntityDamagedShake : MonoBehaviour
     Vector3 _baselineLocalPosition;
     float _shakeTimeRemaining;
     float _activeAmplitude;
+    bool _wasShaking;
+
+    void Reset()
+    {
+        target = transform;
+    }
 
     void Awake()
     {
         _health = GetComponentInParent<CombatEntityHealth>();
-        if (target == null)
-            target = transform;
+        ResolveShakeTarget();
         _baselineLocalPosition = target.localPosition;
     }
 
@@ -35,9 +42,9 @@ public sealed class EntityDamagedShake : MonoBehaviour
     {
         if (_health != null)
             _health.Damaged -= OnDamaged;
-        if (target != null)
-            target.localPosition = _baselineLocalPosition;
+        ResetShakeOffset();
         _shakeTimeRemaining = 0f;
+        _wasShaking = false;
     }
 
     void OnDamaged(float damageAmount)
@@ -54,13 +61,38 @@ public sealed class EntityDamagedShake : MonoBehaviour
 
         if (_shakeTimeRemaining <= 0f)
         {
-            target.localPosition = _baselineLocalPosition;
+            if (_wasShaking)
+                ResetShakeOffset();
             return;
         }
 
+        _wasShaking = true;
         _shakeTimeRemaining -= Time.deltaTime;
         float envelope = shakeDuration > 0f ? Mathf.Clamp01(_shakeTimeRemaining / shakeDuration) : 0f;
         Vector3 offset = Random.insideUnitSphere * (_activeAmplitude * envelope);
         target.localPosition = _baselineLocalPosition + offset;
+    }
+
+    void ResolveShakeTarget()
+    {
+        if (target == null)
+            target = transform;
+
+        if (target.GetComponent<NavMeshAgent>() != null)
+        {
+            Debug.LogWarning(
+                $"{nameof(EntityDamagedShake)} on '{name}' targets a transform with NavMeshAgent — using this component's transform instead.",
+                this);
+            target = transform;
+        }
+    }
+
+    void ResetShakeOffset()
+    {
+        if (target == null)
+            return;
+
+        target.localPosition = _baselineLocalPosition;
+        _wasShaking = false;
     }
 }
