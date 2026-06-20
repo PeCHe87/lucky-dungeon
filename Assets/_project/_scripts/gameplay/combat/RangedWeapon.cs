@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-/// <summary>Pooled ranged attack: spawns a <see cref="DamageProjectile"/> from <see cref="ProjectilePool"/>.</summary>
-public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity
+/// <summary>Pooled ranged attack: spawns a <see cref="DamageProjectile"/> from <see cref="ProjectilePool"/> on animation fire frame.</summary>
+public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAnimationBinding, IWeaponTargetDetection
 {
     [SerializeField] ProjectilePool projectilePool;
     [Tooltip("World spawn pose uses this transform; offset applied in its local space.")]
@@ -28,13 +28,37 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
     [Header("Equipped presentation")]
     [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
     [SerializeField] GameObject[] equippedVisualRoots;
+    [Header("Animation")]
+    [SerializeField] RuntimeAnimatorController animatorController;
+    [SerializeField] PlayerEntityStateAnimationProfile animationProfile;
+
+    public RuntimeAnimatorController AnimatorController => animatorController;
+    public PlayerEntityStateAnimationProfile AnimationProfile => animationProfile;
+
+    [Header("Target detection")]
+    [Tooltip("Primary XZ detection radius pushed to NearestTargetQuery when this weapon is equipped.")]
+    [SerializeField, Min(0.01f)] float targetDetectionRadius = 15f;
+    [Tooltip("360° fallback detection radius pushed to NearestTargetQuery when this weapon is equipped.")]
+    [SerializeField, Min(0.01f)] float omnidirectionalDetectionRadius = 20f;
+
+    public float TargetDetectionRadius => targetDetectionRadius;
+    public float OmnidirectionalDetectionRadius => omnidirectionalDetectionRadius;
 
     float _cooldownRemaining;
     float _attackActiveTimer;
+    bool _hasArmedContext;
+    AttackContext _armedContext;
+    bool _hasPendingFireContext;
+    AttackContext _pendingFireContext;
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
-    public void CancelAttack() => _attackActiveTimer = 0f;
+    public void CancelAttack()
+    {
+        _attackActiveTimer = 0f;
+        _hasArmedContext = false;
+        _hasPendingFireContext = false;
+    }
 
     void Update()
     {
@@ -56,14 +80,49 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
         }
     }
 
-    public bool TryAttack(in AttackContext ctx)
+    public bool TryAttack(in AttackContext ctx) => TryBeginAttack(in ctx);
+
+    /// <summary>Begins a ranged shot: cooldown, arms context for the next clip start. No projectile yet.</summary>
+    public bool TryBeginAttack(in AttackContext ctx)
     {
         if (ctx.attacker == null)
             return false;
         if (_cooldownRemaining > 0f)
             return false;
-        if (projectilePool == null)
-            return false;
+
+        _cooldownRemaining = cooldown;
+        _armedContext = ctx;
+        _hasArmedContext = true;
+        _attackActiveTimer = attackActiveDuration;
+        return true;
+    }
+
+    /// <summary>Called when an attack animator state starts; links armed context to the clip's fire event.</summary>
+    public void ArmFireForCurrentShot()
+    {
+        if (!_hasArmedContext)
+            return;
+
+        _pendingFireContext = _armedContext;
+        _hasPendingFireContext = true;
+        _hasArmedContext = false;
+    }
+
+    /// <summary>Called from animation event <c>OnRangedFireFrame</c> on the Animator object.</summary>
+    public void ApplyPendingFire()
+    {
+        if (!_hasPendingFireContext)
+            return;
+
+        AttackContext ctx = _pendingFireContext;
+        _hasPendingFireContext = false;
+        SpawnProjectile(in ctx);
+    }
+
+    void SpawnProjectile(in AttackContext ctx)
+    {
+        if (ctx.attacker == null || projectilePool == null)
+            return;
 
         Vector3 forward = ctx.facing;
         forward.y = 0f;
@@ -74,7 +133,7 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
 
         GameObject shot = projectilePool.TryGet();
         if (shot == null)
-            return false;
+            return;
 
         Transform originTransform = firePoint != null ? firePoint : ctx.attacker;
         Vector3 spawnPos = originTransform.TransformPoint(spawnOffset);
@@ -88,7 +147,7 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
         if (projectile == null)
         {
             projectilePool.Release(shot);
-            return false;
+            return;
         }
 
         projectile.Initialize(
@@ -107,10 +166,6 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
             pushbackDuration);
 
         shot.SetActive(true);
-
-        _cooldownRemaining = cooldown;
-        _attackActiveTimer = attackActiveDuration;
         onAttackPerformed?.Invoke();
-        return true;
     }
 }

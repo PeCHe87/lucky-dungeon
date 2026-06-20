@@ -109,11 +109,16 @@ public class NearestTargetQuery : MonoBehaviour
     IMoveIntentProvider _moveProvider;
     IDashIntentProvider _dashProvider;
 
+    float _defaultRadius;
+    float _defaultOmnidirectionalRadius;
+
     void Awake()
     {
         TryMigrateLegacyTargetTag();
         EnsureColliderIgnoreRoot();
         _overlapBuffer = new Collider[overlapMaxHits];
+        _defaultRadius = radius;
+        _defaultOmnidirectionalRadius = omnidirectionalRadius;
         if (weaponHolder == null)
             weaponHolder = GetComponent<WeaponHolder>();
         if (meleeAnimator == null)
@@ -121,6 +126,42 @@ public class NearestTargetQuery : MonoBehaviour
         if (attackController == null)
             attackController = GetComponent<PlayerAttackController>();
         ResolveInputProviders();
+        ApplyWeaponDetectionRadii();
+    }
+
+    void OnEnable()
+    {
+        if (weaponHolder != null)
+            weaponHolder.EquippedWeaponChanged += ApplyWeaponDetectionRadii;
+    }
+
+    void OnDisable()
+    {
+        if (weaponHolder != null)
+            weaponHolder.EquippedWeaponChanged -= ApplyWeaponDetectionRadii;
+    }
+
+    /// <summary>Sets active discovery radii (typically from the equipped weapon).</summary>
+    public void SetDetectionRadii(float detectionRadius, float omnidirectionalDetectionRadius)
+    {
+        radius = Mathf.Max(0.01f, detectionRadius);
+        if (enableOmnidirectionalFallback)
+            omnidirectionalRadius = Mathf.Max(0.01f, omnidirectionalDetectionRadius);
+    }
+
+    void ApplyWeaponDetectionRadii()
+    {
+        if (weaponHolder != null
+            && weaponHolder.Current is MonoBehaviour weaponBehaviour
+            && weaponBehaviour is IWeaponTargetDetection detection
+            && detection.TargetDetectionRadius > 0f
+            && detection.OmnidirectionalDetectionRadius > 0f)
+        {
+            SetDetectionRadii(detection.TargetDetectionRadius, detection.OmnidirectionalDetectionRadius);
+            return;
+        }
+
+        SetDetectionRadii(_defaultRadius, _defaultOmnidirectionalRadius);
     }
 
     void LateUpdate()
@@ -170,6 +211,9 @@ public class NearestTargetQuery : MonoBehaviour
 
     /// <summary>Primary XZ detection radius used for discovery and grace-range fallback.</summary>
     public float DetectionRadius => radius;
+
+    /// <summary>360° fallback detection radius (updated when the equipped weapon changes).</summary>
+    public float OmnidirectionalDetectionRadius => omnidirectionalRadius;
 
     public bool HasEngagedCombatTarget => _engagedCombatTarget != null;
 

@@ -29,8 +29,12 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     [SerializeField] bool logAttackAnimation;
 
     MeleeWeapon _meleeWeapon;
+    RangedWeapon _rangedWeapon;
     IMoveIntentProvider _moveProvider;
     bool _meleeApproachAnimActive;
+
+    RuntimeAnimatorController _defaultController;
+    PlayerEntityStateAnimationProfile _defaultProfile;
 
     readonly Dictionary<PlayerEntityStateKind, int> _stateHashes = new Dictionary<PlayerEntityStateKind, int>();
     readonly HashSet<int> _attackStateHashes = new HashSet<int>();
@@ -60,24 +64,19 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
         _moveProvider = GetComponent<IMoveIntentProvider>();
         ResolveMeleeWeapon();
+        ResolveRangedWeapon();
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
 
         if (animator != null)
-        {
-            if (locomotionController != null)
-                animator.runtimeAnimatorController = locomotionController;
             animator.applyRootMotion = false;
-        }
 
 #if UNITY_EDITOR
         if (locomotionController == null)
         {
             locomotionController = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
                 "Assets/_project/_animation/PlayerLocomotion.controller");
-            if (animator != null && locomotionController != null)
-                animator.runtimeAnimatorController = locomotionController;
         }
 
         if (profile == null)
@@ -87,7 +86,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         }
 #endif
 
-        RebuildHashCache();
+        _defaultController = locomotionController;
+        _defaultProfile = profile;
+        ApplyWeaponAnimationBinding();
     }
 
     void OnEnable()
@@ -102,6 +103,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             attackController.MeleeApproachStarted += OnMeleeApproachStarted;
             attackController.MeleeApproachCancelled += OnMeleeApproachCancelled;
         }
+
+        if (weaponHolder != null)
+            weaponHolder.EquippedWeaponChanged += OnEquippedWeaponChanged;
 
         if (playerEntityState != null)
             PlayForState(playerEntityState.Current, force: true);
@@ -120,7 +124,46 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             attackController.MeleeApproachCancelled -= OnMeleeApproachCancelled;
         }
 
+        if (weaponHolder != null)
+            weaponHolder.EquippedWeaponChanged -= OnEquippedWeaponChanged;
+
         _meleeApproachAnimActive = false;
+    }
+
+    void OnEquippedWeaponChanged() => ApplyWeaponAnimationBinding();
+
+    void ApplyWeaponAnimationBinding()
+    {
+        RuntimeAnimatorController controller = _defaultController;
+        PlayerEntityStateAnimationProfile activeProfile = _defaultProfile;
+
+        if (weaponHolder != null
+            && weaponHolder.Current is MonoBehaviour weaponBehaviour
+            && weaponBehaviour is IWeaponAnimationBinding binding)
+        {
+            if (binding.AnimatorController != null)
+                controller = binding.AnimatorController;
+            if (binding.AnimationProfile != null)
+                activeProfile = binding.AnimationProfile;
+        }
+
+        profile = activeProfile;
+
+        if (animator != null && controller != null)
+            animator.runtimeAnimatorController = controller;
+
+        _attackComboIndex = 0;
+        _queuedAttackPressCount = 0;
+        _locomotionSyncPending = false;
+        _meleeApproachAnimActive = false;
+        _lastPlayedHash = int.MinValue;
+
+        ResolveMeleeWeapon();
+        ResolveRangedWeapon();
+        RebuildHashCache();
+
+        if (playerEntityState != null && isActiveAndEnabled)
+            PlayForState(playerEntityState.Current, force: true);
     }
 
     void OnValidate()
@@ -206,6 +249,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     void OnMeleeApproachStarted(float duration)
     {
+        if (weaponHolder != null && !weaponHolder.IsMeleeEquipped())
+            return;
+
         if (animator == null || profile == null || duration <= 0f)
             return;
 
@@ -438,6 +484,14 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             _meleeWeapon = GetComponentInChildren<MeleeWeapon>(true);
     }
 
+    void ResolveRangedWeapon()
+    {
+        if (weaponHolder != null && weaponHolder.Current is RangedWeapon current)
+            _rangedWeapon = current;
+        else
+            _rangedWeapon = GetComponentInChildren<RangedWeapon>(true);
+    }
+
     void PlayAttackState(string stateName, int layer)
     {
         if (animator == null)
@@ -451,10 +505,29 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         _lastPlayedHash = stateHash;
         _lastPlayedLayer = layer;
 
-        ResolveMeleeWeapon();
-
         if (logAttackAnimation)
             Debug.Log($"[PlayerEntityStateAnimator] PlayAttackState '{stateName}' on layer {layer}.", this);
+
+        if (weaponHolder != null && weaponHolder.IsRangedEquipped())
+        {
+            ResolveRangedWeapon();
+            if (_rangedWeapon != null)
+            {
+                _rangedWeapon.ArmFireForCurrentShot();
+                if (logAttackAnimation)
+                    Debug.Log($"[PlayerEntityStateAnimator] ArmFireForCurrentShot on '{_rangedWeapon.name}'.", this);
+            }
+            else if (logAttackAnimation)
+            {
+                Debug.LogWarning(
+                    "[PlayerEntityStateAnimator] RangedWeapon not found; ArmFireForCurrentShot skipped.",
+                    this);
+            }
+
+            return;
+        }
+
+        ResolveMeleeWeapon();
 
         if (_meleeWeapon == null)
         {

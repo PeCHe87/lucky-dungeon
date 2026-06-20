@@ -174,6 +174,10 @@ MonoBehaviour:
   pushbackDuration: 0.08
   equippedVisualRoots:
   - {fileID: 6685292332853155031}
+  animatorController: {fileID: 9100000, guid: b96b7f5ff05fde648bdb8df74d2deade, type: 2}
+  animationProfile: {fileID: 11400000, guid: d9884aae61c0b53449b8b7f6c662b7a9, type: 2}
+  targetDetectionRadius: 15
+  omnidirectionalDetectionRadius: 20
 --- !u!1 &1827364555011111101
 GameObject:
   m_ObjectHideFlags: 0
@@ -1011,6 +1015,7 @@ GameObject:
   - component: {fileID: 8356094001360696364}
   - component: {fileID: -6368343191736498815}
   - component: {fileID: 5638600333480182557}
+  - component: {fileID: 6697435988216015906}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1207,7 +1212,7 @@ MonoBehaviour:
   enableTargetStickiness: 1
   stickyMaxRange: 0
   holdStickyDuringMeleeAnimation: 1
-  weaponHolder: {fileID: 0}
+  weaponHolder: {fileID: 9012345678901234504}
   meleeAnimator: {fileID: 0}
   suspendDetectionDuringMeleeAnimation: 1
   postAttackDetectionHoldSeconds: 0.5
@@ -1494,6 +1499,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
   faceAttackerOnDamage: 1
   visualPivot: {fileID: 0}
+--- !u!114 &6697435988216015906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99540f22d0ad4b04aa53711ae87759a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponDetectionRadiusRingView
+  weaponHolder: {fileID: 9012345678901234504}
+  ringAnchor: {fileID: 99504793967339466}
+  nearestTargetQuery: {fileID: 2598074907052417657}
+  displayDuration: 2.5
+  fadeOutDuration: 0.75
+  heightOffset: 0.05
+  lineWidth: 0.08
+  segmentCount: 64
+  ringColor: {r: 1, g: 0.55, b: 0.15, a: 0.85}
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0
@@ -1664,6 +1690,10 @@ MonoBehaviour:
   minPushTravelFraction: 0.9
   equippedVisualRoots:
   - {fileID: 4196078650961484826}
+  animatorController: {fileID: 9100000, guid: 3867d71e261b62b4c97e4562b1fa8efc, type: 2}
+  animationProfile: {fileID: 11400000, guid: 23438f43f4ac2d441b21f5b3c030f092, type: 2}
+  targetDetectionRadius: 6
+  omnidirectionalDetectionRadius: 8
   enableApproachLunge: 1
   approachStopBuffer: 0.3
   maxApproachLungeDistance: 6
@@ -1868,6 +1898,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7072383029163001940, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
       insertIndex: -1
       addedObject: {fileID: -3790341027782439186}
+    - targetCorrespondingSourceObject: {fileID: 7072383029163001940, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7015888108866437375}
   m_SourcePrefab: {fileID: 100100000, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}
 --- !u!95 &99504793957550150 stripped
 Animator:
@@ -1894,6 +1927,21 @@ MonoBehaviour:
   meleeWeapon: {fileID: 9012345678901234503}
   weaponHolder: {fileID: 9012345678901234504}
   logHitFrameEvents: 0
+--- !u!114 &7015888108866437375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 99504793966918186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 720dcad24b65465449bbf3dbcdc5e7e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RangedAttackAnimationEventReceiver
+  rangedWeapon: {fileID: 1827364555011111004}
+  weaponHolder: {fileID: 9012345678901234504}
+  logFireFrameEvents: 0
 --- !u!4 &99504793967339466 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7072383029163103668, guid: 49e2736be122e8f4ebbc6238196456ee, type: 3}

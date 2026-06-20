@@ -149,6 +149,8 @@ public sealed class PlayerAttackController : MonoBehaviour
         bool performed;
         if (weaponHolder.Current is MeleeWeapon melee)
             performed = TryProcessMeleeAttack(melee, in ctx, pressed);
+        else if (weaponHolder.Current is RangedWeapon ranged)
+            performed = TryProcessRangedAttack(ranged, in ctx);
         else
             performed = weaponHolder.TryAttack(in ctx);
 
@@ -208,6 +210,11 @@ public sealed class PlayerAttackController : MonoBehaviour
             optionalTarget = optionalTarget
         };
         return true;
+    }
+
+    bool TryProcessRangedAttack(RangedWeapon ranged, in AttackContext ctx)
+    {
+        return ranged.TryBeginAttack(in ctx);
     }
 
     bool TryProcessMeleeAttack(MeleeWeapon melee, in AttackContext ctx, bool pressed)

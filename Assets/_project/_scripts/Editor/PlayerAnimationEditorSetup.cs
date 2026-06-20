@@ -7,6 +7,8 @@ static class PlayerAnimationEditorSetup
 {
     const string PlayerPrefabPath = "Assets/_project/_prefabs/entities/player.prefab";
     const string LocomotionControllerPath = "Assets/_project/_animation/PlayerLocomotion.controller";
+    const string BowControllerPath = PlayerBowAnimationEditorSetup.BowControllerPath;
+    const string BowProfilePath = PlayerBowAnimationEditorSetup.BowProfilePath;
 
     static PlayerAnimationEditorSetup()
     {
@@ -16,6 +18,7 @@ static class PlayerAnimationEditorSetup
     static void RunOnceDelayed()
     {
         PlayerEntityStateAnimationProfile.EnsureDefaultAssetExists();
+        PlayerBowAnimationEditorSetup.EnsureBowAssetsExist();
         WirePlayerPrefab();
     }
 
@@ -26,8 +29,10 @@ static class PlayerAnimationEditorSetup
             return;
 
         var locomotion = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(LocomotionControllerPath);
+        var bowController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BowControllerPath);
         var profile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(
             PlayerEntityStateAnimationProfile.DefaultAssetPath);
+        var bowProfile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(BowProfilePath);
 
         bool dirty = false;
 
@@ -47,7 +52,9 @@ static class PlayerAnimationEditorSetup
 
         var attackController = prefabRoot.GetComponent<PlayerAttackController>();
         var weaponHolder = prefabRoot.GetComponent<WeaponHolder>();
+        var nearestTargetQuery = prefabRoot.GetComponent<NearestTargetQuery>();
         var meleeWeapon = prefabRoot.GetComponentInChildren<MeleeWeapon>(true);
+        var rangedWeapon = prefabRoot.GetComponentInChildren<RangedWeapon>(true);
         var movement = prefabRoot.GetComponent<TopDownCharacterMovement>();
         var animator = prefabRoot.GetComponentInChildren<Animator>(true);
         var health = prefabRoot.GetComponent<CombatEntityHealth>();
@@ -75,6 +82,85 @@ static class PlayerAnimationEditorSetup
                 dirty = true;
             }
 
+        }
+
+        if (meleeWeapon != null)
+        {
+            var meleeSo = new SerializedObject(meleeWeapon);
+            if (locomotion != null
+                && meleeSo.FindProperty("animatorController").objectReferenceValue != locomotion)
+            {
+                meleeSo.FindProperty("animatorController").objectReferenceValue = locomotion;
+                dirty = true;
+            }
+
+            if (profile != null
+                && meleeSo.FindProperty("animationProfile").objectReferenceValue != profile)
+            {
+                meleeSo.FindProperty("animationProfile").objectReferenceValue = profile;
+                dirty = true;
+            }
+
+            if (meleeSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
+            {
+                meleeSo.FindProperty("targetDetectionRadius").floatValue = 6f;
+                dirty = true;
+            }
+
+            if (meleeSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
+            {
+                meleeSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 8f;
+                dirty = true;
+            }
+
+            if (meleeSo.ApplyModifiedPropertiesWithoutUndo())
+                dirty = true;
+        }
+
+        if (rangedWeapon != null)
+        {
+            var rangedSo = new SerializedObject(rangedWeapon);
+            if (bowController != null
+                && rangedSo.FindProperty("animatorController").objectReferenceValue != bowController)
+            {
+                rangedSo.FindProperty("animatorController").objectReferenceValue = bowController;
+                dirty = true;
+            }
+
+            if (bowProfile != null
+                && rangedSo.FindProperty("animationProfile").objectReferenceValue != bowProfile)
+            {
+                rangedSo.FindProperty("animationProfile").objectReferenceValue = bowProfile;
+                dirty = true;
+            }
+
+            if (rangedSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
+            {
+                rangedSo.FindProperty("targetDetectionRadius").floatValue = 15f;
+                dirty = true;
+            }
+
+            if (rangedSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
+            {
+                rangedSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 20f;
+                dirty = true;
+            }
+
+            if (rangedSo.ApplyModifiedPropertiesWithoutUndo())
+                dirty = true;
+        }
+
+        if (nearestTargetQuery != null && weaponHolder != null)
+        {
+            var querySo = new SerializedObject(nearestTargetQuery);
+            if (querySo.FindProperty("weaponHolder").objectReferenceValue != weaponHolder)
+            {
+                querySo.FindProperty("weaponHolder").objectReferenceValue = weaponHolder;
+                dirty = true;
+            }
+
+            if (querySo.ApplyModifiedPropertiesWithoutUndo())
+                dirty = true;
         }
 
         var animatorSo = new SerializedObject(stateAnimator);
@@ -222,6 +308,31 @@ static class PlayerAnimationEditorSetup
 
             if (receiverSo.ApplyModifiedPropertiesWithoutUndo())
                 dirty = true;
+
+            var rangedReceiver = animator.GetComponent<RangedAttackAnimationEventReceiver>();
+            if (rangedReceiver == null)
+            {
+                rangedReceiver = animator.gameObject.AddComponent<RangedAttackAnimationEventReceiver>();
+                dirty = true;
+            }
+
+            var rangedReceiverSo = new SerializedObject(rangedReceiver);
+            if (rangedWeapon != null
+                && rangedReceiverSo.FindProperty("rangedWeapon").objectReferenceValue != rangedWeapon)
+            {
+                rangedReceiverSo.FindProperty("rangedWeapon").objectReferenceValue = rangedWeapon;
+                dirty = true;
+            }
+
+            if (weaponHolder != null
+                && rangedReceiverSo.FindProperty("weaponHolder").objectReferenceValue != weaponHolder)
+            {
+                rangedReceiverSo.FindProperty("weaponHolder").objectReferenceValue = weaponHolder;
+                dirty = true;
+            }
+
+            if (rangedReceiverSo.ApplyModifiedPropertiesWithoutUndo())
+                dirty = true;
         }
 
         if (movement != null)
@@ -260,6 +371,41 @@ static class PlayerAnimationEditorSetup
         }
 
         if (attackerFacingSo.ApplyModifiedPropertiesWithoutUndo())
+            dirty = true;
+
+        var detectionRingView = prefabRoot.GetComponent<WeaponDetectionRadiusRingView>();
+        if (detectionRingView == null)
+        {
+            detectionRingView = prefabRoot.AddComponent<WeaponDetectionRadiusRingView>();
+            dirty = true;
+        }
+
+        var detectionRingSo = new SerializedObject(detectionRingView);
+        if (weaponHolder != null
+            && detectionRingSo.FindProperty("weaponHolder").objectReferenceValue != weaponHolder)
+        {
+            detectionRingSo.FindProperty("weaponHolder").objectReferenceValue = weaponHolder;
+            dirty = true;
+        }
+
+        if (nearestTargetQuery != null
+            && detectionRingSo.FindProperty("nearestTargetQuery").objectReferenceValue != nearestTargetQuery)
+        {
+            detectionRingSo.FindProperty("nearestTargetQuery").objectReferenceValue = nearestTargetQuery;
+            dirty = true;
+        }
+
+        if (animator != null)
+        {
+            var ringAnchor = detectionRingSo.FindProperty("ringAnchor");
+            if (ringAnchor.objectReferenceValue != animator.transform)
+            {
+                ringAnchor.objectReferenceValue = animator.transform;
+                dirty = true;
+            }
+        }
+
+        if (detectionRingSo.ApplyModifiedPropertiesWithoutUndo())
             dirty = true;
 
         if (dirty)
