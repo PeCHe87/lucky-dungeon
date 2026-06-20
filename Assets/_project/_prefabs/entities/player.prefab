@@ -1010,6 +1010,7 @@ GameObject:
   - component: {fileID: 9012345678901234521}
   - component: {fileID: 8356094001360696364}
   - component: {fileID: -6368343191736498815}
+  - component: {fileID: 5638600333480182557}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1386,7 +1387,6 @@ MonoBehaviour:
   stickDeadzone: 0.08
   maxTapHoldDuration: 0.18
   dashCooldown: 2
-  invincibilityDuration: 0.2
   dashDuration: 0.5
   dashSpeed: 15
   joystickProvider: {fileID: 2009791332878126513}
@@ -1480,6 +1480,20 @@ MonoBehaviour:
   attackController: {fileID: 9012345678901234505}
   movement: {fileID: 2798365246320322531}
   entityStateAnimator: {fileID: -4037862818332867988}
+--- !u!114 &5638600333480182557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e77387887da5f6b4eab6a09ab0a39776, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
+  faceAttackerOnDamage: 1
+  visualPivot: {fileID: 0}
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0
@@ -1647,6 +1661,7 @@ MonoBehaviour:
   criticalStrikeChance: 0
   pushbackDistance: 0.8
   pushbackDuration: 0.1
+  minPushTravelFraction: 0.9
   equippedVisualRoots:
   - {fileID: 4196078650961484826}
   enableApproachLunge: 1

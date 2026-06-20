@@ -117,7 +117,7 @@ public sealed class DamageProjectile : MonoBehaviour
                     return;
                 if (mb is IDamageable dmg)
                 {
-                    dmg.TakeDamage(_damage, _style);
+                    dmg.TakeDamage(_damage, _style, new DamageHitInfo(_owner));
 
                     if (_pushbackDistance > 0f && ShouldApplyPushback(tr))
                     {

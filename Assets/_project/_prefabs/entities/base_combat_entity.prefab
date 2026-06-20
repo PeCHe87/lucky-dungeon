@@ -303,6 +303,7 @@ GameObject:
   - component: {fileID: 7657992780350737895}
   - component: {fileID: 3778168348497999318}
   - component: {fileID: 6281216324875384146}
+  - component: {fileID: 2669398884229558377}
   m_Layer: 8
   m_Name: base_combat_entity
   m_TagString: Entity
@@ -449,6 +450,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PushbackReceiver
   pushbackResistance: 0
+  pushbackBlockLayers:
+    serializedVersion: 2
+    m_Bits: 0
+--- !u!114 &2669398884229558377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e77387887da5f6b4eab6a09ab0a39776, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
+  faceAttackerOnDamage: 1
+  visualPivot: {fileID: 2000000000000000012}
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0

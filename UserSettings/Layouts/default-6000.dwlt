@@ -327,7 +327,7 @@ MonoBehaviour:
     m_DynamicPanelBehavior: 0
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: 155970
+  m_LastSelectedObjectID: 0
 --- !u!114 &13
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -609,7 +609,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 43.2
+    y: 0
     width: 1536
     height: 36
   m_SerializedDataModeController:
@@ -874,8 +874,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Hierarchy\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 921.60004
-    y: 79.200005
+    x: 1
+    y: 24
     width: 255.59998
     height: 350
   m_SerializedDataModeController:
@@ -980,7 +980,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
-  m_TargetSize: {x: 381, y: 677.8}
+  m_TargetSize: {x: 305, y: 677.8}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -1061,7 +1061,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 79.200005
+    y: 24
     width: 451
     height: 698.8
   m_SerializedDataModeController:
@@ -1093,7 +1093,7 @@ MonoBehaviour:
   m_UseMipMap: 0
   m_SimulatorState:
     controlPanelVisible: 0
-    controlPanelWidth: 0
+    controlPanelWidth: NaN
     controlPanelFoldoutKeys:
     - UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceUIExtension
     - UnityEditor.DeviceSimulation.ApplicationSettingsPlugin
@@ -1106,7 +1106,7 @@ MonoBehaviour:
     - '{"m_SerializationStates":{"thermalFoldout":false,"performanceFoldout":false,"developerFoldout":false,"indexerFoldout":false,"scalersFoldout":false,"deviceSettingsFoldout":false}}'
     - '{}'
     - '{}'
-    scale: 27
+    scale: 10
     fitToScreenEnabled: 1
     rotationDegree: 0
     highlightSafeAreaEnabled: 0
@@ -1173,8 +1173,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Scene\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 452
-    y: 79.200005
+    x: 453
+    y: 24
     width: 467.59998
     height: 698.8
   m_SerializedDataModeController:
@@ -1727,7 +1727,7 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: -0.46529594, y: 0.5330422, z: -0.46980074, w: -0.5279537}
     speed: 2
-    m_Value: {x: -0.46527687, y: 0.5330203, z: -0.4697815, w: -0.52793205}
+    m_Value: {x: -0.4652959, y: 0.5330422, z: -0.46980074, w: -0.5279537}
   m_Size:
     m_Target: 25.896183
     speed: 2
@@ -1786,8 +1786,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Project\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 921.60004
-    y: 455.2
+    x: 1
+    y: 400
     width: 255.59998
     height: 322.8
   m_SerializedDataModeController:
@@ -1835,26 +1835,27 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 51812
-    - m_Data: 51814
-    - m_Data: 51816
-    - m_Data: 51818
-    - m_Data: 51820
-    - m_Data: 51822
-    - m_Data: 51824
-    - m_Data: 51826
-    - m_Data: 51828
-    - m_Data: 51830
-    - m_Data: 51832
-    - m_Data: 51834
-    - m_Data: 51836
-    - m_Data: 51838
-    - m_Data: 51840
-    - m_Data: 51842
-    - m_Data: 51844
-    - m_Data: 51846
-    - m_Data: 51848
-    - m_Data: 51850
+    - m_Data: 51632
+    - m_Data: 51634
+    - m_Data: 51636
+    - m_Data: 51638
+    - m_Data: 51640
+    - m_Data: 51642
+    - m_Data: 51644
+    - m_Data: 51646
+    - m_Data: 51648
+    - m_Data: 51650
+    - m_Data: 51652
+    - m_Data: 51654
+    - m_Data: 51656
+    - m_Data: 51658
+    - m_Data: 51660
+    - m_Data: 51662
+    - m_Data: 51664
+    - m_Data: 51666
+    - m_Data: 51668
+    - m_Data: 51670
+    - m_Data: 51672
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1887,27 +1888,27 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 51812
-    - m_Data: 51816
-    - m_Data: 51818
-    - m_Data: 51820
-    - m_Data: 51822
-    - m_Data: 51824
-    - m_Data: 51826
-    - m_Data: 51830
-    - m_Data: 51832
-    - m_Data: 51834
-    - m_Data: 51836
-    - m_Data: 51840
-    - m_Data: 51844
-    - m_Data: 52194
-    - m_Data: 52222
-    - m_Data: 76528
-    - m_Data: 76532
-    - m_Data: 76534
-    - m_Data: 76540
-    - m_Data: 76542
-    - m_Data: 129972
+    - m_Data: 51632
+    - m_Data: 51634
+    - m_Data: 51636
+    - m_Data: 51638
+    - m_Data: 51640
+    - m_Data: 51642
+    - m_Data: 51644
+    - m_Data: 51646
+    - m_Data: 51648
+    - m_Data: 51650
+    - m_Data: 51652
+    - m_Data: 51654
+    - m_Data: 51656
+    - m_Data: 51658
+    - m_Data: 51660
+    - m_Data: 51662
+    - m_Data: 51664
+    - m_Data: 51666
+    - m_Data: 51668
+    - m_Data: 51670
+    - m_Data: 51672
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2039,8 +2040,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Console\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1179.2001
-    y: 79.200005
+    x: 1180.2
+    y: 24
     width: 355.80005
     height: 698.8
   m_SerializedDataModeController:

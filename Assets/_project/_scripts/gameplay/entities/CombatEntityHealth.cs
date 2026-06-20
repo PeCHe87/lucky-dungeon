@@ -32,6 +32,9 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
     /// <summary>Fired after HP is reduced by a valid hit; argument is damage amount applied this frame.</summary>
     public event Action<float> Damaged;
 
+    /// <summary>Fired after HP is reduced by a valid hit; includes optional attacker metadata.</summary>
+    public event Action<float, DamageHitInfo> DamagedWithHitInfo;
+
     /// <summary>Fired once when HP reaches zero, before the Die FSM state runs.</summary>
     public event Action Died;
 
@@ -44,6 +47,11 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
     }
 
     public void TakeDamage(float amount, DamageNumberStyle style)
+    {
+        TakeDamage(amount, style, default);
+    }
+
+    public void TakeDamage(float amount, DamageNumberStyle style, in DamageHitInfo hitInfo)
     {
         if (_defeated || amount <= 0f)
             return;
@@ -59,6 +67,7 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
 
         _currentHitPoints -= amount;
         Damaged?.Invoke(amount);
+        DamagedWithHitInfo?.Invoke(amount, hitInfo);
         FloatingDamageTextPresenter.Instance?.Spawn(GetDamageNumberWorldPosition(), amount, style);
 
         if (_currentHitPoints <= 0f)

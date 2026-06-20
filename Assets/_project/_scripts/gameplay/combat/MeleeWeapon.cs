@@ -353,7 +353,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                     return false;
                 DamageElement element = ctx.damageElementOverride ?? damageElement;
                 bool isCrit = ctx.forceCritical || (criticalStrikeChance > 0f && Random.value < criticalStrikeChance);
-                dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit));
+                dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit), new DamageHitInfo(ctx.attacker));
 
                 if (pushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection))
                 {

@@ -245,6 +245,23 @@ static class PlayerAnimationEditorSetup
                 dirty = true;
         }
 
+        var attackerFacing = prefabRoot.GetComponent<DamageAttackerFacing>();
+        if (attackerFacing == null)
+        {
+            attackerFacing = prefabRoot.AddComponent<DamageAttackerFacing>();
+            dirty = true;
+        }
+
+        var attackerFacingSo = new SerializedObject(attackerFacing);
+        if (!attackerFacingSo.FindProperty("faceAttackerOnDamage").boolValue)
+        {
+            attackerFacingSo.FindProperty("faceAttackerOnDamage").boolValue = true;
+            dirty = true;
+        }
+
+        if (attackerFacingSo.ApplyModifiedPropertiesWithoutUndo())
+            dirty = true;
+
         if (dirty)
             PrefabUtility.SavePrefabAsset(prefabRoot);
     }

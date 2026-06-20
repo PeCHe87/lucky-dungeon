@@ -8,4 +8,9 @@ public interface IDamageable
     }
 
     void TakeDamage(float amount, DamageNumberStyle style);
+
+    void TakeDamage(float amount, DamageNumberStyle style, in DamageHitInfo hitInfo)
+    {
+        TakeDamage(amount, style);
+    }
 }

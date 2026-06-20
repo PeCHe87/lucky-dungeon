@@ -10,6 +10,7 @@ using UnityEngine;
 public static class EntityCombatPrefabSetup
 {
     const string PrefabPath = "Assets/_project/_prefabs/entities/base_combat_entity.prefab";
+    const string ChaserPrefabPath = "Assets/_project/_prefabs/entities/base_combat_entity_chaser.prefab";
     const string ControllerPath = "Assets/_project/_animation/EntityCombat.controller";
     const string TakeDamageStatePath = "Assets/_project/_fsm/states/State_TakeDamage.asset";
     const string DieStatePath = "Assets/_project/_fsm/states/State_Die.asset";
@@ -17,25 +18,31 @@ public static class EntityCombatPrefabSetup
 
     static EntityCombatPrefabSetup()
     {
-        EditorApplication.delayCall += EnsureCombatEntityPrefab;
+        EditorApplication.delayCall += EnsureCombatEntityPrefabs;
     }
 
     [MenuItem("Tools/Entities/Setup Base Combat Entity Prefab")]
     public static void EnsureCombatEntityPrefabMenu()
     {
-        EnsureCombatEntityPrefab();
+        EnsureCombatEntityPrefabs();
     }
 
-    static void EnsureCombatEntityPrefab()
+    static void EnsureCombatEntityPrefabs()
+    {
+        EnsureCombatEntityPrefab(PrefabPath);
+        EnsureCombatEntityPrefab(ChaserPrefabPath);
+    }
+
+    static void EnsureCombatEntityPrefab(string prefabPath)
     {
         EntityFsmAnimationProfile.EnsureDefaultAssetExists();
 
-        GameObject root = PrefabUtility.LoadPrefabContents(PrefabPath);
+        GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
         try
         {
             if (root.GetComponent<AIStateMachine>() == null)
             {
-                Debug.LogWarning("[EntityCombatPrefabSetup] Skipped: no AIStateMachine on " + PrefabPath);
+                Debug.LogWarning("[EntityCombatPrefabSetup] Skipped: no AIStateMachine on " + prefabPath);
                 return;
             }
 
@@ -94,11 +101,39 @@ public static class EntityCombatPrefabSetup
                 changed = true;
             }
 
+            var attackerFacing = root.GetComponent<DamageAttackerFacing>();
+            if (attackerFacing == null)
+            {
+                attackerFacing = root.AddComponent<DamageAttackerFacing>();
+                changed = true;
+            }
+
+            var attackerFacingSo = new SerializedObject(attackerFacing);
+            if (!attackerFacingSo.FindProperty("faceAttackerOnDamage").boolValue)
+            {
+                attackerFacingSo.FindProperty("faceAttackerOnDamage").boolValue = true;
+                changed = true;
+            }
+
+            Transform body = root.transform.Find("body");
+            if (body != null)
+            {
+                var visualPivot = attackerFacingSo.FindProperty("visualPivot");
+                if (visualPivot.objectReferenceValue != body)
+                {
+                    visualPivot.objectReferenceValue = body;
+                    changed = true;
+                }
+            }
+
+            if (attackerFacingSo.ApplyModifiedPropertiesWithoutUndo())
+                changed = true;
+
             if (!changed)
                 return;
 
-            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
-            Debug.Log("[EntityCombatPrefabSetup] Updated " + PrefabPath);
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Debug.Log("[EntityCombatPrefabSetup] Updated " + prefabPath);
         }
         finally
         {

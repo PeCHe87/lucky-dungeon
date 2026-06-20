@@ -346,6 +346,7 @@ GameObject:
   - component: {fileID: 7219873542029174614}
   - component: {fileID: 5943193764982946597}
   - component: {fileID: 9100000000000000001}
+  - component: {fileID: 7628415799780738255}
   m_Layer: 8
   m_Name: base_combat_entity_chaser
   m_TagString: Entity
@@ -724,6 +725,20 @@ MonoBehaviour:
   indicatorFontSize: 48
   indicatorColor: {r: 1, g: 0.92, b: 0.2, a: 1}
   indicatorCanvasWorldScale: 0.012
+--- !u!114 &7628415799780738255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e77387887da5f6b4eab6a09ab0a39776, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
+  faceAttackerOnDamage: 1
+  visualPivot: {fileID: 2000000000000000012}
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0
