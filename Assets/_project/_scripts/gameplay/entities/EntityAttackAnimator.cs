@@ -21,6 +21,7 @@ public sealed class EntityAttackAnimator : MonoBehaviour
     int _preAttackStateHash;
     int _cancelToStateHash;
     MeleeWeapon _meleeWeapon;
+    RangedWeapon _rangedWeapon;
     bool _attackClipCancelled;
     bool _preAttackClipCancelled;
 
@@ -62,6 +63,7 @@ public sealed class EntityAttackAnimator : MonoBehaviour
             ? 0
             : Animator.StringToHash(cancelToStateName);
         ResolveMeleeWeapon();
+        ResolveRangedWeapon();
     }
 
     void OnEnable()
@@ -133,8 +135,13 @@ public sealed class EntityAttackAnimator : MonoBehaviour
 
         _attackClipCancelled = false;
         ResolveMeleeWeapon();
+        ResolveRangedWeapon();
         animator.CrossFadeInFixedTime(_attackStateHash, crossFadeSeconds, attackLayer, 0f);
-        _meleeWeapon?.ArmHitForCurrentSwing();
+
+        if (weaponHolder != null && weaponHolder.IsRangedEquipped())
+            _rangedWeapon?.ArmFireForCurrentShot();
+        else
+            _meleeWeapon?.ArmHitForCurrentSwing();
     }
 
     void ResolveMeleeWeapon()
@@ -143,5 +150,13 @@ public sealed class EntityAttackAnimator : MonoBehaviour
             _meleeWeapon = current;
         else
             _meleeWeapon = GetComponentInChildren<MeleeWeapon>(true);
+    }
+
+    void ResolveRangedWeapon()
+    {
+        if (weaponHolder != null && weaponHolder.Current is RangedWeapon current)
+            _rangedWeapon = current;
+        else
+            _rangedWeapon = GetComponentInChildren<RangedWeapon>(true);
     }
 }

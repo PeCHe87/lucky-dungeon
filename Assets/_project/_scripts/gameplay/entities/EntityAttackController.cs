@@ -178,6 +178,25 @@ public sealed class EntityAttackController : MonoBehaviour
     public float MeleeApproachStopDistance =>
         weaponHolder?.Current is MeleeWeapon melee ? melee.ApproachStopDistanceFromTarget : 0f;
 
+    /// <summary>NavMesh stopping distance while closing for a ranged strike.</summary>
+    public float RangedApproachStopDistance =>
+        weaponHolder?.Current is RangedWeapon ranged ? ranged.ApproachStopDistanceFromTarget : 0f;
+
+    /// <summary>NavMesh stopping distance for the currently equipped weapon.</summary>
+    public float ApproachStopDistance
+    {
+        get
+        {
+            if (weaponHolder?.Current is MeleeWeapon)
+                return MeleeApproachStopDistance;
+            if (weaponHolder?.Current is RangedWeapon)
+                return RangedApproachStopDistance;
+            return 0f;
+        }
+    }
+
+    public bool IsRangedWeaponEquipped => weaponHolder?.Current is RangedWeapon;
+
     /// <summary>
     /// True when melee should release to chase (beyond overlap and not geometry-pinned).
     /// </summary>

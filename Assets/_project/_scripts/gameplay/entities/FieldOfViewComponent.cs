@@ -11,6 +11,8 @@ public class FieldOfViewComponent : MonoBehaviour
     [SerializeField] Transform moveRoot;
     [Tooltip("Max horizontal (XZ) distance for target detection.")]
     [SerializeField] float detectionRadius = 8f;
+    [Tooltip("Optional latch/loss radius. When > 0, used directly instead of detectionRadius × loss multiplier on EntityAlignmentTargetFinder.")]
+    [SerializeField] float lossDetectionRadius;
     [Tooltip("Total vision cone angle in degrees around forward (XZ plane). 360 = radius-only detection, no cone.")]
     [SerializeField, Range(1f, 360f)] float viewAngle = 90f;
 
@@ -32,12 +34,21 @@ public class FieldOfViewComponent : MonoBehaviour
     public Transform Target => target;
     public bool HasTarget => target != null;
     public float DetectionRadius => detectionRadius;
+    public bool HasExplicitLossRadius => lossDetectionRadius > 0f;
+    public float LossDetectionRadius => HasExplicitLossRadius ? lossDetectionRadius : detectionRadius;
     public float ViewAngle => viewAngle;
     public bool RequireLineOfSightForDetection => requireLineOfSightForDetection;
 
     public void SetTarget(Transform t) => target = t;
 
     public void ClearTarget() => target = null;
+
+    /// <summary>Sets acquisition and optional explicit loss radii (typically from equipped weapon).</summary>
+    public void SetDetectionRadii(float acquireRadius, float lossRadius)
+    {
+        detectionRadius = Mathf.Max(0.01f, acquireRadius);
+        lossDetectionRadius = lossRadius > 0f ? Mathf.Max(detectionRadius, lossRadius) : 0f;
+    }
 
     void Awake()
     {

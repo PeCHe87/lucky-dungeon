@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>Pooled ranged attack: spawns a <see cref="DamageProjectile"/> from <see cref="ProjectilePool"/> on animation fire frame.</summary>
-public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAnimationBinding, IWeaponTargetDetection, IWeaponAttackReadiness
+public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAnimationBinding, IWeaponTargetDetection, IWeaponAttackReadiness, IWeaponAttackRange
 {
     [SerializeField] ProjectilePool projectilePool;
     [Tooltip("World spawn pose uses this transform; offset applied in its local space.")]
@@ -13,6 +13,7 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
     [SerializeField] float projectileLifetime = 3f;
     [Tooltip("0 = no max distance (lifetime only).")]
     [SerializeField] float projectileMaxDistance;
+    [Tooltip("Layers projectile triggers can damage. Player weapons should use CombatHitLayers.PlayerRangedProjectile; enemy weapons should include Player.")]
     [SerializeField] LayerMask hitLayers = ~0;
     [SerializeField] Vector3 spawnOffset;
     [SerializeField] UnityEvent onAttackPerformed;
@@ -35,6 +36,16 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
     public RuntimeAnimatorController AnimatorController => animatorController;
     public PlayerEntityStateAnimationProfile AnimationProfile => animationProfile;
 
+    [Header("Attack range")]
+    [Tooltip("Max horizontal strike distance. 0 = use projectileMaxDistance.")]
+    [SerializeField, Min(0f)] float maxAttackRange;
+    [Tooltip("Target closer than this is out of attack range (entity will reposition).")]
+    [SerializeField, Min(0f)] float minAttackRange = 3f;
+    [Tooltip("Total forward cone angle in degrees. 360 = distance-only.")]
+    [SerializeField, Range(1f, 360f)] float attackConeAngle = 360f;
+    [Tooltip("NavMesh stopping distance buffer subtracted from max attack range.")]
+    [SerializeField, Min(0f)] float approachStopDistanceBuffer = 2f;
+
     [Header("Target detection")]
     [Tooltip("Primary XZ detection radius pushed to NearestTargetQuery when this weapon is equipped.")]
     [SerializeField, Min(0.01f)] float targetDetectionRadius = 15f;
@@ -43,6 +54,12 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
 
     public float TargetDetectionRadius => targetDetectionRadius;
     public float OmnidirectionalDetectionRadius => omnidirectionalDetectionRadius;
+
+    public float EffectiveMaxAttackRange =>
+        maxAttackRange > 0f ? maxAttackRange : (projectileMaxDistance > 0f ? projectileMaxDistance : 20f);
+
+    public float ApproachStopDistanceFromTarget =>
+        Mathf.Max(minAttackRange + 0.5f, EffectiveMaxAttackRange - approachStopDistanceBuffer);
 
     float _cooldownRemaining;
     float _attackActiveTimer;
@@ -80,6 +97,24 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
             if (root != null)
                 root.SetActive(equipped);
         }
+    }
+
+    public bool IsTargetWithinAttackRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
+    {
+        float distance = NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos);
+        if (distance < minAttackRange || distance > EffectiveMaxAttackRange)
+            return false;
+
+        if (attackConeAngle >= 360f)
+            return true;
+
+        Vector3 to = targetWorldPos - origin;
+        to.y = 0f;
+        if (to.sqrMagnitude < 1e-8f)
+            return true;
+        to.Normalize();
+        float halfCone = attackConeAngle * 0.5f;
+        return Vector3.Angle(facingFlat, to) <= halfCone + 0.01f;
     }
 
     public bool TryAttack(in AttackContext ctx) => TryBeginAttack(in ctx);

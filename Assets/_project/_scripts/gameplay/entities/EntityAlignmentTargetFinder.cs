@@ -78,7 +78,7 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
 
         Vector3 origin = fieldOfView.GetDetectionOrigin(_agent);
         float acquireRadius = fieldOfView.DetectionRadius;
-        float lossRadius = acquireRadius * lossRadiusMultiplier;
+        float lossRadius = ResolveLossRadius(acquireRadius);
         Transform previousLatch = _latchedTarget;
 
         if (_latchedTarget != null && !IsTargetStillValid(_latchedTarget, origin, lossRadius))
@@ -238,6 +238,11 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
             _blackboard.Target = target;
     }
 
+    float ResolveLossRadius(float acquireRadius) =>
+        fieldOfView.HasExplicitLossRadius
+            ? fieldOfView.LossDetectionRadius
+            : acquireRadius * lossRadiusMultiplier;
+
     void OnDrawGizmosSelected()
     {
         if (fieldOfView == null)
@@ -247,7 +252,7 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
 
         Vector3 origin = fieldOfView.GetDetectionOrigin(_agent);
         float acquireRadius = fieldOfView.DetectionRadius;
-        float lossRadius = acquireRadius * lossRadiusMultiplier;
+        float lossRadius = ResolveLossRadius(acquireRadius);
 
         NavMeshChaseDriver.DrawXZWireDisc(origin, acquireRadius, new Color(0.25f, 0.9f, 1f, 0.55f));
         NavMeshChaseDriver.DrawXZWireDisc(origin, lossRadius, new Color(0.25f, 0.9f, 1f, 0.2f));

@@ -403,7 +403,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
                 return;
         }
 
-        agent.stoppingDistance = arrivalRadius;
+        agent.stoppingDistance = attackController != null && !attackController.IsMeleeWeaponEquipped
+            ? attackController.ApproachStopDistance
+            : arrivalRadius;
         agent.isStopped = false;
         NavMeshChaseDriver.RefreshChaseDestinationIfNeeded(
             agent,

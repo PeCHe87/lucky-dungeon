@@ -10342,7 +10342,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4088201733402775376, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
       propertyPath: m_Name
-      value: base_combat_entity_chaser_patroller
+      value: base_combat_entity_chaser_patroller_melee
       objectReference: {fileID: 0}
     - target: {fileID: 9027769756202637317, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
       propertyPath: m_LocalPosition.x
@@ -10399,6 +10399,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6934060178787341393, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
   m_PrefabInstance: {fileID: 6069632037596969602}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2181995465182870209 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8293907887644116175, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+  m_PrefabInstance: {fileID: 6069632037596969602}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
 --- !u!1001 &2493902840207305376
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10469,6 +10480,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1929243392}
     m_Modifications:
+    - target: {fileID: 2614154267041728895, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: fieldOfView
+      value: 
+      objectReference: {fileID: 8000000000341959584}
+    - target: {fileID: 2614154267041728895, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: weaponHolder
+      value: 
+      objectReference: {fileID: 2181995465182870209}
     - target: {fileID: 3577614497911487224, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
       propertyPath: 'equippedVisualRoots.Array.data[0]'
       value: 
@@ -10952,6 +10971,17 @@ MonoBehaviour:
   playMaterialFlash: 1
   playHitVfx: 1
   hitDamageVfx: {fileID: 1042536233}
+--- !u!114 &8000000000341959584 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7713640568241068491, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+  m_PrefabInstance: {fileID: 6069632037596969602}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e5f6a708192a3b4c5d6e7f8091a2b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FieldOfViewComponent
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

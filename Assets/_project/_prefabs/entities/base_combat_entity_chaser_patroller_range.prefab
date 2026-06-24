@@ -630,6 +630,7 @@ GameObject:
   - component: {fileID: 6405911739985611451}
   - component: {fileID: 974160349899826416}
   - component: {fileID: 2339245547449331913}
+  - component: {fileID: 8844226611335500221}
   m_Layer: 0
   m_Name: Stander
   m_TagString: Untagged
@@ -691,6 +692,21 @@ MonoBehaviour:
   meleeWeapon: {fileID: 7932441201447975271}
   weaponHolder: {fileID: 8293907887644116175}
   logHitFrameEvents: 0
+--- !u!114 &8844226611335500221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2749163212393997310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 720dcad24b65465449bbf3dbcdc5e7e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RangedAttackAnimationEventReceiver
+  rangedWeapon: {fileID: 3577614497911487224}
+  weaponHolder: {fileID: 8293907887644116175}
+  logFireFrameEvents: 0
 --- !u!1 &2777892808121259166
 GameObject:
   m_ObjectHideFlags: 0
@@ -969,7 +985,7 @@ MonoBehaviour:
   projectileMaxDistance: 45
   hitLayers:
     serializedVersion: 2
-    m_Bits: 2369
+    m_Bits: 3393
   spawnOffset: {x: 0, y: 0, z: 0}
   onAttackPerformed:
     m_PersistentCalls:
@@ -980,9 +996,13 @@ MonoBehaviour:
   pushbackDistance: 0.4
   pushbackDuration: 0.08
   equippedVisualRoots:
-  - {fileID: 0}
+  - {fileID: 924456650385763442}
   animatorController: {fileID: 9100000, guid: b96b7f5ff05fde648bdb8df74d2deade, type: 2}
   animationProfile: {fileID: 11400000, guid: d9884aae61c0b53449b8b7f6c662b7a9, type: 2}
+  maxAttackRange: 0
+  minAttackRange: 3
+  attackConeAngle: 360
+  approachStopDistanceBuffer: 2
   targetDetectionRadius: 15
   omnidirectionalDetectionRadius: 20
 --- !u!1 &3144641206601486897
@@ -1790,6 +1810,7 @@ GameObject:
   - component: {fileID: 954634080178121492}
   - component: {fileID: 5739746715561559543}
   - component: {fileID: 4672761685668651002}
+  - component: {fileID: 2614154267041728895}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_range
   m_TagString: Entity
@@ -1978,6 +1999,7 @@ MonoBehaviour:
   target: {fileID: 0}
   moveRoot: {fileID: 6934060178787341393}
   detectionRadius: 20
+  lossDetectionRadius: 0
   viewAngle: 125
   requireLineOfSightForDetection: 1
   losOriginOffset: {x: 0, y: 1.5, z: 0}
@@ -2076,9 +2098,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
-  startingWeapon: {fileID: 922903480926245887}
+  startingWeapon: {fileID: 3577614497911487224}
   meleeWeapon: {fileID: 7932441201447975271}
-  rangedWeapon: {fileID: 922903480926245887}
+  rangedWeapon: {fileID: 3577614497911487224}
   logEquippedWeaponChanges: 0
 --- !u!114 &5584859218802866874
 MonoBehaviour:
@@ -2183,6 +2205,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
   faceAttackerOnDamage: 1
   visualPivot: {fileID: 3939569336972380752}
+--- !u!114 &2614154267041728895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353573894065297185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 958bb2c278aa8ba43a030bc29aa226a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityWeaponDetectionRadiusSync
+  weaponHolder: {fileID: 0}
+  fieldOfView: {fileID: 0}
 --- !u!1 &7360468481391053212
 GameObject:
   m_ObjectHideFlags: 0
@@ -2937,6 +2973,11 @@ PrefabInstance:
 --- !u!4 &549303641522960072 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 66f0e5410080bb741b469b7f3adc0b29, type: 3}
+  m_PrefabInstance: {fileID: 5978856811958563}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &924456650385763442 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 66f0e5410080bb741b469b7f3adc0b29, type: 3}
   m_PrefabInstance: {fileID: 5978856811958563}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2106096882780075408
