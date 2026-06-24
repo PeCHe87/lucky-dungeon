@@ -40,6 +40,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     readonly HashSet<int> _attackStateHashes = new HashSet<int>();
     int _hitReactStateHash;
     float _hitReactCompletionThreshold = 0.95f;
+    int _deathStateHash;
+    float _deathCompletionThreshold = 0.95f;
     int _lastPlayedHash = int.MinValue;
     int _lastPlayedLayer;
     int _attackComboIndex;
@@ -180,7 +182,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return;
 
         int layer = GetAttackLayer();
-        if (playerEntityState == null || playerEntityState.Current != PlayerEntityStateKind.TakingDamage)
+        if (playerEntityState == null
+            || (playerEntityState.Current != PlayerEntityStateKind.TakingDamage
+                && playerEntityState.Current != PlayerEntityStateKind.Dying))
             DrainQueuedAttackPresses(layer);
         TryApplyPendingLocomotion(layer);
         UpdateAttackReadyPresentation();
@@ -221,7 +225,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     void OnStateChanged(PlayerEntityStateKind previous, PlayerEntityStateKind current)
     {
-        if (current == PlayerEntityStateKind.TakingDamage)
+        if (current == PlayerEntityStateKind.TakingDamage || current == PlayerEntityStateKind.Dying)
         {
             _queuedAttackPressCount = 0;
             _locomotionSyncPending = false;
@@ -336,7 +340,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         _locomotionSyncPending = false;
         if (playerEntityState == null
             || playerEntityState.Current == PlayerEntityStateKind.Attacking
-            || playerEntityState.Current == PlayerEntityStateKind.TakingDamage)
+            || playerEntityState.Current == PlayerEntityStateKind.TakingDamage
+            || playerEntityState.Current == PlayerEntityStateKind.Dying)
             return;
 
         if (ShouldSuppressLocomotionForHeldAttack())
@@ -359,7 +364,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
                 _attackReadyAnimActive = false;
                 if (playerEntityState != null
                     && !IsAttackClipPlaying(GetAttackLayer())
-                    && playerEntityState.Current != PlayerEntityStateKind.TakingDamage)
+                    && playerEntityState.Current != PlayerEntityStateKind.TakingDamage
+                    && playerEntityState.Current != PlayerEntityStateKind.Dying)
                 {
                     PlayForState(playerEntityState.Current, force: false);
                 }
@@ -400,7 +406,11 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return false;
         if (playerEntityState != null && playerEntityState.Current == PlayerEntityStateKind.TakingDamage)
             return false;
+        if (playerEntityState != null && playerEntityState.Current == PlayerEntityStateKind.Dying)
+            return false;
         if (IsHitReactClipPlaying)
+            return false;
+        if (IsDeathClipPlaying)
             return false;
         if (weaponHolder != null
             && weaponHolder.Current is IAttackActivity activity
@@ -498,6 +508,9 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     /// <summary>True while the hurt-react clip is playing and has not reached completion.</summary>
     public bool IsHitReactClipPlaying => IsHitReactClipPlayingOnLayer(GetHitReactLayer());
 
+    /// <summary>True while the death clip is playing and has not reached completion.</summary>
+    public bool IsDeathClipPlaying => IsDeathClipPlayingOnLayer(GetDeathLayer());
+
     /// <summary>True during attack clips, attack-layer transitions, or queued combo inputs.</summary>
     public bool IsMeleeCombatTargetingLocked =>
         IsMeleeAttackClipPlaying
@@ -544,6 +557,29 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return false;
 
         return info.normalizedTime < _hitReactCompletionThreshold;
+    }
+
+    int GetDeathLayer()
+    {
+        if (profile != null
+            && profile.TryGetEntry(PlayerEntityStateKind.Dying, out PlayerEntityStateAnimationEntry entry))
+        {
+            return entry.layer;
+        }
+
+        return 0;
+    }
+
+    bool IsDeathClipPlayingOnLayer(int layer)
+    {
+        if (animator == null || _deathStateHash == 0)
+            return false;
+
+        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(layer);
+        if (info.shortNameHash != _deathStateHash)
+            return false;
+
+        return info.normalizedTime < _deathCompletionThreshold;
     }
 
     void ResolveMeleeWeapon()
@@ -620,6 +656,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         _stateHashes.Clear();
         _attackStateHashes.Clear();
         _hitReactStateHash = 0;
+        _deathStateHash = 0;
         if (profile == null)
             return;
 
@@ -631,6 +668,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             _stateHashes[kind] = Animator.StringToHash(entry.animatorStateName);
             if (kind == PlayerEntityStateKind.TakingDamage)
                 _hitReactStateHash = _stateHashes[kind];
+            if (kind == PlayerEntityStateKind.Dying)
+                _deathStateHash = _stateHashes[kind];
         }
 
         MeleeAttackAnimationSequence sequence = profile.MeleeAttackSequence;

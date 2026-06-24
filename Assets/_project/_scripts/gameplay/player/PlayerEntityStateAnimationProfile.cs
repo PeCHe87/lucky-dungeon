@@ -146,6 +146,13 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
                 crossFadeSeconds = 0.1f,
                 layer = 0,
             },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Dying,
+                animatorStateName = "Die",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
         };
         profile.meleeAttackSequence = new MeleeAttackAnimationSequence
         {
@@ -218,6 +225,13 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
             {
                 kind = PlayerEntityStateKind.TakingDamage,
                 animatorStateName = "Hit",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Dying,
+                animatorStateName = "Die",
                 crossFadeSeconds = 0.1f,
                 layer = 0,
             },

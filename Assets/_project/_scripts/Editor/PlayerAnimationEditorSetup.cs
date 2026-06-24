@@ -25,7 +25,12 @@ static class PlayerAnimationEditorSetup
             LocomotionControllerPath,
             MeleeBlockFbxPath,
             "Fighter_Block_Loop");
+        PlayerBowAnimationEditorSetup.EnsureDieStateOnController(LocomotionControllerPath);
+        PlayerBowAnimationEditorSetup.EnsureDieStateOnController(BowControllerPath);
         EnsureDefaultProfileAttackReadyConfigured();
+        PlayerBowAnimationEditorSetup.EnsureDyingProfileEntry(
+            PlayerEntityStateAnimationProfile.DefaultAssetPath);
+        PlayerBowAnimationEditorSetup.EnsureDyingProfileEntry(BowProfilePath);
         WirePlayerPrefab();
     }
 
@@ -289,6 +294,55 @@ static class PlayerAnimationEditorSetup
             && entityStateSo.FindProperty("hitReact").objectReferenceValue != hitReact)
         {
             entityStateSo.FindProperty("hitReact").objectReferenceValue = hitReact;
+            dirty = true;
+        }
+
+        if (entityStateSo.ApplyModifiedPropertiesWithoutUndo())
+            dirty = true;
+
+        var deathHandler = prefabRoot.GetComponent<PlayerDeathHandler>();
+        if (deathHandler == null)
+        {
+            deathHandler = prefabRoot.AddComponent<PlayerDeathHandler>();
+            dirty = true;
+        }
+
+        var deathHandlerSo = new SerializedObject(deathHandler);
+        if (health != null
+            && deathHandlerSo.FindProperty("health").objectReferenceValue != health)
+        {
+            deathHandlerSo.FindProperty("health").objectReferenceValue = health;
+            dirty = true;
+        }
+
+        if (attackController != null
+            && deathHandlerSo.FindProperty("attackController").objectReferenceValue != attackController)
+        {
+            deathHandlerSo.FindProperty("attackController").objectReferenceValue = attackController;
+            dirty = true;
+        }
+
+        if (movement != null
+            && deathHandlerSo.FindProperty("movement").objectReferenceValue != movement)
+        {
+            deathHandlerSo.FindProperty("movement").objectReferenceValue = movement;
+            dirty = true;
+        }
+
+        if (stateAnimator != null
+            && deathHandlerSo.FindProperty("entityStateAnimator").objectReferenceValue != stateAnimator)
+        {
+            deathHandlerSo.FindProperty("entityStateAnimator").objectReferenceValue = stateAnimator;
+            dirty = true;
+        }
+
+        if (deathHandlerSo.ApplyModifiedPropertiesWithoutUndo())
+            dirty = true;
+
+        if (deathHandler != null
+            && entityStateSo.FindProperty("deathHandler").objectReferenceValue != deathHandler)
+        {
+            entityStateSo.FindProperty("deathHandler").objectReferenceValue = deathHandler;
             dirty = true;
         }
 

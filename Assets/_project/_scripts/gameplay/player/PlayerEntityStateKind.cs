@@ -7,4 +7,5 @@ public enum PlayerEntityStateKind
     Attacking,
     MeleeApproaching,
     TakingDamage,
+    Dying,
 }

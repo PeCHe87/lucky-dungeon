@@ -176,6 +176,10 @@ MonoBehaviour:
   - {fileID: 6685292332853155031}
   animatorController: {fileID: 9100000, guid: b96b7f5ff05fde648bdb8df74d2deade, type: 2}
   animationProfile: {fileID: 11400000, guid: d9884aae61c0b53449b8b7f6c662b7a9, type: 2}
+  maxAttackRange: 0
+  minAttackRange: 3
+  attackConeAngle: 360
+  approachStopDistanceBuffer: 2
   targetDetectionRadius: 15
   omnidirectionalDetectionRadius: 20
 --- !u!1 &1827364555011111101
@@ -1016,6 +1020,7 @@ GameObject:
   - component: {fileID: -6368343191736498815}
   - component: {fileID: 5638600333480182557}
   - component: {fileID: 6697435988216015906}
+  - component: {fileID: -412566731822177401}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1295,6 +1300,7 @@ MonoBehaviour:
   weaponHolder: {fileID: 9012345678901234504}
   attackController: {fileID: 0}
   hitReact: {fileID: -6368343191736498815}
+  deathHandler: {fileID: -412566731822177401}
   moveDeadzone: 0.08
   runThreshold: 0.75
   debugLogState: 0
@@ -1520,6 +1526,23 @@ MonoBehaviour:
   lineWidth: 0.08
   segmentCount: 64
   ringColor: {r: 1, g: 0.55, b: 0.15, a: 0.85}
+--- !u!114 &-412566731822177401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3725f7ebd331b6145b2f5c26ef2d11b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDeathHandler
+  deathFallbackDuration: 2
+  health: {fileID: 9012345678901234521}
+  attackController: {fileID: 9012345678901234505}
+  movement: {fileID: 2798365246320322531}
+  entityStateAnimator: {fileID: -4037862818332867988}
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0
