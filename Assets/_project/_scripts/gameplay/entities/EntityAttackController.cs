@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// AI attack driver: weapon range checks, facing, and <see cref="WeaponHolder.TryAttack"/>.
@@ -35,6 +36,12 @@ public sealed class EntityAttackController : MonoBehaviour
     float _attackBlockedUntil;
     float _telegraphUntil;
     bool _isAttackCommitActive;
+    NavMeshAgent _facingLockAgent;
+    bool _agentUpdateRotationBeforeLock;
+
+    /// <summary>True while PreAttack1 or Attack1 clips are playing on the attack animator layer.</summary>
+    public bool IsCombatFacingLocked =>
+        attackAnimator != null && attackAnimator.IsCombatFacingLocked;
 
     /// <summary>Raised after <see cref="WeaponHolder.TryAttack"/> succeeds.</summary>
     public event Action AttackStarted;
@@ -93,6 +100,8 @@ public sealed class EntityAttackController : MonoBehaviour
     {
         if (_health != null)
             _health.Damaged -= OnDamaged;
+
+        RestoreNavAgentFacingLock();
     }
 
     void OnDamaged(float _)
@@ -360,8 +369,39 @@ public sealed class EntityAttackController : MonoBehaviour
 
     public void FaceTarget(Transform target)
     {
-        if (target != null)
-            SnapFacingToward(target.position);
+        if (target == null || IsCombatFacingLocked)
+            return;
+
+        SnapFacingToward(target.position);
+    }
+
+    public void SyncNavAgentFacingLock(NavMeshAgent agent)
+    {
+        if (IsCombatFacingLocked)
+        {
+            if (_facingLockAgent != agent)
+            {
+                RestoreNavAgentFacingLock();
+                _facingLockAgent = agent;
+                if (agent != null)
+                {
+                    _agentUpdateRotationBeforeLock = agent.updateRotation;
+                    agent.updateRotation = false;
+                }
+            }
+
+            return;
+        }
+
+        RestoreNavAgentFacingLock();
+    }
+
+    void RestoreNavAgentFacingLock()
+    {
+        if (_facingLockAgent != null)
+            _facingLockAgent.updateRotation = _agentUpdateRotationBeforeLock;
+
+        _facingLockAgent = null;
     }
 
     void SnapFacingToward(Vector3 worldPos)

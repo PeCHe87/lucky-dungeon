@@ -43,6 +43,26 @@ public sealed class EntityAttackAnimator : MonoBehaviour
         }
     }
 
+    public bool IsPreAttackClipPlaying
+    {
+        get
+        {
+            if (_preAttackClipCancelled)
+                return false;
+
+            if (animator == null || _preAttackStateHash == 0)
+                return false;
+
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(attackLayer);
+            if (info.shortNameHash != _preAttackStateHash)
+                return false;
+
+            return info.normalizedTime < attackCompletionNormalizedTime;
+        }
+    }
+
+    public bool IsCombatFacingLocked => IsPreAttackClipPlaying || IsAttackClipPlaying;
+
     void Awake()
     {
         if (attackController == null)

@@ -119,6 +119,8 @@ public static class EntityNavChaseAttackSupport
         if (attackController == null)
             return AttackTickResult.ResumeChasing;
 
+        attackController.SyncNavAgentFacingLock(agent);
+
         if (attackController.IsOnlyDamageBlocked)
         {
             if (agent != null)
@@ -149,6 +151,8 @@ public static class EntityNavChaseAttackSupport
     {
         if (attackController == null)
             return AttackTickResult.ResumeChasing;
+
+        attackController.SyncNavAgentFacingLock(agent);
 
         if (attackController.IsOnlyDamageBlocked)
         {
@@ -213,10 +217,12 @@ public static class EntityNavChaseAttackSupport
 
         if (attackController.IsBusy)
         {
+            attackController.SyncNavAgentFacingLock(agent);
             agent.isStopped = true;
             return;
         }
 
+        attackController.SyncNavAgentFacingLock(agent);
         attackController.FaceTarget(target);
 
         float retreatStopDistance = attackController.RangedRetreatStopDistanceFromTarget;

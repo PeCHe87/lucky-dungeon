@@ -229,6 +229,7 @@ public class AttackStateHandler : IStateHandler
             return;
 
         var agent = FSMNavMesh.GetAgent(bb);
+        attack.SyncNavAgentFacingLock(agent);
         attack.FaceTarget(bb.Target);
 
         if (attack.IsBusy)
