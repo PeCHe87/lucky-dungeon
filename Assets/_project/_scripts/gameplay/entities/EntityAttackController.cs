@@ -197,6 +197,25 @@ public sealed class EntityAttackController : MonoBehaviour
 
     public bool IsRangedWeaponEquipped => weaponHolder?.Current is RangedWeapon;
 
+    public bool IsTargetTooCloseForRanged(Transform target)
+    {
+        if (target == null || weaponHolder?.Current is not RangedWeapon ranged)
+            return false;
+
+        return ranged.IsTargetTooClose(AttackOriginTransform.position, target.position);
+    }
+
+    public bool IsTargetBeyondMaxRangedEngagement(Transform target)
+    {
+        if (target == null || weaponHolder?.Current is not RangedWeapon ranged)
+            return true;
+
+        return ranged.IsTargetBeyondMaxRange(AttackOriginTransform.position, target.position);
+    }
+
+    public float RangedRetreatStopDistanceFromTarget =>
+        weaponHolder?.Current is RangedWeapon ranged ? ranged.RetreatStopDistanceFromTarget : 0f;
+
     /// <summary>
     /// True when melee should release to chase (beyond overlap and not geometry-pinned).
     /// </summary>
@@ -212,6 +231,9 @@ public sealed class EntityAttackController : MonoBehaviour
 
         if (weaponHolder.Current is MeleeWeapon)
             return ShouldReleaseMeleeEngagement(target);
+
+        if (weaponHolder.Current is RangedWeapon)
+            return IsTargetBeyondMaxRangedEngagement(target);
 
         return !IsTargetInAttackRange(target);
     }

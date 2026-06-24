@@ -403,6 +403,13 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
                 return;
         }
 
+        if (attackController != null
+            && attackController.IsTargetTooCloseForRanged(fieldOfView.Target))
+        {
+            EntityNavChaseAttackSupport.UpdateRangedAttackRetreat(attackController, fieldOfView.Target, agent);
+            return;
+        }
+
         agent.stoppingDistance = attackController != null && !attackController.IsMeleeWeaponEquipped
             ? attackController.ApproachStopDistance
             : arrivalRadius;

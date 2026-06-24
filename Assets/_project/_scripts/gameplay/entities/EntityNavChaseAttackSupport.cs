@@ -184,7 +184,7 @@ public static class EntityNavChaseAttackSupport
             return abortResult;
 
         UpdateMeleeAttackApproach(attackController, target, agent);
-        HoldPositionIfNotMelee(attackController, agent);
+        UpdateRangedEngagementMovement(attackController, target, agent);
 
         if (attackController.CanStrikeTarget(target))
         {
@@ -195,6 +195,74 @@ public static class EntityNavChaseAttackSupport
         }
 
         return AttackTickResult.StayAttacking;
+    }
+
+    public static void UpdateRangedAttackRetreat(
+        EntityAttackController attackController,
+        Transform target,
+        NavMeshAgent agent)
+    {
+        if (attackController == null || target == null || agent == null)
+            return;
+
+        if (!attackController.IsRangedWeaponEquipped)
+            return;
+
+        if (!attackController.IsTargetTooCloseForRanged(target))
+            return;
+
+        if (attackController.IsBusy)
+        {
+            agent.isStopped = true;
+            return;
+        }
+
+        attackController.FaceTarget(target);
+
+        float retreatStopDistance = attackController.RangedRetreatStopDistanceFromTarget;
+        if (retreatStopDistance <= 0f)
+            return;
+
+        Vector3 origin = attackController.AttackOriginTransform.position;
+        Vector3 targetPos = target.position;
+        Vector3 away = origin - targetPos;
+        away.y = 0f;
+        if (away.sqrMagnitude < 1e-8f)
+        {
+            away = attackController.AttackFacingTransform.forward;
+            away.y = 0f;
+        }
+
+        if (away.sqrMagnitude < 1e-8f)
+            away = Vector3.back;
+        else
+            away.Normalize();
+
+        Vector3 desiredPos = targetPos + away * retreatStopDistance;
+        agent.isStopped = false;
+        agent.stoppingDistance = 0.25f;
+
+        if (NavMesh.SamplePosition(desiredPos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            agent.SetDestination(hit.position);
+        else
+            agent.SetDestination(origin + away * 2f);
+    }
+
+    public static void UpdateRangedEngagementMovement(
+        EntityAttackController attackController,
+        Transform target,
+        NavMeshAgent agent)
+    {
+        if (attackController == null || agent == null || !attackController.IsRangedWeaponEquipped)
+            return;
+
+        if (target != null && attackController.IsTargetTooCloseForRanged(target))
+        {
+            UpdateRangedAttackRetreat(attackController, target, agent);
+            return;
+        }
+
+        HoldPositionIfNotMelee(attackController, agent);
     }
 
     public static void HoldPositionIfNotMelee(EntityAttackController attackController, NavMeshAgent agent)
@@ -218,7 +286,7 @@ public static class EntityNavChaseAttackSupport
             return abortResult;
 
         UpdateMeleeAttackApproach(attackController, target, agent);
-        HoldPositionIfNotMelee(attackController, agent);
+        UpdateRangedEngagementMovement(attackController, target, agent);
 
         if (attackController.CanStrikeTarget(target))
         {

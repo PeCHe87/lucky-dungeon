@@ -213,7 +213,7 @@ public class AttackStateHandler : IStateHandler
         if (attack != null && bb.Target != null)
         {
             EntityNavChaseAttackSupport.UpdateMeleeAttackApproach(attack, bb.Target, agent);
-            EntityNavChaseAttackSupport.HoldPositionIfNotMelee(attack, agent);
+            EntityNavChaseAttackSupport.UpdateRangedEngagementMovement(attack, bb.Target, agent);
             if (attack.CanStrikeTarget(bb.Target))
                 attack.TryAttackTarget(bb.Target);
         }
@@ -239,7 +239,7 @@ public class AttackStateHandler : IStateHandler
         }
 
         EntityNavChaseAttackSupport.UpdateMeleeAttackApproach(attack, bb.Target, agent);
-        EntityNavChaseAttackSupport.HoldPositionIfNotMelee(attack, agent);
+        EntityNavChaseAttackSupport.UpdateRangedEngagementMovement(attack, bb.Target, agent);
 
         if (attack.CanStrikeTarget(bb.Target))
             attack.TryAttackTarget(bb.Target);

@@ -61,6 +61,17 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
     public float ApproachStopDistanceFromTarget =>
         Mathf.Max(minAttackRange + 0.5f, EffectiveMaxAttackRange - approachStopDistanceBuffer);
 
+    public float MinAttackRange => minAttackRange;
+
+    public bool IsTargetTooClose(Vector3 origin, Vector3 targetWorldPos) =>
+        minAttackRange > 0f
+        && NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos) < minAttackRange;
+
+    public bool IsTargetBeyondMaxRange(Vector3 origin, Vector3 targetWorldPos) =>
+        NavMeshChaseDriver.HorizontalDistance(origin, targetWorldPos) > EffectiveMaxAttackRange;
+
+    public float RetreatStopDistanceFromTarget => minAttackRange + 0.5f;
+
     float _cooldownRemaining;
     float _attackActiveTimer;
     bool _hasArmedContext;
