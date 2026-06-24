@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>Pooled ranged attack: spawns a <see cref="DamageProjectile"/> from <see cref="ProjectilePool"/> on animation fire frame.</summary>
-public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAnimationBinding, IWeaponTargetDetection
+public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAnimationBinding, IWeaponTargetDetection, IWeaponAttackReadiness
 {
     [SerializeField] ProjectilePool projectilePool;
     [Tooltip("World spawn pose uses this transform; offset applied in its local space.")]
@@ -52,6 +52,8 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresen
     AttackContext _pendingFireContext;
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
+
+    public bool IsAttackReady => _cooldownRemaining <= 0f;
 
     public void CancelAttack()
     {

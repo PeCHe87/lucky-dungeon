@@ -9,6 +9,8 @@ static class PlayerAnimationEditorSetup
     const string LocomotionControllerPath = "Assets/_project/_animation/PlayerLocomotion.controller";
     const string BowControllerPath = PlayerBowAnimationEditorSetup.BowControllerPath;
     const string BowProfilePath = PlayerBowAnimationEditorSetup.BowProfilePath;
+    const string MeleeBlockFbxPath =
+        "Assets/_assetStore/Shinabro/Platform_Animation/Animation/09_Fighter/Stander@Fighter_Block.FBX";
 
     static PlayerAnimationEditorSetup()
     {
@@ -19,7 +21,30 @@ static class PlayerAnimationEditorSetup
     {
         PlayerEntityStateAnimationProfile.EnsureDefaultAssetExists();
         PlayerBowAnimationEditorSetup.EnsureBowAssetsExist();
+        PlayerBowAnimationEditorSetup.EnsureAttackReadyStateOnController(
+            LocomotionControllerPath,
+            MeleeBlockFbxPath,
+            "Fighter_Block_Loop");
+        EnsureDefaultProfileAttackReadyConfigured();
         WirePlayerPrefab();
+    }
+
+    static void EnsureDefaultProfileAttackReadyConfigured()
+    {
+        var profile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(
+            PlayerEntityStateAnimationProfile.DefaultAssetPath);
+        if (profile == null)
+            return;
+
+        var so = new SerializedObject(profile);
+        var readyState = so.FindProperty("attackReadyAnimatorStateName");
+        if (string.IsNullOrWhiteSpace(readyState.stringValue))
+        {
+            readyState.stringValue = "AttackReady";
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
     }
 
     static void WirePlayerPrefab()

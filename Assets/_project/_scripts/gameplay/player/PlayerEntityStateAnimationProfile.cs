@@ -8,11 +8,20 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
     [SerializeField, Min(0f)] float defaultCrossFadeSeconds = 0.15f;
     [SerializeField] List<PlayerEntityStateAnimationEntry> entries = new List<PlayerEntityStateAnimationEntry>();
     [SerializeField] MeleeAttackAnimationSequence meleeAttackSequence;
+    [SerializeField] string attackReadyAnimatorStateName;
+    [SerializeField, Min(0f)] float attackReadyCrossFadeSeconds;
 
     Dictionary<PlayerEntityStateKind, PlayerEntityStateAnimationEntry> _cache;
     bool _cacheBuilt;
 
     public float DefaultCrossFadeSeconds => defaultCrossFadeSeconds;
+
+    public bool HasAttackReadyState => !string.IsNullOrWhiteSpace(attackReadyAnimatorStateName);
+
+    public string AttackReadyAnimatorStateName => attackReadyAnimatorStateName;
+
+    public float ResolveAttackReadyCrossFadeSeconds() =>
+        attackReadyCrossFadeSeconds > 0f ? attackReadyCrossFadeSeconds : defaultCrossFadeSeconds;
 
     public bool TryGetEntry(PlayerEntityStateKind kind, out PlayerEntityStateAnimationEntry entry)
     {
@@ -91,6 +100,8 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
 
         var profile = CreateInstance<PlayerEntityStateAnimationProfile>();
         profile.defaultCrossFadeSeconds = 0.15f;
+        profile.attackReadyAnimatorStateName = "AttackReady";
+        profile.attackReadyCrossFadeSeconds = 0.15f;
         profile.entries = new List<PlayerEntityStateAnimationEntry>
         {
             new PlayerEntityStateAnimationEntry
@@ -164,6 +175,8 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
 
         var profile = CreateInstance<PlayerEntityStateAnimationProfile>();
         profile.defaultCrossFadeSeconds = 0.15f;
+        profile.attackReadyAnimatorStateName = "AttackReady";
+        profile.attackReadyCrossFadeSeconds = 0.15f;
         profile.entries = new List<PlayerEntityStateAnimationEntry>
         {
             new PlayerEntityStateAnimationEntry

@@ -47,6 +47,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     int _queuedAttackPressCount;
     bool _locomotionSyncPending;
     bool _wasMeleeCombatTargetingLocked;
+    bool _attackReadyAnimActive;
 
     void Awake()
     {
@@ -156,6 +157,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         _queuedAttackPressCount = 0;
         _locomotionSyncPending = false;
         _meleeApproachAnimActive = false;
+        _attackReadyAnimActive = false;
         _lastPlayedHash = int.MinValue;
 
         ResolveMeleeWeapon();
@@ -181,6 +183,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (playerEntityState == null || playerEntityState.Current != PlayerEntityStateKind.TakingDamage)
             DrainQueuedAttackPresses(layer);
         TryApplyPendingLocomotion(layer);
+        UpdateAttackReadyPresentation();
         UpdateCombatFocusLockGrace();
     }
 
@@ -223,6 +226,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             _queuedAttackPressCount = 0;
             _locomotionSyncPending = false;
             _meleeApproachAnimActive = false;
+            _attackReadyAnimActive = false;
             PlayForState(current, force: true);
             return;
         }
@@ -283,6 +287,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         _locomotionSyncPending = false;
         _attackComboIndex = 0;
         _meleeApproachAnimActive = false;
+        _attackReadyAnimActive = false;
 
         if (playerEntityState == null || profile == null)
             return;
@@ -338,6 +343,71 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return;
 
         PlayForState(playerEntityState.Current, force: false);
+    }
+
+    void UpdateAttackReadyPresentation()
+    {
+        if (animator == null || profile == null)
+            return;
+
+        bool shouldShow = ShouldShowAttackReadyStance();
+
+        if (!shouldShow)
+        {
+            if (_attackReadyAnimActive)
+            {
+                _attackReadyAnimActive = false;
+                if (playerEntityState != null
+                    && !IsAttackClipPlaying(GetAttackLayer())
+                    && playerEntityState.Current != PlayerEntityStateKind.TakingDamage)
+                {
+                    PlayForState(playerEntityState.Current, force: false);
+                }
+            }
+
+            return;
+        }
+
+        int layer = GetLocomotionLayer();
+        int stateHash = Animator.StringToHash(profile.AttackReadyAnimatorStateName);
+        AnimatorStateInfo currentInfo = animator.GetCurrentAnimatorStateInfo(layer);
+        if (_attackReadyAnimActive
+            && currentInfo.shortNameHash == stateHash
+            && stateHash == _lastPlayedHash
+            && layer == _lastPlayedLayer)
+        {
+            return;
+        }
+
+        _attackReadyAnimActive = true;
+        _meleeApproachAnimActive = false;
+        CrossFadeToStateHash(stateHash, profile.ResolveAttackReadyCrossFadeSeconds(), layer, force: false);
+    }
+
+    bool ShouldShowAttackReadyStance()
+    {
+        if (attackController == null || profile == null || !profile.HasAttackReadyState)
+            return false;
+        if (!attackController.IsAttackInputHeld)
+            return false;
+        if (!attackController.IsCurrentWeaponOnCooldown)
+            return false;
+        if (IsAttackClipPlaying(GetAttackLayer()))
+            return false;
+        if (HasMoveIntentAboveDeadzone())
+            return false;
+        if (_meleeApproachAnimActive || attackController.IsMeleeApproaching)
+            return false;
+        if (playerEntityState != null && playerEntityState.Current == PlayerEntityStateKind.TakingDamage)
+            return false;
+        if (IsHitReactClipPlaying)
+            return false;
+        if (weaponHolder != null
+            && weaponHolder.Current is IAttackActivity activity
+            && activity.IsAttackActive)
+            return false;
+
+        return true;
     }
 
     bool ShouldSuppressLocomotionForHeldAttack()
@@ -498,6 +568,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return;
 
         _meleeApproachAnimActive = false;
+        _attackReadyAnimActive = false;
 
         int stateHash = Animator.StringToHash(stateName);
         animator.Play(stateHash, layer, 0f);
@@ -607,10 +678,17 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (!force && alreadyOnState)
         {
             _meleeApproachAnimActive = false;
+            if (stateHash != Animator.StringToHash(profile != null ? profile.AttackReadyAnimatorStateName : string.Empty))
+                _attackReadyAnimActive = false;
             return;
         }
 
         _meleeApproachAnimActive = false;
+        if (profile == null
+            || stateHash != Animator.StringToHash(profile.AttackReadyAnimatorStateName))
+        {
+            _attackReadyAnimActive = false;
+        }
 
         animator.CrossFadeInFixedTime(stateHash, crossFadeSeconds, layer, 0f);
 

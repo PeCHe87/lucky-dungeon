@@ -48,6 +48,11 @@ public sealed class PlayerAttackController : MonoBehaviour
     public bool IsAttackInputHeld =>
         _attackProvider != null && _attackProvider.IsAttackHeld();
 
+    public bool IsCurrentWeaponOnCooldown =>
+        weaponHolder != null
+        && weaponHolder.Current is IWeaponAttackReadiness readiness
+        && !readiness.IsAttackReady;
+
     void Awake()
     {
         if (attackIntentProvider != null)
@@ -140,7 +145,8 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (entityStateAnimator != null
             && entityStateAnimator.IsMeleeAttackClipPlaying
             && held
-            && !pressed)
+            && !pressed
+            && weaponHolder.Current is MeleeWeapon)
             return;
 
         if (!TryBuildAttackContext(out AttackContext ctx))
@@ -154,13 +160,8 @@ public sealed class PlayerAttackController : MonoBehaviour
         else
             performed = weaponHolder.TryAttack(in ctx);
 
-        if (!_meleeApproachPending)
-        {
-            if (pressed)
-                AttackPressed?.Invoke(true);
-            else if (performed)
-                AttackPressed?.Invoke(false);
-        }
+        if (!_meleeApproachPending && performed)
+            AttackPressed?.Invoke(pressed);
 
         if (performed)
         {

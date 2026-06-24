@@ -12,6 +12,11 @@ static class PlayerBowAnimationEditorSetup
     const string DamageHitFbxPath =
         "Assets/_assetStore/Shinabro/Platform_Animation/Animation/98_Damage/Stander@Damage2.FBX";
 
+    const string BowBlockFbxPath =
+        "Assets/_assetStore/Shinabro/Platform_Animation/Animation/04_Bow/Stander@Bow_Block.FBX";
+
+    const string AttackReadyStateName = "AttackReady";
+
     static readonly (string fbxPath, string clipName)[] BowLocomotionClips =
     {
         ("Assets/_assetStore/Shinabro/Platform_Animation/Animation/04_Bow/Stander@Bow_Idle.FBX", "Bow_Idle"),
@@ -27,6 +32,8 @@ static class PlayerBowAnimationEditorSetup
         EnsureAnimationFolderExists();
         RangedAttackAnimationEventSetup.EnsureRangedFireAnimationEvents();
         EnsureBowControllerExists();
+        EnsureAttackReadyStateOnController(BowControllerPath, BowBlockFbxPath, "Bow_Block_Loop");
+        EnsureBowProfileAttackReadyConfigured();
         PlayerEntityStateAnimationProfile.EnsureBowAssetExists();
     }
 
@@ -54,11 +61,51 @@ static class PlayerBowAnimationEditorSetup
         AddState(root, "Dashing", LoadClip(BowLocomotionClips[3].fbxPath, BowLocomotionClips[3].clipName));
         AddState(root, "Attacking1", LoadClip(BowLocomotionClips[4].fbxPath, BowLocomotionClips[4].clipName), 1f);
         AddState(root, "Attacking2", LoadClip(BowLocomotionClips[5].fbxPath, BowLocomotionClips[5].clipName), 1f);
+        AddState(root, AttackReadyStateName, LoadClip(BowBlockFbxPath, "Bow_Block_Loop"));
         AddState(root, "Hit", LoadClip(DamageHitFbxPath, "Damage2"));
 
         root.defaultState = root.states[0].state;
         EditorUtility.SetDirty(controller);
         AssetDatabase.SaveAssets();
+    }
+
+    public static void EnsureAttackReadyStateOnController(string controllerPath, string fbxPath, string clipName)
+    {
+        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+        if (controller == null)
+            return;
+
+        AnimatorStateMachine root = controller.layers[0].stateMachine;
+        for (int i = 0; i < root.states.Length; i++)
+        {
+            if (string.Equals(root.states[i].state.name, AttackReadyStateName, StringComparison.Ordinal))
+                return;
+        }
+
+        AnimationClip clip = LoadClip(fbxPath, clipName);
+        if (clip == null)
+            return;
+
+        AddState(root, AttackReadyStateName, clip);
+        EditorUtility.SetDirty(controller);
+        AssetDatabase.SaveAssets();
+    }
+
+    static void EnsureBowProfileAttackReadyConfigured()
+    {
+        var profile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(BowProfilePath);
+        if (profile == null)
+            return;
+
+        var so = new SerializedObject(profile);
+        var readyState = so.FindProperty("attackReadyAnimatorStateName");
+        if (string.IsNullOrWhiteSpace(readyState.stringValue))
+        {
+            readyState.stringValue = AttackReadyStateName;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
     }
 
     static void AddState(AnimatorStateMachine root, string stateName, AnimationClip clip, float speed = 1f)
