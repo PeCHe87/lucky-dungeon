@@ -11,6 +11,7 @@ public sealed class EntityAttackAnimator : MonoBehaviour
     [SerializeField] Animator animator;
     [SerializeField] string attackStateName = "Attack1";
     [SerializeField] string preAttackStateName = "PreAttack1";
+    [SerializeField] string betweenAttackStateName = "AttackReady";
     [SerializeField] int attackLayer;
     [SerializeField, Min(0f)] float crossFadeSeconds = 0.08f;
     [Tooltip("Treat attack clip as playing until normalized time reaches this value (0-1).")]
@@ -19,6 +20,7 @@ public sealed class EntityAttackAnimator : MonoBehaviour
 
     int _attackStateHash;
     int _preAttackStateHash;
+    int _betweenAttackStateHash;
     int _cancelToStateHash;
     MeleeWeapon _meleeWeapon;
     RangedWeapon _rangedWeapon;
@@ -63,6 +65,21 @@ public sealed class EntityAttackAnimator : MonoBehaviour
 
     public bool IsCombatFacingLocked => IsPreAttackClipPlaying || IsAttackClipPlaying;
 
+    public bool IsBetweenAttackIdlePlaying
+    {
+        get
+        {
+            if (animator == null)
+                return false;
+
+            int targetHash = _betweenAttackStateHash != 0 ? _betweenAttackStateHash : _cancelToStateHash;
+            if (targetHash == 0)
+                return false;
+
+            return animator.GetCurrentAnimatorStateInfo(attackLayer).shortNameHash == targetHash;
+        }
+    }
+
     void Awake()
     {
         if (attackController == null)
@@ -79,6 +96,9 @@ public sealed class EntityAttackAnimator : MonoBehaviour
         _preAttackStateHash = string.IsNullOrWhiteSpace(preAttackStateName)
             ? 0
             : Animator.StringToHash(preAttackStateName);
+        _betweenAttackStateHash = string.IsNullOrWhiteSpace(betweenAttackStateName)
+            ? 0
+            : Animator.StringToHash(betweenAttackStateName);
         _cancelToStateHash = string.IsNullOrWhiteSpace(cancelToStateName)
             ? 0
             : Animator.StringToHash(cancelToStateName);
@@ -146,6 +166,25 @@ public sealed class EntityAttackAnimator : MonoBehaviour
             return;
 
         animator.CrossFadeInFixedTime(_cancelToStateHash, crossFadeSeconds, attackLayer, 0f);
+    }
+
+    public void PlayBetweenAttackIdle()
+    {
+        int targetHash = _betweenAttackStateHash != 0 ? _betweenAttackStateHash : _cancelToStateHash;
+        if (animator == null || targetHash == 0)
+            return;
+
+        _attackClipCancelled = false;
+        _preAttackClipCancelled = false;
+        animator.CrossFadeInFixedTime(targetHash, crossFadeSeconds, attackLayer, 0f);
+    }
+
+    public void SustainBetweenAttackIdle()
+    {
+        if (IsBetweenAttackIdlePlaying)
+            return;
+
+        PlayBetweenAttackIdle();
     }
 
     void PlayAttackClip()

@@ -25,12 +25,14 @@ public static class EntityNavChaseAttackSupport
         Failed,
         PreAttacking,
         Attacking,
+        AttackReady,
     }
 
     public enum AttackTickResult
     {
         StayAttacking,
         StayPreAttacking,
+        StayAttackReady,
         ResumeChasing,
         ResumeSearching,
     }
@@ -40,6 +42,18 @@ public static class EntityNavChaseAttackSupport
         hasChaseSample = false;
         if (agent != null)
             agent.isStopped = false;
+    }
+
+    public static void SyncChaseFacing(
+        EntityAttackController attackController,
+        Transform target,
+        NavMeshAgent agent)
+    {
+        if (attackController == null || target == null)
+            return;
+
+        attackController.SyncNavAgentFacingLock(agent);
+        attackController.FaceTarget(target);
     }
 
     public static bool TryBeginAttackPhase(
@@ -88,6 +102,7 @@ public static class EntityNavChaseAttackSupport
         agent.isStopped = false;
         agent.stoppingDistance = stopDistance;
         agent.SetDestination(target.position);
+        attackController.FaceTarget(target);
     }
 
     public static AttackPhaseBeginResult TryBeginPreAttackPhase(
@@ -97,6 +112,9 @@ public static class EntityNavChaseAttackSupport
     {
         if (!TryBeginAttackPhase(attackController, target, agent))
             return AttackPhaseBeginResult.Failed;
+
+        if (attackController.IsWaitingForNextAttack)
+            return AttackPhaseBeginResult.AttackReady;
 
         if (attackController.EnablePreAttackTelegraph)
         {
@@ -143,6 +161,96 @@ public static class EntityNavChaseAttackSupport
         return AttackTickResult.StayAttacking;
     }
 
+    public static AttackTickResult TickAttackReadyPhase(
+        EntityAttackController attackController,
+        FieldOfViewComponent fieldOfView,
+        NavMeshAgent agent,
+        Vector3 origin)
+    {
+        if (attackController == null)
+            return AttackTickResult.ResumeChasing;
+
+        attackController.SyncNavAgentFacingLock(agent);
+
+        if (attackController.IsInTakeDamageFsm)
+            return AttackTickResult.StayAttackReady;
+
+        if (!fieldOfView.HasTarget)
+            return AttackTickResult.ResumeSearching;
+
+        if (attackController.IsOnlyDamageBlocked)
+        {
+            if (ShouldHoldAttackReadyDuringCooldown(attackController))
+                return HoldAttackReadyDuringCooldown(attackController, fieldOfView.Target, agent);
+
+            if (agent != null)
+                agent.isStopped = false;
+            return AttackTickResult.ResumeChasing;
+        }
+
+        Transform target = fieldOfView.Target;
+        attackController.FaceTarget(target);
+
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        if (ShouldHoldAttackReadyDuringCooldown(attackController))
+            return HoldAttackReadyDuringCooldown(attackController, target, agent);
+
+        if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
+            return abortResult;
+
+        UpdateMeleeAttackApproach(attackController, target, agent);
+        UpdateRangedEngagementMovement(attackController, target, agent);
+
+        if (!attackController.CanStrikeTarget(target))
+            return StayAttackReadyWithSustain(attackController);
+
+        if (attackController.EnablePreAttackTelegraph && attackController.TryBeginPreAttack(target))
+            return AttackTickResult.StayPreAttacking;
+
+        if (attackController.TryAttackTarget(target))
+            return AttackTickResult.StayAttacking;
+
+        return StayAttackReadyWithSustain(attackController);
+    }
+
+    static AttackTickResult StayAttackReadyWithSustain(EntityAttackController attackController)
+    {
+        if (attackController.IsInTakeDamageFsm)
+            return AttackTickResult.StayAttackReady;
+
+        if (!attackController.IsHoldingAttackReadyStance)
+            attackController.EnterBetweenAttackRecovery();
+        else
+            attackController.SustainBetweenAttackRecovery();
+
+        return AttackTickResult.StayAttackReady;
+    }
+
+    static bool ShouldHoldAttackReadyDuringCooldown(EntityAttackController attackController) =>
+        attackController != null
+        && attackController.EnableBetweenAttackRecovery
+        && attackController.IsWaitingForNextAttack;
+
+    static AttackTickResult HoldAttackReadyDuringCooldown(
+        EntityAttackController attackController,
+        Transform target,
+        NavMeshAgent agent)
+    {
+        attackController.FaceTarget(target);
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        return StayAttackReadyWithSustain(attackController);
+    }
+
     public static AttackTickResult TickAttackPhase(
         EntityAttackController attackController,
         FieldOfViewComponent fieldOfView,
@@ -183,6 +291,9 @@ public static class EntityNavChaseAttackSupport
 
         if (!fieldOfView.HasTarget)
             return AttackTickResult.ResumeSearching;
+
+        if (ShouldHoldAttackReadyDuringCooldown(attackController))
+            return HoldAttackReadyDuringCooldown(attackController, target, agent);
 
         if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
             return abortResult;
@@ -287,6 +398,9 @@ public static class EntityNavChaseAttackSupport
     {
         if (!fieldOfView.HasTarget)
             return AttackTickResult.ResumeSearching;
+
+        if (ShouldHoldAttackReadyDuringCooldown(attackController))
+            return HoldAttackReadyDuringCooldown(attackController, target, agent);
 
         if (ShouldAbortAttackEngagement(attackController, target, agent, out AttackTickResult abortResult))
             return abortResult;

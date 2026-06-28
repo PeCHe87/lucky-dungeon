@@ -13,6 +13,7 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
         TargetDetected,
         Chasing,
         Arrived,
+        AttackReady,
         PreAttacking,
         Attacking,
     }
@@ -99,6 +100,15 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             return;
         }
 
+        if (_phase == Phase.AttackReady
+            && attackController != null
+            && attackController.EnableBetweenAttackRecovery
+            && attackController.IsWaitingForNextAttack
+            && !attackController.IsActivelyAttacking)
+        {
+            return;
+        }
+
         targetDetectedTelegraph?.Cancel();
         _phase = Phase.Chasing;
         EntityNavChaseAttackSupport.ResetToChaseAfterDamageInterrupt(agent, ref _hasChaseSample);
@@ -178,6 +188,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             case Phase.Arrived:
                 TickArrived(agent, origin);
                 break;
+            case Phase.AttackReady:
+                TickAttackReady(agent, origin);
+                break;
             case Phase.PreAttacking:
                 TickPreAttacking(agent, origin);
                 break;
@@ -232,6 +245,9 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             case EntityNavChaseAttackSupport.AttackPhaseBeginResult.Attacking:
                 _phase = Phase.Attacking;
                 return;
+            case EntityNavChaseAttackSupport.AttackPhaseBeginResult.AttackReady:
+                EnterAttackReady();
+                return;
         }
 
         _phase = Phase.Chasing;
@@ -278,7 +294,45 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             case EntityNavChaseAttackSupport.AttackTickResult.StayAttacking:
                 _phase = Phase.Attacking;
                 break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayAttackReady:
+                EnterAttackReady();
+                break;
         }
+    }
+
+    void TickAttackReady(NavMeshAgent agent, Vector3 origin)
+    {
+        switch (EntityNavChaseAttackSupport.TickAttackReadyPhase(attackController, fieldOfView, agent, origin))
+        {
+            case EntityNavChaseAttackSupport.AttackTickResult.ResumeSearching:
+                attackController?.EndBetweenAttackRecovery();
+                EntityNavChaseAttackSupport.NotifyAggroLost(targetDetectedTelegraph);
+                ReturnToNoTargetPhase(agent);
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.ResumeChasing:
+                attackController?.EndBetweenAttackRecovery();
+                _phase = Phase.Chasing;
+                _hasChaseSample = false;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayPreAttacking:
+                attackController?.EndBetweenAttackRecovery();
+                _phase = Phase.PreAttacking;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayAttacking:
+                attackController?.EndBetweenAttackRecovery();
+                _phase = Phase.Attacking;
+                break;
+            case EntityNavChaseAttackSupport.AttackTickResult.StayAttackReady:
+                _phase = Phase.AttackReady;
+                break;
+        }
+    }
+
+    void EnterAttackReady()
+    {
+        if (_phase != Phase.AttackReady)
+            attackController?.EnterBetweenAttackRecovery();
+        _phase = Phase.AttackReady;
     }
 
     void TickSearching(NavMeshAgent agent, Vector3 origin)
@@ -391,9 +445,12 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             return;
         }
 
-        Vector3 targetPos = fieldOfView.Target.position;
+        Transform target = fieldOfView.Target;
+        EntityNavChaseAttackSupport.SyncChaseFacing(attackController, target, agent);
 
-        switch (EntityNavChaseAttackSupport.TryBeginPreAttackPhase(attackController, fieldOfView.Target, agent))
+        Vector3 targetPos = target.position;
+
+        switch (EntityNavChaseAttackSupport.TryBeginPreAttackPhase(attackController, target, agent))
         {
             case EntityNavChaseAttackSupport.AttackPhaseBeginResult.PreAttacking:
                 _phase = Phase.PreAttacking;
@@ -401,12 +458,15 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             case EntityNavChaseAttackSupport.AttackPhaseBeginResult.Attacking:
                 _phase = Phase.Attacking;
                 return;
+            case EntityNavChaseAttackSupport.AttackPhaseBeginResult.AttackReady:
+                EnterAttackReady();
+                return;
         }
 
         if (attackController != null
-            && attackController.IsTargetTooCloseForRanged(fieldOfView.Target))
+            && attackController.IsTargetTooCloseForRanged(target))
         {
-            EntityNavChaseAttackSupport.UpdateRangedAttackRetreat(attackController, fieldOfView.Target, agent);
+            EntityNavChaseAttackSupport.UpdateRangedAttackRetreat(attackController, target, agent);
             return;
         }
 

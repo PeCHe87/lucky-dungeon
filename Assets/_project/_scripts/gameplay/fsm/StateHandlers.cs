@@ -232,7 +232,7 @@ public class AttackStateHandler : IStateHandler
         attack.SyncNavAgentFacingLock(agent);
         attack.FaceTarget(bb.Target);
 
-        if (attack.IsBusy)
+        if (attack.IsBusy || attack.IsWaitingForNextAttack)
         {
             if (agent != null)
                 agent.isStopped = true;

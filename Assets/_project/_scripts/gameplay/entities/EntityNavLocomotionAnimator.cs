@@ -9,6 +9,7 @@ using UnityEngine.AI;
 public sealed class EntityNavLocomotionAnimator : MonoBehaviour
 {
     const string DefaultLocomotionFsmStateId = "Idle";
+    const string TakeDamageFsmStateId = "TakeDamage";
 
     [SerializeField] NavMeshAgent agent;
     [SerializeField] Animator animator;
@@ -57,7 +58,8 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
             return;
         }
 
-        if (attackController != null && attackController.IsBusy)
+        if (attackController != null
+            && (attackController.IsBusy || attackController.IsHoldingAttackReadyStance))
         {
             _lastPlayedHash = int.MinValue;
             return;
@@ -78,7 +80,11 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
         if (stateMachine == null || stateMachine.CurrentStateData == null)
             return true;
 
-        return stateMachine.CurrentStateData.stateId == locomotionFsmStateId;
+        string stateId = stateMachine.CurrentStateData.stateId;
+        if (stateId == TakeDamageFsmStateId)
+            return false;
+
+        return stateId == locomotionFsmStateId;
     }
 
     bool IsAgentMoving()

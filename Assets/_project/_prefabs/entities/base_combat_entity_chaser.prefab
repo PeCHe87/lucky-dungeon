@@ -658,6 +658,8 @@ MonoBehaviour:
   cancelAttackOnDamage: 1
   attackCooldownAfterDamage: 0.4
   suppressDamageInterruptDuringAttack: 0
+  suppressPushbackDuringAttack: 0
+  enableBetweenAttackRecovery: 1
   pinnedTravelThreshold: 0.05
   pinEngagementSlack: 0.35
   debugLogEngagement: 0
@@ -678,6 +680,7 @@ MonoBehaviour:
   animator: {fileID: 7533446042223888342}
   attackStateName: Attack1
   preAttackStateName: PreAttack1
+  betweenAttackStateName: AttackReady
   attackLayer: 0
   crossFadeSeconds: 0.08
   attackCompletionNormalizedTime: 0.95
@@ -1245,7 +1248,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
   damage: 1
-  cooldown: 1
+  cooldown: 2
   range: 2.5
   moveForwardDistance: 0
   moveForwardDuration: 0.15

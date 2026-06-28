@@ -24,10 +24,14 @@ public sealed class EntityAttackController : MonoBehaviour
     [SerializeField] bool cancelAttackOnDamage = true;
     [Tooltip("Blocks starting new attacks for this many seconds after taking damage. 0 = no block (cancel only).")]
     [SerializeField, Min(0f)] float attackCooldownAfterDamage = 0.4f;
-    [Tooltip("While in pre-attack telegraph or active attack, suppress TakeDamage FSM, attack cancel, nav reset, facing snap, and damage shake.")]
+    [Tooltip("While in pre-attack telegraph or attack clip (not AttackReady), suppress TakeDamage FSM, attack cancel, nav reset, facing snap, and damage shake.")]
     [SerializeField] bool suppressDamageInterruptDuringAttack;
-    [Tooltip("While in pre-attack telegraph or active attack, block weapon pushback.")]
+    [Tooltip("While in pre-attack telegraph or attack clip (not AttackReady), block weapon pushback.")]
     [SerializeField] bool suppressPushbackDuringAttack;
+
+    [Header("Between-attack recovery")]
+    [Tooltip("When enabled, wait in combat idle until weapon cooldown before starting the next pre-attack telegraph.")]
+    [SerializeField] bool enableBetweenAttackRecovery = true;
 
     [Header("Melee engagement")]
     [Tooltip("Max probe travel along push axis to still count as geometry-pinned.")]
@@ -37,9 +41,11 @@ public sealed class EntityAttackController : MonoBehaviour
     [SerializeField] bool debugLogEngagement;
 
     CombatEntityHealth _health;
+    AIStateMachine _stateMachine;
     float _attackBlockedUntil;
     float _telegraphUntil;
     bool _isAttackCommitActive;
+    bool _isHoldingAttackReadyStance;
     NavMeshAgent _facingLockAgent;
     bool _agentUpdateRotationBeforeLock;
 
@@ -57,6 +63,21 @@ public sealed class EntityAttackController : MonoBehaviour
     public Transform AttackFacingTransform => AttackOriginTransform;
 
     public bool EnablePreAttackTelegraph => enablePreAttackTelegraph;
+
+    public bool EnableBetweenAttackRecovery => enableBetweenAttackRecovery;
+
+    public bool IsWeaponAttackReady =>
+        weaponHolder?.Current is not IWeaponAttackReadiness readiness || readiness.IsAttackReady;
+
+    public bool IsWaitingForNextAttack =>
+        enableBetweenAttackRecovery && !IsWeaponAttackReady;
+
+    public bool IsHoldingAttackReadyStance => _isHoldingAttackReadyStance;
+
+    public bool IsInTakeDamageFsm =>
+        _stateMachine != null
+        && _stateMachine.CurrentStateData != null
+        && _stateMachine.CurrentStateData.stateId == "TakeDamage";
 
     public bool IsAttackBlocked => Time.time < _attackBlockedUntil;
 
@@ -78,9 +99,10 @@ public sealed class EntityAttackController : MonoBehaviour
         || (attackAnimator != null && attackAnimator.IsAttackClipPlaying);
 
     public bool IsActivelyAttacking =>
-        IsTelegraphing
-        || IsWeaponAttackActive
-        || (attackAnimator != null && (attackAnimator.IsPreAttackClipPlaying || attackAnimator.IsAttackClipPlaying));
+        !IsHoldingAttackReadyStance
+        && (IsTelegraphing
+            || (attackAnimator != null
+                && (attackAnimator.IsPreAttackClipPlaying || attackAnimator.IsAttackClipPlaying)));
 
     public bool ShouldSuppressDamageInterrupt =>
         suppressDamageInterruptDuringAttack && IsActivelyAttacking;
@@ -123,6 +145,7 @@ public sealed class EntityAttackController : MonoBehaviour
             facingRoot = transform;
 
         _health = GetComponent<CombatEntityHealth>();
+        _stateMachine = GetComponent<AIStateMachine>();
     }
 
     void OnEnable()
@@ -144,8 +167,10 @@ public sealed class EntityAttackController : MonoBehaviour
         if (ShouldSuppressDamageInterrupt)
             return;
 
-        if (cancelAttackOnDamage)
+        if (IsActivelyAttacking)
             CancelActiveAttack();
+        else
+            EndBetweenAttackRecovery();
 
         if (attackCooldownAfterDamage > 0f)
         {
@@ -309,7 +334,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (!enablePreAttackTelegraph || target == null)
             return false;
 
-        if (IsAttackBlocked || IsTelegraphing)
+        if (IsAttackBlocked || IsTelegraphing || IsWaitingForNextAttack)
             return false;
 
         if (snapFacingToTargetBeforeAttack)
@@ -318,6 +343,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (!IsInStrikeRange(target))
             return false;
 
+        EndBetweenAttackRecovery();
         _telegraphUntil = Time.time + preAttackDuration;
         _isAttackCommitActive = true;
         attackAnimator?.PlayPreAttackClip();
@@ -355,12 +381,32 @@ public sealed class EntityAttackController : MonoBehaviour
         _isAttackCommitActive = false;
     }
 
+    /// <summary>Plays combat idle on the attack animator layer while waiting for the next strike.</summary>
+    public void EnterBetweenAttackRecovery()
+    {
+        _isHoldingAttackReadyStance = true;
+        attackAnimator?.PlayBetweenAttackIdle();
+    }
+
+    public void EndBetweenAttackRecovery()
+    {
+        _isHoldingAttackReadyStance = false;
+    }
+
+    public void SustainBetweenAttackRecovery()
+    {
+        if (!_isHoldingAttackReadyStance || IsInTakeDamageFsm)
+            return;
+
+        attackAnimator?.SustainBetweenAttackIdle();
+    }
+
     public bool TryAttackTarget(Transform target)
     {
         if (target == null || weaponHolder == null)
             return false;
 
-        if (IsAttackBlocked || IsTelegraphing)
+        if (IsAttackBlocked || IsTelegraphing || IsWaitingForNextAttack)
             return false;
 
         if (snapFacingToTargetBeforeAttack)
@@ -368,6 +414,8 @@ public sealed class EntityAttackController : MonoBehaviour
 
         if (!IsInStrikeRange(target))
             return false;
+
+        EndBetweenAttackRecovery();
 
         var ctx = new AttackContext
         {
@@ -393,6 +441,7 @@ public sealed class EntityAttackController : MonoBehaviour
 
     public void CancelActiveAttack()
     {
+        EndBetweenAttackRecovery();
         CancelTelegraph();
         weaponHolder?.CancelActiveAttack();
         attackAnimator?.CancelAttackAnimation();
