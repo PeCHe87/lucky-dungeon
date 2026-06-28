@@ -138,7 +138,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectilePool
   prefab: {fileID: 9100000000000000001, guid: d1d1d1d1123456789012345678abc010, type: 3}
-  poolParent: {fileID: 1827364555011111002}
+  poolParent: {fileID: 0}
   prewarmCount: 16
   maxPoolSize: 64
 --- !u!114 &1827364555011111004

@@ -6,7 +6,7 @@ public sealed class ProjectilePool : MonoBehaviour
 {
     [Tooltip("Prefab root must include a DamageProjectile component (typically on the same GameObject).")]
     [SerializeField] GameObject prefab;
-    [Tooltip("Inactive instances are parented here. Defaults to this transform.")]
+    [Tooltip("Fallback parent when no ProjectileWorldContainer exists in the scene. Defaults to this transform.")]
     [SerializeField] Transform poolParent;
     [SerializeField, Min(0)] int prewarmCount = 8;
     [Tooltip("Hard cap on total instances (active + inactive). 0 = unlimited growth.")]
@@ -17,24 +17,39 @@ public sealed class ProjectilePool : MonoBehaviour
 
     void Awake()
     {
-        if (poolParent == null)
-            poolParent = transform;
         if (prefab == null)
         {
             Debug.LogWarning($"{nameof(ProjectilePool)} on {name}: prefab is not assigned.", this);
             return;
         }
 
+        Transform parent = ResolvePoolParent();
         for (int i = 0; i < prewarmCount; i++)
         {
             if (maxPoolSize > 0 && _totalCreated >= maxPoolSize)
                 break;
-            GameObject instance = Instantiate(prefab, poolParent);
+            GameObject instance = Instantiate(prefab, parent);
             instance.name = prefab.name;
             instance.SetActive(false);
             _inactive.Push(instance);
             _totalCreated++;
         }
+    }
+
+    Transform ResolvePoolParent()
+    {
+        if (ProjectileWorldContainer.Instance != null)
+            return ProjectileWorldContainer.Instance.Container;
+        if (poolParent != null)
+            return poolParent;
+        return transform;
+    }
+
+    void EnsureParent(GameObject instance)
+    {
+        Transform parent = ResolvePoolParent();
+        if (instance.transform.parent != parent)
+            instance.transform.SetParent(parent, false);
     }
 
     /// <summary>Activates an instance from the pool, or creates one if allowed. Returns null if <see cref="maxPoolSize"/> is reached and the pool is empty.</summary>
@@ -43,20 +58,26 @@ public sealed class ProjectilePool : MonoBehaviour
         if (prefab == null)
             return null;
 
+        GameObject instance;
         if (_inactive.Count > 0)
-            return _inactive.Pop();
-
-        if (maxPoolSize == 0 || _totalCreated < maxPoolSize)
+        {
+            instance = _inactive.Pop();
+        }
+        else if (maxPoolSize == 0 || _totalCreated < maxPoolSize)
         {
             _totalCreated++;
-            GameObject created = Instantiate(prefab, poolParent);
-            created.name = prefab.name;
-            created.SetActive(false);
-            return created;
+            instance = Instantiate(prefab, ResolvePoolParent());
+            instance.name = prefab.name;
+            instance.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning($"{nameof(ProjectilePool)} on {name}: pool exhausted (maxPoolSize={maxPoolSize}).", this);
+            return null;
         }
 
-        Debug.LogWarning($"{nameof(ProjectilePool)} on {name}: pool exhausted (maxPoolSize={maxPoolSize}).", this);
-        return null;
+        EnsureParent(instance);
+        return instance;
     }
 
     public void Release(GameObject instance)
@@ -64,7 +85,7 @@ public sealed class ProjectilePool : MonoBehaviour
         if (instance == null)
             return;
         instance.SetActive(false);
-        instance.transform.SetParent(poolParent != null ? poolParent : transform, false);
+        EnsureParent(instance);
         _inactive.Push(instance);
     }
 }
