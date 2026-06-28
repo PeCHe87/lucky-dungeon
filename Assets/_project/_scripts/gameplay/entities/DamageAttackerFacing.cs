@@ -37,6 +37,9 @@ public sealed class DamageAttackerFacing : MonoBehaviour
 
     void OnDamagedWithHitInfo(float _, DamageHitInfo hitInfo)
     {
+        if (EntityAttackController.ShouldSuppressDamageInterruptOn(_health.gameObject))
+            return;
+
         if (!faceAttackerOnDamage || !hitInfo.HasAttacker)
             return;
 

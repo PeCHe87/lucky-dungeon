@@ -119,7 +119,8 @@ public sealed class DamageProjectile : MonoBehaviour
                 {
                     dmg.TakeDamage(_damage, _style, new DamageHitInfo(_owner));
 
-                    if (_pushbackDistance > 0f && ShouldApplyPushback(tr))
+                    if (_pushbackDistance > 0f && ShouldApplyPushback(tr)
+                        && !EntityAttackController.ShouldSuppressPushbackOn(tr.gameObject))
                     {
                         PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
                         {

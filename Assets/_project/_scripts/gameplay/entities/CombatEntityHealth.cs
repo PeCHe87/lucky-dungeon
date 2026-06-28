@@ -23,6 +23,7 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
 
     float _currentHitPoints;
     bool _defeated;
+    EntityAttackController _attackController;
 
     public EntityAlignment Alignment => alignment;
     public bool IsDefeated => _defeated;
@@ -44,6 +45,8 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
 
         if (stateMachine == null)
             stateMachine = GetComponent<AIStateMachine>();
+
+        _attackController = GetComponent<EntityAttackController>();
     }
 
     public void TakeDamage(float amount, DamageNumberStyle style)
@@ -78,9 +81,13 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
         }
 
         if (takeDamageState != null && stateMachine != null
-            && stateMachine.CurrentStateData != takeDamageState)
+            && stateMachine.CurrentStateData != takeDamageState
+            && !IsDamageInterruptSuppressed())
             stateMachine.ForceInterrupt(takeDamageState);
     }
+
+    bool IsDamageInterruptSuppressed() =>
+        _attackController != null && _attackController.ShouldSuppressDamageInterrupt;
 
     void Die()
     {

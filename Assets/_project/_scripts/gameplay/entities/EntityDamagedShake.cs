@@ -49,6 +49,9 @@ public sealed class EntityDamagedShake : MonoBehaviour
 
     void OnDamaged(float damageAmount)
     {
+        if (_health != null && EntityAttackController.ShouldSuppressDamageInterruptOn(_health.gameObject))
+            return;
+
         float bonus = Mathf.Min(damageAmount * amplitudeBonusPerDamage, amplitudeBonusMax);
         _activeAmplitude = shakeAmplitude + bonus;
         _shakeTimeRemaining = shakeDuration;

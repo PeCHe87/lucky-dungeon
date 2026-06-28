@@ -24,6 +24,10 @@ public sealed class EntityAttackController : MonoBehaviour
     [SerializeField] bool cancelAttackOnDamage = true;
     [Tooltip("Blocks starting new attacks for this many seconds after taking damage. 0 = no block (cancel only).")]
     [SerializeField, Min(0f)] float attackCooldownAfterDamage = 0.4f;
+    [Tooltip("While in pre-attack telegraph or active attack, suppress TakeDamage FSM, attack cancel, nav reset, facing snap, and damage shake.")]
+    [SerializeField] bool suppressDamageInterruptDuringAttack;
+    [Tooltip("While in pre-attack telegraph or active attack, block weapon pushback.")]
+    [SerializeField] bool suppressPushbackDuringAttack;
 
     [Header("Melee engagement")]
     [Tooltip("Max probe travel along push axis to still count as geometry-pinned.")]
@@ -73,6 +77,37 @@ public sealed class EntityAttackController : MonoBehaviour
         || IsWeaponAttackActive
         || (attackAnimator != null && attackAnimator.IsAttackClipPlaying);
 
+    public bool IsActivelyAttacking =>
+        IsTelegraphing
+        || IsWeaponAttackActive
+        || (attackAnimator != null && (attackAnimator.IsPreAttackClipPlaying || attackAnimator.IsAttackClipPlaying));
+
+    public bool ShouldSuppressDamageInterrupt =>
+        suppressDamageInterruptDuringAttack && IsActivelyAttacking;
+
+    public bool ShouldSuppressPushback =>
+        suppressPushbackDuringAttack && IsActivelyAttacking;
+
+    /// <summary>True when <paramref name="hitObject"/> belongs to an entity suppressing damage interrupts during attack.</summary>
+    public static bool ShouldSuppressDamageInterruptOn(GameObject hitObject)
+    {
+        if (hitObject == null)
+            return false;
+
+        var attack = hitObject.GetComponentInParent<EntityAttackController>();
+        return attack != null && attack.ShouldSuppressDamageInterrupt;
+    }
+
+    /// <summary>True when <paramref name="hitObject"/> belongs to an entity suppressing pushback during attack.</summary>
+    public static bool ShouldSuppressPushbackOn(GameObject hitObject)
+    {
+        if (hitObject == null)
+            return false;
+
+        var attack = hitObject.GetComponentInParent<EntityAttackController>();
+        return attack != null && attack.ShouldSuppressPushback;
+    }
+
     bool IsWeaponAttackActive =>
         weaponHolder != null
         && weaponHolder.Current is IAttackActivity activity
@@ -106,6 +141,9 @@ public sealed class EntityAttackController : MonoBehaviour
 
     void OnDamaged(float _)
     {
+        if (ShouldSuppressDamageInterrupt)
+            return;
+
         if (cancelAttackOnDamage)
             CancelActiveAttack();
 

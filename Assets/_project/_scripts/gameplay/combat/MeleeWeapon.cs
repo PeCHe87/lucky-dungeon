@@ -373,7 +373,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                 bool isCrit = ctx.forceCritical || (criticalStrikeChance > 0f && Random.value < criticalStrikeChance);
                 dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit), new DamageHitInfo(ctx.attacker));
 
-                if (pushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection))
+                if (pushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection)
+                    && !EntityAttackController.ShouldSuppressPushbackOn(tr.gameObject))
                 {
                     PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
                     {

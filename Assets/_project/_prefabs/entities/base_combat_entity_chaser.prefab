@@ -534,6 +534,7 @@ MonoBehaviour:
   target: {fileID: 0}
   moveRoot: {fileID: 2000000000000000002}
   detectionRadius: 8
+  lossDetectionRadius: 0
   viewAngle: 90
   requireLineOfSightForDetection: 1
   losOriginOffset: {x: 0, y: 1.5, z: 0}
@@ -656,6 +657,7 @@ MonoBehaviour:
   preAttackDuration: 0.4
   cancelAttackOnDamage: 1
   attackCooldownAfterDamage: 0.4
+  suppressDamageInterruptDuringAttack: 0
   pinnedTravelThreshold: 0.05
   pinEngagementSlack: 0.35
   debugLogEngagement: 0
@@ -1243,7 +1245,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
   damage: 1
-  cooldown: 0.35
+  cooldown: 1
   range: 2.5
   moveForwardDistance: 0
   moveForwardDuration: 0.15
@@ -1263,6 +1265,10 @@ MonoBehaviour:
   pushbackDuration: 0.1
   minPushTravelFraction: 0.9
   equippedVisualRoots: []
+  animatorController: {fileID: 0}
+  animationProfile: {fileID: 0}
+  targetDetectionRadius: 6
+  omnidirectionalDetectionRadius: 8
   enableApproachLunge: 0
   approachStopBuffer: 0.3
   maxApproachLungeDistance: 6
