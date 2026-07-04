@@ -15,15 +15,17 @@ public class NearestTargetQuery : MonoBehaviour
     struct Candidate : IComparable<Candidate>
     {
         public Collider Collider;
+        public Transform TargetRoot;
+        public int Tier;
         public float DistSq;
 
-        public int CompareTo(Candidate other) => DistSq.CompareTo(other.DistSq);
+        public int CompareTo(Candidate other) => DetectionTargetRank.Compare(Tier, DistSq, other.Tier, other.DistSq);
     }
 
     [Tooltip("World-space origin for planar (XZ) range and overlap center. Uses this transform if unset.")]
     [SerializeField] Transform queryOrigin;
     [SerializeField] float radius = 8f;
-    [Tooltip("Non-empty entries must be tags defined in the Unity Tag Manager. Colliders matching any listed tag are candidates.")]
+    [Tooltip("Non-empty entries must be tags defined in the Unity Tag Manager. Colliders matching any listed tag are candidates. Earlier tags outrank later tags; distance breaks ties within the same tag.")]
     [SerializeField] string[] targetTags;
     [SerializeField, HideInInspector, FormerlySerializedAs("targetTag")]
     string legacyTargetTag;
@@ -43,6 +45,8 @@ public class NearestTargetQuery : MonoBehaviour
     [SerializeField] QueryTriggerInteraction losQueryTriggerInteraction = QueryTriggerInteraction.Ignore;
     [Tooltip("Colliders on this transform or its children are ignored during discovery and line-of-sight. Defaults to this GameObject.")]
     [SerializeField] Transform colliderIgnoreRoot;
+    [Tooltip("LOS rays to highest-priority targets (tier 0) pass through these layers (e.g. Destructible).")]
+    [SerializeField] LayerMask entityLosPenetrateLayers;
 
     [Header("View cone")]
     [Tooltip("When enabled, only targets inside the vision cone count as detected unless Omnidirectional Fallback is enabled.")]
@@ -119,6 +123,8 @@ public class NearestTargetQuery : MonoBehaviour
         _overlapBuffer = new Collider[overlapMaxHits];
         _defaultRadius = radius;
         _defaultOmnidirectionalRadius = omnidirectionalRadius;
+        if (entityLosPenetrateLayers.value == 0)
+            entityLosPenetrateLayers = LayerMask.GetMask("Destructible");
         if (weaponHolder == null)
             weaponHolder = GetComponent<WeaponHolder>();
         if (meleeAnimator == null)
@@ -184,6 +190,8 @@ public class NearestTargetQuery : MonoBehaviour
             queryOrigin = transform;
         if (colliderIgnoreRoot == null)
             colliderIgnoreRoot = transform;
+        if (entityLosPenetrateLayers.value == 0)
+            entityLosPenetrateLayers = LayerMask.GetMask("Destructible");
     }
 
     void EnsureColliderIgnoreRoot()
@@ -208,6 +216,9 @@ public class NearestTargetQuery : MonoBehaviour
     Vector3 PlanarOrigin => OriginTransform.position;
 
     Vector3 LosOriginWorld => OriginTransform.TransformPoint(losOriginOffset);
+
+    /// <summary>World-space origin used for detection overlap and LOS queries.</summary>
+    public Transform QueryOriginTransform => OriginTransform;
 
     /// <summary>Primary XZ detection radius used for discovery and grace-range fallback.</summary>
     public float DetectionRadius => radius;
@@ -299,12 +310,6 @@ public class NearestTargetQuery : MonoBehaviour
         UpdateDetectionSuspensionState();
         TryInvalidateDeadCombatTargets();
 
-        if (TryGetEngagedCombatTarget(out nearest))
-        {
-            CommitEngagedAsCurrentTarget(nearest);
-            return true;
-        }
-
         if (IsDetectionSuspended && TryGetFrozenCombatTarget(out nearest))
         {
             TryResolveFrozenColliderForDebug();
@@ -312,8 +317,31 @@ public class NearestTargetQuery : MonoBehaviour
         }
 
         Vector3 planar = PlanarOrigin;
+        BuildSortedCandidates(GetEffectiveQueryRadius());
 
-        BuildSortedCandidates(radius);
+        if (TryGetEngagedCombatTarget(out Transform engaged))
+        {
+            if (TryFindHigherPriorityTarget(engaged, planar, viewConeOnly: false, out Transform higher))
+            {
+                ClearEngagedCombatTarget();
+                nearest = higher;
+                OnPickSuccess(nearest);
+                return true;
+            }
+
+            nearest = engaged;
+            CommitEngagedAsCurrentTarget(nearest);
+            return true;
+        }
+
+        if (enableTargetStickiness
+            && _stickyTarget != null
+            && TryFindHigherPriorityTarget(_stickyTarget, planar, viewConeOnly: false, out Transform preempt))
+        {
+            nearest = preempt;
+            OnPickSuccess(nearest);
+            return true;
+        }
 
         if (!UsesViewConeFilter())
         {
@@ -323,7 +351,7 @@ public class NearestTargetQuery : MonoBehaviour
                 return false;
             }
 
-            if (TryPickNearestVisible(planar, viewConeOnly: false, out nearest))
+            if (TryPickNearestByPriority(planar, viewConeOnly: false, out nearest))
             {
                 OnPickSuccess(nearest);
                 return true;
@@ -339,7 +367,7 @@ public class NearestTargetQuery : MonoBehaviour
             return true;
 
         if (_candidates.Count > 0
-            && TryPickNearestVisible(planar, viewConeOnly: true, out nearest))
+            && TryPickNearestByPriority(planar, viewConeOnly: true, out nearest))
         {
             if (enableTargetStickiness
                 && ShouldHoldCombatTarget()
@@ -348,18 +376,29 @@ public class NearestTargetQuery : MonoBehaviour
                 && TryReturnStickyTarget(out nearest, lenient: true))
                 return true;
 
+            if (TryFindHigherPriorityTarget(nearest, planar, viewConeOnly: false, out Transform higher))
+                nearest = higher;
+
             OnPickSuccess(nearest);
             return true;
         }
 
         if (enableTargetStickiness && TryReturnStickyTarget(out nearest))
+        {
+            if (TryFindHigherPriorityTarget(nearest, planar, viewConeOnly: false, out Transform higher))
+            {
+                nearest = higher;
+                OnPickSuccess(nearest);
+            }
+
             return true;
+        }
 
         if (enableOmnidirectionalFallback)
         {
             BuildSortedCandidates(omnidirectionalRadius);
             if (_candidates.Count > 0
-                && TryPickNearestVisible(planar, viewConeOnly: false, out nearest))
+                && TryPickNearestByPriority(planar, viewConeOnly: false, out nearest))
             {
                 OnPickSuccess(nearest);
                 return true;
@@ -369,9 +408,9 @@ public class NearestTargetQuery : MonoBehaviour
         if (prioritizeFrontTargets && !requireTargetsInViewCone)
         {
             if (enableOmnidirectionalFallback)
-                BuildSortedCandidates(radius);
+                BuildSortedCandidates(GetEffectiveQueryRadius());
             if (_candidates.Count > 0
-                && TryPickNearestVisible(planar, viewConeOnly: false, out nearest))
+                && TryPickNearestByPriority(planar, viewConeOnly: false, out nearest))
             {
                 OnPickSuccess(nearest);
                 return true;
@@ -513,7 +552,7 @@ public class NearestTargetQuery : MonoBehaviour
             return false;
         }
 
-        if (!lenient && !HasLineOfSight(col))
+        if (!lenient && !HasLineOfSightForTier(col, ResolveTagTier(col)))
         {
             ClearStickyTarget();
             return false;
@@ -793,28 +832,135 @@ public class NearestTargetQuery : MonoBehaviour
         frontViewAngle < 360f &&
         (requireTargetsInViewCone || prioritizeFrontTargets);
 
-    bool TryPickNearestVisible(Vector3 planarOrigin, bool viewConeOnly, out Transform nearest)
+    float GetEffectiveQueryRadius()
     {
-        nearest = null;
-        for (int i = 0; i < _candidates.Count; i++)
+        if (enableOmnidirectionalFallback && omnidirectionalRadius > radius)
+            return omnidirectionalRadius;
+        return radius;
+    }
+
+    bool TryFindHigherPriorityTarget(
+        Transform current,
+        Vector3 planarOrigin,
+        bool viewConeOnly,
+        out Transform higher)
+    {
+        higher = null;
+        if (current == null || _candidates.Count == 0)
+            return false;
+
+        int currentTier = ResolveTagTierForTransform(current);
+        if (currentTier <= 0)
+            return false;
+
+        for (int tier = 0; tier < currentTier; tier++)
         {
-            Collider c = _candidates[i].Collider;
-            if (!IsCombatTargetAlive(c.transform))
+            if (!TryPickNearestInTier(tier, planarOrigin, viewConeOnly, out Transform pick))
                 continue;
-            if (!HasLineOfSight(c))
+            if (IsSameTargetTransform(pick, current))
                 continue;
-            if (viewConeOnly && !IsPointWithinFrontCone(planarOrigin, c.transform.position))
-                continue;
-            nearest = c.transform;
-            _debugLosWinner = c;
+
+            higher = pick;
             return true;
         }
 
         return false;
     }
 
+    int ResolveTagTierForTransform(Transform target)
+    {
+        if (target == null || targetTags == null)
+            return -1;
+
+        int bestTier = -1;
+        Collider[] colliders = target.GetComponentsInChildren<Collider>();
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider col = colliders[i];
+            if (col == null || !col.enabled)
+                continue;
+
+            int tier = ResolveTagTier(col);
+            if (tier < 0)
+                continue;
+            if (bestTier < 0 || tier < bestTier)
+                bestTier = tier;
+        }
+
+        if (bestTier >= 0)
+            return bestTier;
+
+        Transform current = target;
+        while (current != null)
+        {
+            for (int i = 0; i < targetTags.Length; i++)
+            {
+                string tag = targetTags[i];
+                if (string.IsNullOrWhiteSpace(tag))
+                    continue;
+                if (!current.CompareTag(tag))
+                    continue;
+                if (bestTier < 0 || i < bestTier)
+                    bestTier = i;
+            }
+
+            current = current.parent;
+        }
+
+        return bestTier;
+    }
+
+    bool TryPickNearestByPriority(Vector3 planarOrigin, bool viewConeOnly, out Transform nearest)
+    {
+        nearest = null;
+        int tierCount = targetTags != null ? targetTags.Length : 0;
+        for (int tier = 0; tier < tierCount; tier++)
+        {
+            if (TryPickNearestInTier(tier, planarOrigin, viewConeOnly, out nearest))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool TryPickNearestInTier(int tier, Vector3 planarOrigin, bool viewConeOnly, out Transform nearest)
+    {
+        nearest = null;
+        float bestDistSq = float.MaxValue;
+        Collider bestCollider = null;
+
+        for (int i = 0; i < _candidates.Count; i++)
+        {
+            Candidate candidate = _candidates[i];
+            if (candidate.Tier != tier)
+                continue;
+
+            Collider c = candidate.Collider;
+            Transform targetRoot = candidate.TargetRoot != null ? candidate.TargetRoot : c.transform;
+            if (!IsCombatTargetAlive(targetRoot))
+                continue;
+            if (!HasLineOfSightForTier(c, tier))
+                continue;
+            if (viewConeOnly && !IsPointWithinFrontCone(planarOrigin, targetRoot.position))
+                continue;
+            if (candidate.DistSq >= bestDistSq)
+                continue;
+
+            bestDistSq = candidate.DistSq;
+            bestCollider = c;
+            nearest = targetRoot;
+        }
+
+        if (bestCollider == null)
+            return false;
+
+        _debugLosWinner = bestCollider;
+        return true;
+    }
+
     /// <summary>
-    /// Fills <paramref name="buffer"/> with transforms that pass target tag(s), horizontal range, and LOS, ordered by increasing XZ distance.
+    /// Fills <paramref name="buffer"/> with transforms in tag priority tier order, then increasing XZ distance.
+    /// Within each tier, only targets with obstacle LOS (lower-priority targets do not block) are included.
     /// Does not apply target stickiness; use <see cref="TryGetNearestTransform"/> for locked combat targeting.
     /// </summary>
     public int CollectTargets(List<Transform> buffer, bool clearList = true)
@@ -825,18 +971,27 @@ public class NearestTargetQuery : MonoBehaviour
         if (clearList)
             buffer.Clear();
 
-        BuildSortedCandidates(radius);
+        BuildSortedCandidates(GetEffectiveQueryRadius());
         Vector3 planar = PlanarOrigin;
         int added = 0;
-        for (int i = 0; i < _candidates.Count; i++)
+        int tierCount = targetTags != null ? targetTags.Length : 0;
+        for (int tier = 0; tier < tierCount; tier++)
         {
-            Collider c = _candidates[i].Collider;
-            if (!HasLineOfSight(c))
-                continue;
-            if (requireTargetsInViewCone && !IsPointWithinFrontCone(planar, c.transform.position))
-                continue;
-            buffer.Add(c.transform);
-            added++;
+            for (int i = 0; i < _candidates.Count; i++)
+            {
+                Candidate candidate = _candidates[i];
+                if (candidate.Tier != tier)
+                    continue;
+
+                Collider c = candidate.Collider;
+                Transform targetRoot = candidate.TargetRoot != null ? candidate.TargetRoot : c.transform;
+                if (!HasLineOfSightForTier(c, tier))
+                    continue;
+                if (requireTargetsInViewCone && !IsPointWithinFrontCone(planar, targetRoot.position))
+                    continue;
+                buffer.Add(targetRoot);
+                added++;
+            }
         }
 
         return added;
@@ -871,18 +1026,49 @@ public class NearestTargetQuery : MonoBehaviour
 
     bool MatchesTargetTags(Collider c)
     {
+        return ResolveTagTier(c) >= 0;
+    }
+
+    int ResolveTagTier(Collider c)
+    {
         if (c == null || targetTags == null)
-            return false;
-        for (int i = 0; i < targetTags.Length; i++)
+            return -1;
+
+        int bestTier = -1;
+        Transform current = c.transform;
+        while (current != null)
         {
-            string tag = targetTags[i];
-            if (string.IsNullOrWhiteSpace(tag))
-                continue;
-            if (c.CompareTag(tag))
-                return true;
+            for (int i = 0; i < targetTags.Length; i++)
+            {
+                string tag = targetTags[i];
+                if (string.IsNullOrWhiteSpace(tag))
+                    continue;
+                if (!current.CompareTag(tag))
+                    continue;
+                if (bestTier < 0 || i < bestTier)
+                    bestTier = i;
+            }
+
+            current = current.parent;
         }
 
-        return false;
+        return bestTier;
+    }
+
+    static Transform ResolveTargetRoot(Collider c)
+    {
+        if (c == null)
+            return null;
+
+        var health = c.GetComponentInParent<CombatEntityHealth>();
+        if (health != null)
+            return health.transform;
+
+        var destructible = c.GetComponentInParent<BaseDestructibleObject>();
+        if (destructible != null)
+            return destructible.transform;
+
+        return c.transform;
     }
 
     void BuildSortedCandidates(float searchRadius)
@@ -913,44 +1099,59 @@ public class NearestTargetQuery : MonoBehaviour
                 continue;
             if (!MatchesTargetTags(c))
                 continue;
-            if (!NavMeshChaseDriver.IsWithinXZRadius(planar, c.transform.position, searchRadius))
+            Transform targetRoot = ResolveTargetRoot(c);
+            if (targetRoot == null)
                 continue;
-            if (!IsCombatTargetAlive(c.transform))
+            if (!NavMeshChaseDriver.IsWithinXZRadius(planar, targetRoot.position, searchRadius))
+                continue;
+            if (!IsCombatTargetAlive(targetRoot))
                 continue;
 
-            float distSq = NavMeshChaseDriver.FlatDistanceSq(planar, c.transform.position);
-            UpsertCandidate(c, distSq);
+            int tier = ResolveTagTier(c);
+            if (tier < 0)
+                continue;
+
+            float distSq = NavMeshChaseDriver.FlatDistanceSq(planar, targetRoot.position);
+            UpsertCandidate(c, targetRoot, tier, distSq);
         }
 
         if (_candidates.Count > 1)
             _candidates.Sort();
     }
 
-    void UpsertCandidate(Collider c, float distSq)
+    void UpsertCandidate(Collider c, Transform targetRoot, int tier, float distSq)
     {
-        Transform t = c.transform;
         for (int i = 0; i < _candidates.Count; i++)
         {
-            if (_candidates[i].Collider.transform != t)
+            if (_candidates[i].TargetRoot != targetRoot)
                 continue;
-            if (distSq >= _candidates[i].DistSq)
+            if (!DetectionTargetRank.IsBetter(tier, distSq, _candidates[i].Tier, _candidates[i].DistSq))
                 return;
-            _candidates[i] = new Candidate { Collider = c, DistSq = distSq };
+            _candidates[i] = new Candidate { Collider = c, TargetRoot = targetRoot, Tier = tier, DistSq = distSq };
             return;
         }
 
-        _candidates.Add(new Candidate { Collider = c, DistSq = distSq });
+        _candidates.Add(new Candidate { Collider = c, TargetRoot = targetRoot, Tier = tier, DistSq = distSq });
     }
 
-    bool HasLineOfSight(Collider candidate)
+    bool HasLineOfSightForTier(Collider candidate, int candidateTier)
     {
         EnsureColliderIgnoreRoot();
+
         return LineOfSightProbe.HasLineOfSight(
             LosOriginWorld,
             candidate,
             colliderIgnoreRoot,
             losLayers,
-            losQueryTriggerInteraction);
+            losQueryTriggerInteraction,
+            entityLosPenetrateLayers,
+            hit => IsLowerPriorityTargetHit(hit, candidateTier));
+    }
+
+    bool IsLowerPriorityTargetHit(Collider hit, int candidateTier)
+    {
+        int hitTier = ResolveTagTier(hit);
+        return hitTier >= 0 && hitTier > candidateTier;
     }
 
     Transform FacingTransform => facingRoot != null ? facingRoot : OriginTransform;

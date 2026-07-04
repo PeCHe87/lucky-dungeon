@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -83,7 +84,7 @@ public class FieldOfViewComponent : MonoBehaviour
         return root.TransformPoint(losOriginOffset);
     }
 
-    public bool HasLineOfSightToCollider(Collider candidate)
+    public bool HasLineOfSightToCollider(Collider candidate, Func<Collider, bool> shouldPenetrateHit = null)
     {
         EnsureLosIgnoreRoot();
         return LineOfSightProbe.HasLineOfSight(
@@ -91,7 +92,8 @@ public class FieldOfViewComponent : MonoBehaviour
             candidate,
             losIgnoreRoot,
             losLayers,
-            losQueryTriggerInteraction);
+            losQueryTriggerInteraction,
+            shouldPenetrateHit: shouldPenetrateHit);
     }
 
     public bool HasLineOfSightToTarget()

@@ -1,18 +1,29 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 
 /// <summary>
-/// Scans for the nearest <see cref="CombatEntityHealth"/> matching a configurable alignment within
+/// Scans for the nearest <see cref="CombatEntityHealth"/> matching configurable priority tiers within
 /// <see cref="FieldOfViewComponent.DetectionRadius"/>, then feeds the result into FOV and the blackboard.
 /// </summary>
 [DefaultExecutionOrder(-10)]
 [RequireComponent(typeof(FieldOfViewComponent))]
 public class EntityAlignmentTargetFinder : MonoBehaviour
 {
+    struct ScanCandidate
+    {
+        public Collider Collider;
+        public Transform EntityRoot;
+        public int Tier;
+        public float DistSq;
+    }
+
     [SerializeField] FieldOfViewComponent fieldOfView;
-    [Tooltip("Only entities with this alignment are valid targets. E.g. set Ally to chase the player.")]
-    [SerializeField] EntityAlignment targetAlignment = EntityAlignment.Enemy;
+    [Tooltip("Lower tier values outrank higher ones. Distance breaks ties within the same tier.")]
+    [SerializeField] EntityTargetPriorityRule[] priorityRules;
+    [SerializeField, HideInInspector, FormerlySerializedAs("targetAlignment")]
+    EntityAlignment legacyTargetAlignment = EntityAlignment.Enemy;
     [Tooltip("Layers scanned for colliders (Entity + Player by default).")]
     [SerializeField] LayerMask scanLayers;
     [Tooltip("When true, new targets must be inside the FOV vision cone. Retention uses distance only (cone is not re-checked after latch).")]
@@ -40,6 +51,8 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
     Vector3 _lastDetectedPosition;
     float _lastDetectedTime;
     bool _hasDetectionMemory;
+    readonly List<ScanCandidate> _scanCandidates = new List<ScanCandidate>(16);
+    readonly List<int> _sortedTiers = new List<int>(4);
 
     void Awake()
     {
@@ -51,6 +64,8 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
 
         if (scanLayers.value == 0)
             scanLayers = LayerMask.GetMask("Entity", "Player");
+
+        EnsurePriorityRulesMigrated();
     }
 
     void Reset()
@@ -59,6 +74,13 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
             fieldOfView = GetComponent<FieldOfViewComponent>();
         if (scanLayers.value == 0)
             scanLayers = LayerMask.GetMask("Entity", "Player");
+        if (priorityRules == null || priorityRules.Length == 0)
+            priorityRules = EntityTargetPriorityRules.CreateDefaultRules(EntityAlignment.Ally);
+    }
+
+    void OnValidate()
+    {
+        EnsurePriorityRulesMigrated();
     }
 
     void Update()
@@ -75,6 +97,8 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
     {
         if (fieldOfView == null)
             return;
+
+        EnsurePriorityRulesMigrated();
 
         Vector3 origin = fieldOfView.GetDetectionOrigin(_agent);
         float acquireRadius = fieldOfView.DetectionRadius;
@@ -100,6 +124,14 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
             RecordDetection(_latchedTarget.position);
 
         ApplyTarget(_latchedTarget);
+    }
+
+    void EnsurePriorityRulesMigrated()
+    {
+        if (priorityRules != null && priorityRules.Length > 0)
+            return;
+
+        priorityRules = EntityTargetPriorityRules.CreateDefaultRules(legacyTargetAlignment);
     }
 
     void EnsureFieldOfViewTarget(Transform latch)
@@ -149,9 +181,26 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
 
     Transform FindNearestCandidate(Vector3 origin, float acquireRadius)
     {
-        if (acquireRadius <= 0f)
+        if (acquireRadius <= 0f || priorityRules == null || priorityRules.Length == 0)
             return null;
 
+        _scanCandidates.Clear();
+        CollectScanCandidates(origin, acquireRadius);
+        if (_scanCandidates.Count == 0)
+            return null;
+
+        BuildSortedTiers();
+        for (int i = 0; i < _sortedTiers.Count; i++)
+        {
+            if (TryPickNearestInTier(_sortedTiers[i], out Transform pick))
+                return pick;
+        }
+
+        return null;
+    }
+
+    void CollectScanCandidates(Vector3 origin, float acquireRadius)
+    {
         int count = Physics.OverlapSphereNonAlloc(
             origin,
             acquireRadius,
@@ -159,41 +208,118 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
             scanLayers,
             QueryTriggerInteraction.Ignore);
 
-        Transform best = null;
-        float bestDistSq = float.MaxValue;
-
         for (int i = 0; i < count; i++)
         {
             Collider col = _overlapBuffer[i];
             if (col == null)
                 continue;
 
-            if (!TryResolveCandidate(col, origin, acquireRadius, out Transform entityRoot, out float distSq))
+            if (!TryResolveCandidate(col, origin, acquireRadius, out Transform entityRoot, out int tier, out float distSq))
                 continue;
 
-            if (distSq >= bestDistSq)
-                continue;
-
-            bestDistSq = distSq;
-            best = entityRoot;
+            UpsertScanCandidate(col, entityRoot, tier, distSq);
         }
-
-        return best;
     }
 
-    bool TryResolveCandidate(Collider col, Vector3 origin, float acquireRadius, out Transform entityRoot, out float distSq)
+    void UpsertScanCandidate(Collider col, Transform entityRoot, int tier, float distSq)
+    {
+        for (int i = 0; i < _scanCandidates.Count; i++)
+        {
+            if (_scanCandidates[i].EntityRoot != entityRoot)
+                continue;
+            if (!DetectionTargetRank.IsBetter(tier, distSq, _scanCandidates[i].Tier, _scanCandidates[i].DistSq))
+                return;
+            _scanCandidates[i] = new ScanCandidate
+            {
+                Collider = col,
+                EntityRoot = entityRoot,
+                Tier = tier,
+                DistSq = distSq,
+            };
+            return;
+        }
+
+        _scanCandidates.Add(new ScanCandidate
+        {
+            Collider = col,
+            EntityRoot = entityRoot,
+            Tier = tier,
+            DistSq = distSq,
+        });
+    }
+
+    void BuildSortedTiers()
+    {
+        _sortedTiers.Clear();
+        for (int i = 0; i < priorityRules.Length; i++)
+        {
+            int tier = priorityRules[i].tier;
+            if (!_sortedTiers.Contains(tier))
+                _sortedTiers.Add(tier);
+        }
+
+        _sortedTiers.Sort();
+    }
+
+    bool TryPickNearestInTier(int tier, out Transform nearest)
+    {
+        nearest = null;
+        float bestDistSq = float.MaxValue;
+
+        for (int i = 0; i < _scanCandidates.Count; i++)
+        {
+            ScanCandidate candidate = _scanCandidates[i];
+            if (candidate.Tier != tier)
+                continue;
+            if (!HasLineOfSightForTier(candidate.Collider, tier))
+                continue;
+            if (candidate.DistSq >= bestDistSq)
+                continue;
+
+            bestDistSq = candidate.DistSq;
+            nearest = candidate.EntityRoot;
+        }
+
+        return nearest != null;
+    }
+
+    bool HasLineOfSightForTier(Collider candidate, int candidateTier)
+    {
+        if (fieldOfView == null || !fieldOfView.RequireLineOfSightForDetection)
+            return true;
+
+        return fieldOfView.HasLineOfSightToCollider(
+            candidate,
+            hit => IsLowerPriorityTargetHit(hit, candidateTier));
+    }
+
+    bool IsLowerPriorityTargetHit(Collider hit, int candidateTier)
+    {
+        if (!EntityTargetPriorityRules.TryResolveRule(hit, priorityRules, out int hitTier))
+            return false;
+        return hitTier > candidateTier;
+    }
+
+    bool TryResolveCandidate(
+        Collider col,
+        Vector3 origin,
+        float acquireRadius,
+        out Transform entityRoot,
+        out int tier,
+        out float distSq)
     {
         entityRoot = null;
+        tier = int.MaxValue;
         distSq = float.MaxValue;
 
         if (col.transform == transform || col.transform.IsChildOf(transform))
             return false;
 
-        var health = col.GetComponentInParent<CombatEntityHealth>();
-        if (health == null || health.Alignment != targetAlignment)
+        if (!EntityTargetPriorityRules.TryResolveRule(col, priorityRules, out tier))
             return false;
 
-        if (health.IsDefeated)
+        var health = col.GetComponentInParent<CombatEntityHealth>();
+        if (health == null || health.IsDefeated)
             return false;
 
         entityRoot = health.transform;
@@ -203,9 +329,6 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
             return false;
 
         if (requireVisionConeForAcquisition && !fieldOfView.IsPointWithinVisionCone(origin, targetPos))
-            return false;
-
-        if (fieldOfView.RequireLineOfSightForDetection && !fieldOfView.HasLineOfSightToCollider(col))
             return false;
 
         distSq = NavMeshChaseDriver.FlatDistanceSq(origin, targetPos);
@@ -218,7 +341,10 @@ public class EntityAlignmentTargetFinder : MonoBehaviour
             return false;
 
         var health = target.GetComponent<CombatEntityHealth>();
-        if (health == null || health.Alignment != targetAlignment || health.IsDefeated)
+        if (health == null || health.IsDefeated)
+            return false;
+
+        if (!EntityTargetPriorityRules.TargetMatchesAnyRule(target, priorityRules))
             return false;
 
         return NavMeshChaseDriver.IsWithinXZRadius(origin, target.position, lossRadius);

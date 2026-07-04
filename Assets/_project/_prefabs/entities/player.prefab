@@ -1196,6 +1196,7 @@ MonoBehaviour:
   radius: 8
   targetTags:
   - Entity
+  - Destructible
   legacyTargetTag: 
   discoveryLayers:
     serializedVersion: 2
@@ -1520,7 +1521,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponDetectionRadiusRingView
   weaponHolder: {fileID: 9012345678901234504}
-  ringAnchor: {fileID: 99504793967339466}
+  ringAnchor: {fileID: 2555463186198603948}
   nearestTargetQuery: {fileID: 2598074907052417657}
   displayDuration: 2.5
   fadeOutDuration: 0.75

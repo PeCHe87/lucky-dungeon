@@ -1377,7 +1377,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityAlignmentTargetFinder
   fieldOfView: {fileID: 5241060034435961512}
-  targetAlignment: 1
+  priorityRules:
+  - tier: 0
+    layers:
+      serializedVersion: 2
+      m_Bits: 1024
+    filterByAlignment: 0
+    alignment: 0
+  - tier: 1
+    layers:
+      serializedVersion: 2
+      m_Bits: 256
+    filterByAlignment: 1
+    alignment: 1
+  legacyTargetAlignment: 1
   scanLayers:
     serializedVersion: 2
     m_Bits: 1280
@@ -2273,7 +2286,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
-  damage: 1
+  damage: 15
   cooldown: 0.5
   range: 3
   moveForwardDistance: 0

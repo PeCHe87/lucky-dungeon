@@ -978,8 +978,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RangedWeapon
   projectilePool: {fileID: 922903480926245887}
   firePoint: {fileID: 7717955869499183769}
-  damage: 10
-  cooldown: 1.5
+  damage: 5
+  cooldown: 1
   projectileSpeed: 30
   projectileLifetime: 5
   projectileMaxDistance: 45
@@ -2052,7 +2052,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityAlignmentTargetFinder
   fieldOfView: {fileID: 7713640568241068491}
-  targetAlignment: 1
+  priorityRules:
+  - tier: 0
+    layers:
+      serializedVersion: 2
+      m_Bits: 1024
+    filterByAlignment: 0
+    alignment: 0
+  - tier: 1
+    layers:
+      serializedVersion: 2
+      m_Bits: 256
+    filterByAlignment: 1
+    alignment: 1
+  legacyTargetAlignment: 1
   scanLayers:
     serializedVersion: 2
     m_Bits: 1280

@@ -28,12 +28,10 @@ public sealed class WeaponDetectionRadiusRingView : MonoBehaviour
             weaponHolder = GetComponent<WeaponHolder>();
         if (nearestTargetQuery == null)
             nearestTargetQuery = GetComponent<NearestTargetQuery>();
+        if (ringAnchor == null && nearestTargetQuery != null)
+            ringAnchor = nearestTargetQuery.QueryOriginTransform;
         if (ringAnchor == null)
-        {
-            Animator animator = GetComponentInChildren<Animator>(true);
-            if (animator != null)
-                ringAnchor = animator.transform;
-        }
+            ringAnchor = transform;
 
         EnsureRingObjects();
     }

@@ -11,14 +11,19 @@ public class UiAttackButtonBinder : MonoBehaviour, IPointerDownHandler, IPointer
     [SerializeField] PlayerEntityState playerEntityState;
     [SerializeField, Range(0f, 1f)] float disabledAlpha = 0.45f;
     [SerializeField, Range(0f, 1f)] float enabledAlpha = 1f;
+    [Tooltip("When enabled, holding the attack button keeps attack input active until release. When disabled, only the initial press triggers an attack.")]
+    [SerializeField] bool enableHoldAttack = true;
 
     Button _button;
     CanvasGroup _canvasGroup;
+    bool _hasIntentProvider;
 
     void Awake()
     {
         if (intentProvider == null)
             intentProvider = FindFirstObjectByType<FeneraxJoystickMoveIntentProvider>();
+
+        _hasIntentProvider = intentProvider != null;
 
         if (playerEntityState == null)
             playerEntityState = FindFirstObjectByType<PlayerEntityState>();
@@ -36,28 +41,33 @@ public class UiAttackButtonBinder : MonoBehaviour, IPointerDownHandler, IPointer
 
     void OnDestroy()
     {
-        if (intentProvider != null)
+        if (_hasIntentProvider)
             intentProvider.RegisterUiAttackPointerUp();
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (IsAttackBlocked())
+        if (!_hasIntentProvider || IsAttackBlocked())
             return;
-        if (intentProvider != null)
+
+        if (enableHoldAttack)
             intentProvider.RegisterUiAttackPointerDown();
+        else
+            intentProvider.RegisterUiAttackFromUi();
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (intentProvider != null)
-            intentProvider.RegisterUiAttackPointerUp();
+        if (!_hasIntentProvider || !enableHoldAttack)
+            return;
+        intentProvider.RegisterUiAttackPointerUp();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (intentProvider != null)
-            intentProvider.RegisterUiAttackPointerUp();
+        if (!_hasIntentProvider || !enableHoldAttack)
+            return;
+        intentProvider.RegisterUiAttackPointerUp();
     }
 
     bool IsAttackBlocked() =>

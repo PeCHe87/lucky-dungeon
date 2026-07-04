@@ -474,14 +474,14 @@ static class PlayerAnimationEditorSetup
             dirty = true;
         }
 
-        if (animator != null)
+        Transform queryOrigin = nearestTargetQuery != null
+            ? nearestTargetQuery.QueryOriginTransform
+            : prefabRoot.transform;
+        var ringAnchor = detectionRingSo.FindProperty("ringAnchor");
+        if (ringAnchor.objectReferenceValue != queryOrigin)
         {
-            var ringAnchor = detectionRingSo.FindProperty("ringAnchor");
-            if (ringAnchor.objectReferenceValue != animator.transform)
-            {
-                ringAnchor.objectReferenceValue = animator.transform;
-                dirty = true;
-            }
+            ringAnchor.objectReferenceValue = queryOrigin;
+            dirty = true;
         }
 
         if (detectionRingSo.ApplyModifiedPropertiesWithoutUndo())

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>Shared raycast line-of-sight checks for entity and player target discovery.</summary>
@@ -10,13 +11,16 @@ public static class LineOfSightProbe
 
     /// <summary>
     /// True when a ray from <paramref name="from"/> reaches <paramref name="candidate"/> without a blocking hit.
+    /// Hits on <paramref name="penetrateLayers"/> or matching <paramref name="shouldPenetrateHit"/> advance the ray.
     /// </summary>
     public static bool HasLineOfSight(
         Vector3 from,
         Collider candidate,
         Transform ignoreRoot,
         LayerMask layers,
-        QueryTriggerInteraction triggers)
+        QueryTriggerInteraction triggers,
+        LayerMask penetrateLayers = default,
+        Func<Collider, bool> shouldPenetrateHit = null)
     {
         if (candidate == null)
             return false;
@@ -36,7 +40,7 @@ public static class LineOfSightProbe
             if (!Physics.Raycast(origin, dir, out RaycastHit hit, remaining, layers, triggers))
                 return true;
 
-            if (ShouldIgnoreForLos(hit.collider, ignoreRoot))
+            if (ShouldAdvanceThroughHit(hit.collider, ignoreRoot, penetrateLayers, shouldPenetrateHit))
             {
                 float advance = Mathf.Max(hit.distance + LosPenetrationStep, LosPenetrationStep);
                 origin += dir * advance;
@@ -58,7 +62,9 @@ public static class LineOfSightProbe
         Vector3 worldPoint,
         Transform ignoreRoot,
         LayerMask layers,
-        QueryTriggerInteraction triggers)
+        QueryTriggerInteraction triggers,
+        LayerMask penetrateLayers = default,
+        Func<Collider, bool> shouldPenetrateHit = null)
     {
         Vector3 to = worldPoint - from;
         float dist = to.magnitude;
@@ -74,7 +80,7 @@ public static class LineOfSightProbe
             if (!Physics.Raycast(origin, dir, out RaycastHit hit, remaining, layers, triggers))
                 return true;
 
-            if (ShouldIgnoreForLos(hit.collider, ignoreRoot))
+            if (ShouldAdvanceThroughHit(hit.collider, ignoreRoot, penetrateLayers, shouldPenetrateHit))
             {
                 float advance = Mathf.Max(hit.distance + LosPenetrationStep, LosPenetrationStep);
                 origin += dir * advance;
@@ -88,6 +94,19 @@ public static class LineOfSightProbe
         return remaining <= LosEpsilon;
     }
 
+    static bool ShouldAdvanceThroughHit(
+        Collider c,
+        Transform ignoreRoot,
+        LayerMask penetrateLayers,
+        Func<Collider, bool> shouldPenetrateHit)
+    {
+        if (ShouldIgnoreForLos(c, ignoreRoot))
+            return true;
+        if (ShouldPenetrateForLos(c, penetrateLayers))
+            return true;
+        return shouldPenetrateHit != null && shouldPenetrateHit(c);
+    }
+
     static bool ShouldIgnoreForLos(Collider c, Transform ignoreRoot)
     {
         if (c == null || ignoreRoot == null)
@@ -96,10 +115,22 @@ public static class LineOfSightProbe
         return c.transform == ignoreRoot || c.transform.IsChildOf(ignoreRoot);
     }
 
+    static bool ShouldPenetrateForLos(Collider c, LayerMask penetrateLayers)
+    {
+        if (c == null || penetrateLayers.value == 0)
+            return false;
+
+        return (penetrateLayers.value & (1 << c.gameObject.layer)) != 0;
+    }
+
     static bool IsHitFromCandidate(RaycastHit hit, Collider candidate)
     {
         if (hit.collider == candidate)
             return true;
-        return hit.transform.IsChildOf(candidate.transform);
+        if (hit.transform.IsChildOf(candidate.transform))
+            return true;
+        if (candidate.transform.IsChildOf(hit.transform))
+            return true;
+        return false;
     }
 }
