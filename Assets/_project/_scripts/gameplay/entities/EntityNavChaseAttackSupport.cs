@@ -53,6 +53,13 @@ public static class EntityNavChaseAttackSupport
             return;
 
         attackController.SyncNavAgentFacingLock(agent);
+
+        if (attackController.IsCombatFacingLocked)
+            return;
+
+        if (IsNavAgentLocomoting(agent))
+            return;
+
         attackController.FaceTarget(target);
     }
 
@@ -102,7 +109,8 @@ public static class EntityNavChaseAttackSupport
         agent.isStopped = false;
         agent.stoppingDistance = stopDistance;
         agent.SetDestination(target.position);
-        attackController.FaceTarget(target);
+        if (!IsNavAgentLocomoting(agent))
+            attackController.FaceTarget(target);
     }
 
     public static AttackPhaseBeginResult TryBeginPreAttackPhase(
@@ -334,7 +342,6 @@ public static class EntityNavChaseAttackSupport
         }
 
         attackController.SyncNavAgentFacingLock(agent);
-        attackController.FaceTarget(target);
 
         float retreatStopDistance = attackController.RangedRetreatStopDistanceFromTarget;
         if (retreatStopDistance <= 0f)
@@ -363,6 +370,9 @@ public static class EntityNavChaseAttackSupport
             agent.SetDestination(hit.position);
         else
             agent.SetDestination(origin + away * 2f);
+
+        if (!IsNavAgentLocomoting(agent))
+            attackController.FaceTarget(target);
     }
 
     public static void UpdateRangedEngagementMovement(
@@ -488,5 +498,21 @@ public static class EntityNavChaseAttackSupport
         return fallbackRemaining <= 0f
             ? TargetDetectedTickResult.Complete
             : TargetDetectedTickResult.Continue;
+    }
+
+    static bool IsNavAgentLocomoting(NavMeshAgent agent, float speedThreshold = 0.05f)
+    {
+        if (agent == null || !agent.isOnNavMesh || !agent.enabled || agent.isStopped)
+            return false;
+
+        float thresholdSq = speedThreshold * speedThreshold;
+        if (agent.velocity.sqrMagnitude > thresholdSq)
+            return true;
+        if (agent.desiredVelocity.sqrMagnitude > thresholdSq)
+            return true;
+
+        return agent.hasPath
+            && !agent.pathPending
+            && agent.remainingDistance > agent.stoppingDistance + 0.05f;
     }
 }
