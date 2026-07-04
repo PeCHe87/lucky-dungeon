@@ -30,8 +30,7 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     Func<Vector2> _readVirtualStick;
     bool _uiAttackThisFrame;
     bool _uiAttackHeld;
-    IJoystickDoubleTapSink _doubleTapSink;
-    JoystickDoubleTapBridge _joystickDoubleTapBridge;
+    bool _uiDashThisFrame;
 
     void Awake()
     {
@@ -39,46 +38,17 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
             TryGetComponent(out playerInput);
 
         CacheVirtualStickReader();
-        EnsureJoystickDoubleTapBridge();
     }
 
     void OnValidate()
     {
         CacheVirtualStickReader();
-        EnsureJoystickDoubleTapBridge();
     }
 
-    /// <summary>Registers a sink for joystick double-tap pointer events (e.g. <see cref="DashJoystickDoubleTapController"/>).</summary>
-    public void RegisterDoubleTapSink(IJoystickDoubleTapSink sink)
-    {
-        _doubleTapSink = sink;
-        if (_joystickDoubleTapBridge != null)
-            _joystickDoubleTapBridge.SetSink(sink);
-    }
+    /// <summary>Legacy no-op; dash is currently disabled.</summary>
+    public void RegisterDoubleTapSink(IJoystickDoubleTapSink sink) { }
 
-    public void UnregisterDoubleTapSink(IJoystickDoubleTapSink sink)
-    {
-        if (_doubleTapSink != sink)
-            return;
-        _doubleTapSink = null;
-        if (_joystickDoubleTapBridge != null)
-            _joystickDoubleTapBridge.SetSink(null);
-    }
-
-    void EnsureJoystickDoubleTapBridge()
-    {
-        if (virtualJoystick == null)
-        {
-            _joystickDoubleTapBridge = null;
-            return;
-        }
-
-        GameObject joystickObject = virtualJoystick.gameObject;
-        if (!joystickObject.TryGetComponent(out _joystickDoubleTapBridge))
-            _joystickDoubleTapBridge = joystickObject.AddComponent<JoystickDoubleTapBridge>();
-
-        _joystickDoubleTapBridge.SetSink(_doubleTapSink);
-    }
+    public void UnregisterDoubleTapSink(IJoystickDoubleTapSink sink) { }
 
     void CacheVirtualStickReader()
     {
@@ -116,8 +86,6 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
         if (attackAction.action != null)
             attackAction.action.Enable();
 
-        EnsureJoystickDoubleTapBridge();
-
         if (moveAction.action != null)
             return;
 
@@ -153,8 +121,11 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
         _uiAttackHeld = false;
     }
 
-    /// <summary>No-op; dash is joystick double-tap only via <see cref="DashJoystickDoubleTapController"/>.</summary>
-    public void RegisterUiDashFromUi() { }
+    /// <summary>Called from UI (e.g. <see cref="UiDashButtonBinder"/>) to request a dash on the next gameplay read.</summary>
+    public void RegisterUiDashFromUi()
+    {
+        _uiDashThisFrame = true;
+    }
 
     /// <summary>Called from UI (e.g. <see cref="UiAttackButtonBinder"/>) to request an attack on the next gameplay read.</summary>
     public void RegisterUiAttackFromUi()
@@ -200,7 +171,12 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
         return fromActions;
     }
 
-    public bool WasDashPressedThisFrame() => false;
+    public bool WasDashPressedThisFrame()
+    {
+        bool fromUi = _uiDashThisFrame;
+        _uiDashThisFrame = false;
+        return fromUi;
+    }
 
     public bool WasAttackPressedThisFrame()
     {

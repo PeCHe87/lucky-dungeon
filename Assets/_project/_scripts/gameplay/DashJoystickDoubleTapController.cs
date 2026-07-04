@@ -1,28 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// Double-tap the virtual joystick (two quick taps, not drag-then-tap) to burst-dash.
-/// Dragging to move never arms a dash; only two short contacts within a tight window count.
+/// Executes a directed burst dash when the UI dash button registers dash intent.
 /// </summary>
 [RequireComponent(typeof(TopDownCharacterMovement))]
-public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDoubleTapSink
+[RequireComponent(typeof(CharacterController))]
+public sealed class DashJoystickDoubleTapController : MonoBehaviour
 {
-    const float NoPendingTap = -1f;
-
-    [Header("Double-tap")]
-    [Tooltip("Max seconds between first tap release and second tap press.")]
-    [SerializeField, Range(0.1f, 0.25f)] float doubleTapMaxInterval = 0.18f;
-    [Tooltip("Ignore second tap if it comes too soon after the first release (debounce).")]
-    [SerializeField, Range(0.02f, 0.08f)] float doubleTapMinInterval = 0.05f;
-    [Tooltip("Stick deflection above this during a contact counts as a drag, not a tap.")]
-    [SerializeField] float stickDeadzone = 0.08f;
-    [Tooltip("Contacts longer than this are holds/drags, not taps.")]
-    [SerializeField, Range(0.1f, 0.25f)] float maxTapHoldDuration = 0.18f;
-
     [Header("Dash")]
     [SerializeField] float dashCooldown = 2f;
     [SerializeField] float dashDuration = 0.2f;
     [SerializeField] float dashSpeed = 18f;
+    [SerializeField] bool requireGroundedToStartDash = true;
 
     [Header("References")]
     [SerializeField] FeneraxJoystickMoveIntentProvider joystickProvider;
@@ -32,23 +21,28 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
     [SerializeField] DashCooldownRingView cooldownRing;
     [SerializeField] PlayerEntityState playerEntityState;
 
-    bool _gestureActive;
-    float _gestureDownTime;
-    float _gestureMaxOffsetSq;
-
-    float _firstTapEndTime = NoPendingTap;
+    CharacterController _characterController;
+    IDashIntentProvider _dashProvider;
     float _cooldownRemaining;
-
-    float TapDeadzoneSq => stickDeadzone * stickDeadzone;
 
     public float DashDistance => dashSpeed * dashDuration;
 
+    public bool IsDashAvailable =>
+        (playerEntityState == null || !playerEntityState.IsInputBlocked)
+        && CanAcceptDashInput()
+        && IsGroundedForDash();
+
     void Awake()
     {
+        _characterController = GetComponent<CharacterController>();
         if (movement == null)
             movement = GetComponent<TopDownCharacterMovement>();
         if (joystickProvider == null)
             joystickProvider = GetComponent<FeneraxJoystickMoveIntentProvider>();
+        if (joystickProvider != null)
+            _dashProvider = joystickProvider;
+        if (_dashProvider == null)
+            _dashProvider = GetComponent<IDashIntentProvider>();
         if (invulnerability == null)
             invulnerability = GetComponent<DamageInvulnerability>();
         if (trailEffect == null)
@@ -59,28 +53,8 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
             playerEntityState = GetComponent<PlayerEntityState>();
     }
 
-    void OnEnable()
-    {
-        if (joystickProvider != null)
-            joystickProvider.RegisterDoubleTapSink(this);
-    }
-
-    void OnDisable()
-    {
-        if (joystickProvider != null)
-            joystickProvider.UnregisterDoubleTapSink(this);
-        ResetGesture();
-        _firstTapEndTime = NoPendingTap;
-    }
-
     void Update()
     {
-        if (_firstTapEndTime > NoPendingTap
-            && Time.unscaledTime - _firstTapEndTime > doubleTapMaxInterval)
-        {
-            _firstTapEndTime = NoPendingTap;
-        }
-
         if (_cooldownRemaining > 0f)
         {
             _cooldownRemaining -= Time.deltaTime;
@@ -94,89 +68,25 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
         {
             cooldownRing.SetFill01(1f);
         }
+
+        if (_dashProvider != null && _dashProvider.WasDashPressedThisFrame())
+            TryStartDash();
     }
 
-    public void OnJoystickPointerDown(Vector2 normalizedOffsetFromCenter)
+    bool CanAcceptDashInput() =>
+        _cooldownRemaining <= 0f && movement != null && !movement.IsDashing;
+
+    bool IsGroundedForDash() =>
+        !requireGroundedToStartDash
+        || _characterController == null
+        || _characterController.isGrounded;
+
+    void TryStartDash()
     {
-        if (!CanAcceptDashInput())
+        if (!IsDashAvailable)
             return;
 
-        float now = Time.unscaledTime;
-        if (_firstTapEndTime > NoPendingTap)
-        {
-            float sinceFirstTap = now - _firstTapEndTime;
-            if (sinceFirstTap >= doubleTapMinInterval && sinceFirstTap <= doubleTapMaxInterval)
-            {
-                _firstTapEndTime = NoPendingTap;
-                TryStartDash(normalizedOffsetFromCenter);
-                return;
-            }
-
-            _firstTapEndTime = NoPendingTap;
-        }
-
-        BeginGesture(normalizedOffsetFromCenter);
-    }
-
-    public void OnJoystickPointerMove(Vector2 normalizedOffsetFromCenter)
-    {
-        if (!_gestureActive)
-            return;
-
-        float sq = normalizedOffsetFromCenter.sqrMagnitude;
-        if (sq > _gestureMaxOffsetSq)
-            _gestureMaxOffsetSq = sq;
-    }
-
-    public void OnJoystickPointerUp()
-    {
-        if (!_gestureActive)
-            return;
-
-        float now = Time.unscaledTime;
-        bool wasTap = IsTapGesture(now - _gestureDownTime, _gestureMaxOffsetSq);
-        ResetGesture();
-
-        if (!wasTap || !CanAcceptDashInput())
-        {
-            _firstTapEndTime = NoPendingTap;
-            return;
-        }
-
-        _firstTapEndTime = now;
-    }
-
-    void BeginGesture(Vector2 normalizedOffset)
-    {
-        _gestureActive = true;
-        _gestureDownTime = Time.unscaledTime;
-        _gestureMaxOffsetSq = normalizedOffset.sqrMagnitude;
-    }
-
-    void ResetGesture()
-    {
-        _gestureActive = false;
-        _gestureMaxOffsetSq = 0f;
-    }
-
-    bool IsTapGesture(float holdDuration, float maxOffsetSq)
-    {
-        return holdDuration <= maxTapHoldDuration && maxOffsetSq <= TapDeadzoneSq;
-    }
-
-    bool CanAcceptDashInput()
-    {
-        return _cooldownRemaining <= 0f && movement != null && !movement.IsDashing;
-    }
-
-    void TryStartDash(Vector2 normalizedOffset)
-    {
-        if (playerEntityState != null && playerEntityState.IsInputBlocked)
-            return;
-        if (!CanAcceptDashInput())
-            return;
-
-        Vector3 dashDir = ResolveDashDirection(normalizedOffset);
+        Vector3 dashDir = movement.GetFacingHorizontalDirection();
         if (!movement.TryStartDirectedDash(dashDir, dashDuration, dashSpeed))
             return;
 
@@ -187,18 +97,5 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour, IJoystickDo
             trailEffect.Play(dashDir, dashDuration);
         if (cooldownRing != null)
             cooldownRing.SetFill01(0f);
-    }
-
-    Vector3 ResolveDashDirection(Vector2 normalizedOffset)
-    {
-        if (normalizedOffset.sqrMagnitude > TapDeadzoneSq)
-        {
-            Vector2 stick = normalizedOffset;
-            if (stick.sqrMagnitude > 1f)
-                stick.Normalize();
-            return movement.GetHorizontalMoveDirectionFromStick(stick);
-        }
-
-        return movement.GetFacingHorizontalDirection();
     }
 }

@@ -1396,13 +1396,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3ac5f779390da04d9f8f0f18432d824, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DashJoystickDoubleTapController
-  doubleTapMaxInterval: 0.18
-  doubleTapMinInterval: 0.05
-  stickDeadzone: 0.08
-  maxTapHoldDuration: 0.18
   dashCooldown: 2
   dashDuration: 0.5
   dashSpeed: 15
+  requireGroundedToStartDash: 1
   joystickProvider: {fileID: 2009791332878126513}
   movement: {fileID: 2798365246320322531}
   invulnerability: {fileID: 9012345678901234511}

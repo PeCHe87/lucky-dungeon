@@ -3611,6 +3611,98 @@ Transform:
   m_Children: []
   m_Father: {fileID: 179491035}
   m_LocalEulerAnglesHint: {x: 95, y: -176.88, z: 0}
+--- !u!1 &730831433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 730831434}
+  - component: {fileID: 730831437}
+  - component: {fileID: 730831436}
+  - component: {fileID: 730831435}
+  m_Layer: 5
+  m_Name: screenTapAttackInput
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &730831434
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 730831433}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1430985295}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &730831435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 730831433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26b99c1719cb2e24c972f55a12051a44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenTapAttackInput
+  intentProvider: {fileID: 7183177815072600266}
+  playerEntityState: {fileID: 0}
+  maxTapMovementPixels: 16
+  maxTapHoldDuration: 0.18
+--- !u!114 &730831436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 730831433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &730831437
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 730831433}
+  m_CullTransparentMesh: 1
 --- !u!1 &738076436
 GameObject:
   m_ObjectHideFlags: 0
@@ -7273,6 +7365,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 730831434}
   - {fileID: 3030303011}
   - {fileID: 1721384499}
   - {fileID: 1661198350}
@@ -8468,7 +8561,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.1.91.04072026
+  m_text: v.0.1.93.04072026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -8794,7 +8887,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1661198350
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9079,7 +9172,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1721384499
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9095,10 +9188,10 @@ RectTransform:
   - {fileID: 1969291483}
   m_Father: {fileID: 1430985295}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 180, y: 150}
-  m_SizeDelta: {x: 120, y: 100}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -80, y: 450}
+  m_SizeDelta: {x: 120, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1721384500
 MonoBehaviour:
@@ -9157,16 +9250,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6062273, g: 1, b: 0, a: 1}
+  m_Color: {r: 0.46489483, g: 0.7207546, b: 0.28150225, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
+  m_Sprite: {fileID: 21300000, guid: 54628aafa20f64b40ae661038ee7abf0, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -9194,7 +9287,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9f0e1d2c3b4758697a0b1c2d3e4f506, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UiDashButtonBinder
-  intentProvider: {fileID: 0}
+  intentProvider: {fileID: 7183177815072600266}
+  dashController: {fileID: 0}
+  disabledAlpha: 0.45
+  enabledAlpha: 1
 --- !u!1 &1758408908
 GameObject:
   m_ObjectHideFlags: 0
@@ -11338,9 +11434,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 2006127980}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3e33950721ce8d459e81b99f71c402e, type: 3}
+  m_Script: {fileID: 11500000, guid: 9e45f0dc41a723447b84fc12bf974e84, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::JoystickDoubleTapBridge
+  m_EditorClassIdentifier: Assembly-CSharp::TapOrDragJoystickGate
+  intentProvider: {fileID: 7183177815072600266}
+  playerEntityState: {fileID: 0}
+  dragActivationPixels: 16
+  maxTapHoldDuration: 0.18
 --- !u!1001 &535854424256076792
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12172,7 +12272,7 @@ PrefabInstance:
       objectReference: {fileID: 1311685300}
     - target: {fileID: 9012345678901234513, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: dashSpeed
-      value: 20
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 9012345678901234516, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: m_LocalPosition.z
@@ -12255,6 +12355,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
+--- !u!114 &7183177815072600266 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2009791332878126513, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+  m_PrefabInstance: {fileID: 7183177815072600264}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1662043928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8e9f0d1c2b3647586970a1b2c3d4e5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FeneraxJoystickMoveIntentProvider
 --- !u!114 &7183177815072600287 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9012345678901234506, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
