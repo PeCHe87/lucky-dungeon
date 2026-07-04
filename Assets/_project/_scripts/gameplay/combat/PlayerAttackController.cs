@@ -23,6 +23,8 @@ public sealed class PlayerAttackController : MonoBehaviour
     [SerializeField] bool snapFacingToNearestTargetBeforeAttack = true;
     [Tooltip("If true, logs the weapon used each time an attack is processed (i.e. TryAttack succeeded).")]
     [SerializeField] bool logProcessedAttack;
+    [Tooltip("If true, logs ignored, buffered, consumed, and cleared attack input.")]
+    [SerializeField] bool logIgnoredAttackInput;
     [Tooltip("If unset, uses PlayerEntityState on this GameObject or in the scene.")]
     [SerializeField] PlayerEntityState playerEntityState;
     [Tooltip("If unset, uses PlayerEntityStateAnimator on this GameObject.")]
@@ -37,6 +39,7 @@ public sealed class PlayerAttackController : MonoBehaviour
     AttackContext _pendingMeleeContext;
     bool _movementPriorityCancelActive;
     bool _rangedAttackDisengagedUntilRelease;
+    bool _hasBufferedAttackPress;
 
     /// <summary>World position used as melee overlap origin (<see cref="AttackContext.attacker"/>).</summary>
     public Transform AttackOriginTransform => transform;
@@ -86,6 +89,18 @@ public sealed class PlayerAttackController : MonoBehaviour
         _dashProvider = GetComponent<IDashIntentProvider>();
     }
 
+    void OnEnable()
+    {
+        if (playerEntityState != null)
+            playerEntityState.StateChanged += OnPlayerStateChanged;
+    }
+
+    void OnDisable()
+    {
+        if (playerEntityState != null)
+            playerEntityState.StateChanged -= OnPlayerStateChanged;
+    }
+
     void Update()
     {
         ClearRangedAttackDisengageIfReleased();
@@ -99,6 +114,8 @@ public sealed class PlayerAttackController : MonoBehaviour
             return;
         }
 
+        ClearBufferedAttackPress("movement priority");
+
         if (!IsAttackInProgress())
             return;
 
@@ -110,8 +127,13 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (_attackProvider == null || weaponHolder == null)
             return;
 
+        bool pressed = _attackProvider.WasAttackPressedThisFrame();
+
         if (_meleeApproachPending)
         {
+            if (pressed)
+                TryHandleExplicitPressBuffering(pressed);
+
             if (weaponHolder.Current is MeleeWeapon meleeCheck && !meleeCheck.EnableApproachLunge)
             {
                 CancelPendingMeleeApproach();
@@ -142,14 +164,20 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (HasMovementPriorityInput())
             return;
 
-        bool pressed = _attackProvider.WasAttackPressedThisFrame();
+        if (TryConsumeBufferedAttackPress())
+            return;
+
         bool held = IsAttackHoldActive;
         if (!pressed && !held)
             return;
         if (playerEntityState != null && playerEntityState.IsInputBlocked)
             return;
         if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
+        {
+            if (pressed)
+                TryHandleExplicitPressBuffering(pressed);
             return;
+        }
 
         if (_movement != null && _movement.IsLunging)
             return;
@@ -161,26 +189,123 @@ public sealed class PlayerAttackController : MonoBehaviour
             && weaponHolder.Current is MeleeWeapon)
             return;
 
-        if (!TryBuildAttackContext(out AttackContext ctx))
+        if (!TryExecuteAttack(pressed, out bool performed))
             return;
 
+        if (pressed && !performed && IsExplicitAttackPressUnavailable())
+            TryHandleExplicitPressBuffering(pressed);
+    }
+
+    bool IsExplicitAttackPressUnavailable() =>
+        IsCurrentWeaponOnCooldown || IsAttackInProgress();
+
+    void TryHandleExplicitPressBuffering(bool pressed)
+    {
+        if (!pressed)
+            return;
+
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            return;
+
+        if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
+        {
+            LogIgnoredAttackInput("locomotion blocked");
+            return;
+        }
+
+        if (!IsExplicitAttackPressUnavailable())
+            return;
+
+        if (!_hasBufferedAttackPress)
+        {
+            _hasBufferedAttackPress = true;
+            LogAttackInputDebug("Attack input buffered.");
+            return;
+        }
+
+        LogIgnoredAttackInput("buffer already full");
+    }
+
+    bool TryConsumeBufferedAttackPress()
+    {
+        if (!_hasBufferedAttackPress)
+            return false;
+
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            return false;
+        if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
+            return false;
+        if (_movement != null && _movement.IsLunging)
+            return false;
+        if (IsExplicitAttackPressUnavailable())
+            return false;
+
+        if (!TryBuildAttackContext(out AttackContext ctx))
+            return false;
+
+        bool performed = ExecuteAttackFromContext(in ctx, isUserPress: false);
+        if (performed)
+            LogAttackInputDebug("Buffered attack input consumed.");
+
+        return performed;
+    }
+
+    bool TryExecuteAttack(bool isUserPress, out bool performed)
+    {
+        performed = false;
+        if (!TryBuildAttackContext(out AttackContext ctx))
+            return false;
+
+        performed = ExecuteAttackFromContext(in ctx, isUserPress);
+        return true;
+    }
+
+    bool ExecuteAttackFromContext(in AttackContext ctx, bool isUserPress)
+    {
         bool performed;
         if (weaponHolder.Current is MeleeWeapon melee)
-            performed = TryProcessMeleeAttack(melee, in ctx, pressed);
+            performed = TryProcessMeleeAttack(melee, in ctx, isUserPress);
         else if (weaponHolder.Current is RangedWeapon ranged)
             performed = TryProcessRangedAttack(ranged, in ctx);
         else
             performed = weaponHolder.TryAttack(in ctx);
 
         if (!_meleeApproachPending && performed)
-            AttackPressed?.Invoke(pressed);
+            AttackPressed?.Invoke(isUserPress);
 
         if (performed)
         {
             _movementPriorityCancelActive = false;
+            ClearBufferedAttackPress();
             EngageCombatTargetIfNeeded(ctx.optionalTarget);
             AttackPerformed?.Invoke();
             LogProcessedAttackIfEnabled();
+        }
+
+        return performed;
+    }
+
+    void ClearBufferedAttackPress(string reason = null)
+    {
+        if (!_hasBufferedAttackPress)
+            return;
+
+        _hasBufferedAttackPress = false;
+        if (!string.IsNullOrEmpty(reason))
+            LogAttackInputDebug($"Buffered attack input cleared ({reason}).");
+    }
+
+    void OnPlayerStateChanged(PlayerEntityStateKind previous, PlayerEntityStateKind current)
+    {
+        switch (current)
+        {
+            case PlayerEntityStateKind.Walking:
+            case PlayerEntityStateKind.Running:
+            case PlayerEntityStateKind.Dashing:
+            case PlayerEntityStateKind.TakingDamage:
+            case PlayerEntityStateKind.Dying:
+                ClearBufferedAttackPress($"state changed to {current}");
+                break;
         }
     }
 
@@ -286,6 +411,7 @@ public sealed class PlayerAttackController : MonoBehaviour
         }
 
         _movementPriorityCancelActive = false;
+        ClearBufferedAttackPress();
         EngageCombatTargetIfNeeded(ctx.optionalTarget);
         AttackPressed?.Invoke(false);
         AttackPerformed?.Invoke();
@@ -393,7 +519,24 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (disengageRangedHold && weaponHolder != null && weaponHolder.IsRangedEquipped())
             _rangedAttackDisengagedUntilRelease = true;
         _movementPriorityCancelActive = true;
+        ClearBufferedAttackPress("attack cancelled");
         AttackCancelled?.Invoke();
+    }
+
+    void LogIgnoredAttackInput(string reason)
+    {
+        if (!logIgnoredAttackInput)
+            return;
+
+        Debug.Log($"[PlayerAttackController] Attack input ignored — {reason}.", this);
+    }
+
+    void LogAttackInputDebug(string message)
+    {
+        if (!logIgnoredAttackInput)
+            return;
+
+        Debug.Log($"[PlayerAttackController] {message}", this);
     }
 
     void LogProcessedAttackIfEnabled()
