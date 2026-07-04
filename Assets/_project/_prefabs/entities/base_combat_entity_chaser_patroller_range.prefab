@@ -1913,7 +1913,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialState: {fileID: 11400000, guid: d3c4b5a69788796a5b4c3d2e1f0a1b2c, type: 2}
-  debugLog: 1
+  debugLog: 0
 --- !u!114 &2025908165253351341
 MonoBehaviour:
   m_ObjectHideFlags: 0
