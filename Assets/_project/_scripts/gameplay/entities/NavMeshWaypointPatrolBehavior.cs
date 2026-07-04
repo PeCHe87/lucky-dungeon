@@ -53,6 +53,8 @@ public class NavMeshWaypointPatrolBehavior : MonoBehaviour, IEntityNavBehavior
 
         if (_lastSetIndex != _index)
             TrySetDestination(agent, target.position);
+
+        EntityNavChaseAttackSupport.SyncLocomotionFacing(agent, gameObject);
     }
 
     static float FlatDistanceSq(Vector3 a, Vector3 b)

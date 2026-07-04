@@ -105,7 +105,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
 
         targetDetectedTelegraph?.Cancel();
         _phase = Phase.Chasing;
-        EntityNavChaseAttackSupport.ResetToChaseAfterDamageInterrupt(agent, ref _hasChaseSample);
+        EntityNavChaseAttackSupport.ResetToChaseAfterDamageInterrupt(agent, gameObject, ref _hasChaseSample);
     }
 
     void Start()
@@ -230,7 +230,7 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
 
         _phase = Phase.Chasing;
         _hasChaseSample = false;
-        agent.isStopped = false;
+        EntityNavChaseAttackSupport.TryEnableNavLocomotion(agent, gameObject);
     }
 
     void TickPreAttacking(NavMeshAgent agent, Vector3 origin)
@@ -444,7 +444,9 @@ public class NavMeshPatrolUntilChaseBehavior : MonoBehaviour, IEntityNavBehavior
         }
 
         agent.stoppingDistance = arrivalRadius;
-        agent.isStopped = false;
+        if (!EntityNavChaseAttackSupport.TryEnableNavLocomotion(agent, gameObject))
+            return;
+
         NavMeshChaseDriver.RefreshChaseDestinationIfNeeded(
             agent,
             targetPos,

@@ -701,6 +701,7 @@ MonoBehaviour:
   pushbackBlockLayers:
     serializedVersion: 2
     m_Bits: 0
+  movementResumeDelayAfterPushback: 0.4
 --- !u!114 &9100000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0

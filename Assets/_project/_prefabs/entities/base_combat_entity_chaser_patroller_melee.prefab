@@ -1324,6 +1324,7 @@ MonoBehaviour:
   target: {fileID: 0}
   moveRoot: {fileID: 9027769756202637317}
   detectionRadius: 20
+  lossDetectionRadius: 0
   viewAngle: 125
   requireLineOfSightForDetection: 1
   losOriginOffset: {x: 0, y: 1.5, z: 0}
@@ -1446,6 +1447,9 @@ MonoBehaviour:
   preAttackDuration: 0.75
   cancelAttackOnDamage: 1
   attackCooldownAfterDamage: 0.4
+  suppressDamageInterruptDuringAttack: 0
+  suppressPushbackDuringAttack: 0
+  enableBetweenAttackRecovery: 1
   pinnedTravelThreshold: 0.05
   pinEngagementSlack: 0.35
   debugLogEngagement: 0
@@ -1466,6 +1470,7 @@ MonoBehaviour:
   animator: {fileID: 596521848079013383}
   attackStateName: Attack1
   preAttackStateName: PreAttack1
+  betweenAttackStateName: AttackReady
   attackLayer: 0
   crossFadeSeconds: 0.08
   attackCompletionNormalizedTime: 0.95
@@ -1486,6 +1491,7 @@ MonoBehaviour:
   pushbackBlockLayers:
     serializedVersion: 2
     m_Bits: 0
+  movementResumeDelayAfterPushback: 0.4
 --- !u!114 &1976526935618219501
 MonoBehaviour:
   m_ObjectHideFlags: 0

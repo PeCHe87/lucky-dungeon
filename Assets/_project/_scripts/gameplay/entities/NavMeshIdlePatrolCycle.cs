@@ -206,6 +206,8 @@ public class NavMeshIdlePatrolCycle
 
         if (!agent.pathPending && agent.remainingDistance <= randomWaypointThreshold)
             PickRandomDestination(agent);
+
+        EntityNavChaseAttackSupport.SyncLocomotionFacing(agent, agent.gameObject);
     }
 
     static void StopAgent(NavMeshAgent agent)

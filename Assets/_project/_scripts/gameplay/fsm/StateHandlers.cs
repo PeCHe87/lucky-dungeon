@@ -114,6 +114,8 @@ public class PatrolStateHandler : IStateHandler
 
         if (!agent.pathPending && agent.remainingDistance <= waypointThreshold)
             PickNewWaypoint(bb, agent, radius);
+
+        EntityNavChaseAttackSupport.SyncLocomotionFacing(agent, bb.Self.gameObject);
     }
 
     public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params) { }
@@ -142,9 +144,7 @@ public class ChaseStateHandler : IStateHandler
     {
         var agent = FSMNavMesh.GetAgent(bb);
         if (agent != null)
-        {
-            agent.isStopped = false;
-        }
+            EntityNavChaseAttackSupport.TryEnableNavLocomotion(agent, bb.Self.gameObject);
     }
 
     public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
@@ -178,9 +178,11 @@ public class ChaseStateHandler : IStateHandler
             return;
         }
 
-        agent.isStopped = false;
         agent.speed = speed;
         agent.stoppingDistance = stoppingDistance;
+        if (!EntityNavChaseAttackSupport.TryEnableNavLocomotion(agent, bb.Self.gameObject))
+            return;
+
         agent.SetDestination(bb.Target.position);
     }
 
@@ -294,7 +296,7 @@ public class TakeDamageStateHandler : IStateHandler
 
         var agent = FSMNavMesh.GetAgent(bb);
         if (agent != null)
-            agent.isStopped = false;
+            EntityNavChaseAttackSupport.TryEnableNavLocomotion(agent, bb.Self.gameObject);
 
         EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
     }

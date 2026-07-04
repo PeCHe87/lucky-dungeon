@@ -20,6 +20,64 @@ public static class EntityNavChaseAttackSupport
             caches[i].InvalidateChaseDestinationCache();
     }
 
+    public static bool IsNavLocomotionBlocked(GameObject entityRoot) =>
+        entityRoot != null
+        && entityRoot.TryGetComponent(out PushbackReceiver receiver)
+        && receiver.IsNavLocomotionBlocked;
+
+    /// <summary>Returns true when locomotion was enabled; false when blocked (agent left stopped).</summary>
+    public static bool TryEnableNavLocomotion(NavMeshAgent agent, GameObject entityRoot)
+    {
+        if (agent == null)
+            return false;
+
+        if (IsNavLocomotionBlocked(entityRoot))
+        {
+            agent.isStopped = true;
+            return false;
+        }
+
+        agent.isStopped = false;
+        ReconcileNavAgentRotation(agent, entityRoot != null ? entityRoot.GetComponent<EntityAttackController>() : null);
+        return true;
+    }
+
+    public static void SyncLocomotionFacing(NavMeshAgent agent, GameObject entityRoot)
+    {
+        if (agent == null || !IsNavAgentLocomoting(agent))
+            return;
+
+        EntityAttackController attackController =
+            entityRoot != null ? entityRoot.GetComponent<EntityAttackController>() : null;
+
+        ReconcileNavAgentRotation(agent, attackController);
+
+        if (attackController != null && attackController.IsCombatFacingLocked)
+            return;
+
+        if (!agent.updateRotation)
+        {
+            Vector3 moveDir = agent.velocity;
+            if (moveDir.sqrMagnitude < 1e-8f)
+                moveDir = agent.desiredVelocity;
+
+            Transform facingRoot = attackController != null
+                ? attackController.AttackFacingTransform
+                : agent.transform;
+
+            RotateTowardFlatDirection(facingRoot, moveDir, agent.angularSpeed);
+        }
+    }
+
+    static void ReconcileNavAgentRotation(NavMeshAgent agent, EntityAttackController attackController)
+    {
+        if (agent == null)
+            return;
+
+        agent.updateRotation = true;
+        attackController?.SyncNavAgentFacingLock(agent);
+    }
+
     public enum AttackPhaseBeginResult
     {
         Failed,
@@ -37,11 +95,10 @@ public static class EntityNavChaseAttackSupport
         ResumeSearching,
     }
 
-    public static void ResetToChaseAfterDamageInterrupt(NavMeshAgent agent, ref bool hasChaseSample)
+    public static void ResetToChaseAfterDamageInterrupt(NavMeshAgent agent, GameObject entityRoot, ref bool hasChaseSample)
     {
         hasChaseSample = false;
-        if (agent != null)
-            agent.isStopped = false;
+        TryEnableNavLocomotion(agent, entityRoot);
     }
 
     public static void SyncChaseFacing(
@@ -58,9 +115,28 @@ public static class EntityNavChaseAttackSupport
             return;
 
         if (IsNavAgentLocomoting(agent))
+        {
+            SyncLocomotionFacing(agent, attackController.gameObject);
             return;
+        }
 
         attackController.FaceTarget(target);
+    }
+
+    static void RotateTowardFlatDirection(Transform facingRoot, Vector3 direction, float degreesPerSecond)
+    {
+        if (facingRoot == null)
+            return;
+
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 1e-8f)
+            return;
+
+        Quaternion target = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        facingRoot.rotation = Quaternion.RotateTowards(
+            facingRoot.rotation,
+            target,
+            degreesPerSecond * Time.deltaTime);
     }
 
     public static bool TryBeginAttackPhase(
@@ -106,7 +182,9 @@ public static class EntityNavChaseAttackSupport
             return;
 
         float stopDistance = attackController.MeleeApproachStopDistance;
-        agent.isStopped = false;
+        if (!TryEnableNavLocomotion(agent, attackController.gameObject))
+            return;
+
         agent.stoppingDistance = stopDistance;
         agent.SetDestination(target.position);
         if (!IsNavAgentLocomoting(agent))
@@ -150,7 +228,7 @@ public static class EntityNavChaseAttackSupport
         if (attackController.IsOnlyDamageBlocked)
         {
             if (agent != null)
-                agent.isStopped = false;
+                TryEnableNavLocomotion(agent, attackController.gameObject);
             return AttackTickResult.ResumeChasing;
         }
 
@@ -192,7 +270,7 @@ public static class EntityNavChaseAttackSupport
                 return HoldAttackReadyDuringCooldown(attackController, fieldOfView.Target, agent);
 
             if (agent != null)
-                agent.isStopped = false;
+                TryEnableNavLocomotion(agent, attackController.gameObject);
             return AttackTickResult.ResumeChasing;
         }
 
@@ -273,7 +351,7 @@ public static class EntityNavChaseAttackSupport
         if (attackController.IsOnlyDamageBlocked)
         {
             if (agent != null)
-                agent.isStopped = false;
+                TryEnableNavLocomotion(agent, attackController.gameObject);
             return AttackTickResult.ResumeChasing;
         }
 
@@ -363,7 +441,9 @@ public static class EntityNavChaseAttackSupport
             away.Normalize();
 
         Vector3 desiredPos = targetPos + away * retreatStopDistance;
-        agent.isStopped = false;
+        if (!TryEnableNavLocomotion(agent, attackController.gameObject))
+            return;
+
         agent.stoppingDistance = 0.25f;
 
         if (NavMesh.SamplePosition(desiredPos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
@@ -442,7 +522,7 @@ public static class EntityNavChaseAttackSupport
 
         attackController.CancelActiveAttack();
         if (agent != null)
-            agent.isStopped = false;
+            TryEnableNavLocomotion(agent, attackController.gameObject);
         result = AttackTickResult.ResumeChasing;
         return true;
     }

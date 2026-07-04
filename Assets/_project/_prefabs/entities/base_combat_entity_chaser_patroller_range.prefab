@@ -2122,6 +2122,9 @@ MonoBehaviour:
   preAttackDuration: 0.75
   cancelAttackOnDamage: 1
   attackCooldownAfterDamage: 0.4
+  suppressDamageInterruptDuringAttack: 0
+  suppressPushbackDuringAttack: 0
+  enableBetweenAttackRecovery: 1
   pinnedTravelThreshold: 0.05
   pinEngagementSlack: 0.35
   debugLogEngagement: 0
@@ -2142,6 +2145,7 @@ MonoBehaviour:
   animator: {fileID: 974160349899826416}
   attackStateName: Attack1
   preAttackStateName: PreAttack1
+  betweenAttackStateName: AttackReady
   attackLayer: 0
   crossFadeSeconds: 0.08
   attackCompletionNormalizedTime: 0.95
@@ -2162,6 +2166,7 @@ MonoBehaviour:
   pushbackBlockLayers:
     serializedVersion: 2
     m_Bits: 0
+  movementResumeDelayAfterPushback: 0.4
 --- !u!114 &5739746715561559543
 MonoBehaviour:
   m_ObjectHideFlags: 0

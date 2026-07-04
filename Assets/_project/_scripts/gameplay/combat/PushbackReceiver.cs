@@ -11,17 +11,24 @@ public sealed class PushbackReceiver : MonoBehaviour
     [SerializeField, Range(0f, 1f)] float pushbackResistance;
     [Tooltip("Layers that block horizontal pushback (e.g. walls).")]
     [SerializeField] LayerMask pushbackBlockLayers;
+    [Tooltip("Seconds after knockback ends before NavMesh locomotion may resume.")]
+    [SerializeField, Min(0f)] float movementResumeDelayAfterPushback = 0.2f;
 
     Coroutine _activeKnockback;
+    float _movementResumeAllowedAt;
     Collider[] _selfColliders;
     int _agentKnockbackDepth;
     bool _agentWasStopped;
     bool _agentUpdatedPosition;
-    bool _agentUpdatedRotation;
 
     public float PushbackResistance => pushbackResistance;
 
     public LayerMask PushbackBlockLayers => pushbackBlockLayers;
+
+    public bool IsApplyingPushback => _activeKnockback != null;
+
+    public bool IsNavLocomotionBlocked =>
+        IsApplyingPushback || Time.time < _movementResumeAllowedAt;
 
     void Reset()
     {
@@ -45,6 +52,7 @@ public sealed class PushbackReceiver : MonoBehaviour
         }
 
         RestoreNavMeshAgentAfterKnockback();
+        _movementResumeAllowedAt = 0f;
     }
 
     public void ApplyPushback(in PushbackContext ctx)
@@ -106,6 +114,12 @@ public sealed class PushbackReceiver : MonoBehaviour
         {
             EndNavMeshAgentKnockback(agent, useAgent);
             _activeKnockback = null;
+            if (useAgent && movementResumeDelayAfterPushback > 0f)
+            {
+                _movementResumeAllowedAt = Mathf.Max(
+                    _movementResumeAllowedAt,
+                    Time.time + movementResumeDelayAfterPushback);
+            }
         }
     }
 
@@ -118,7 +132,6 @@ public sealed class PushbackReceiver : MonoBehaviour
         {
             _agentWasStopped = agent.isStopped;
             _agentUpdatedPosition = agent.updatePosition;
-            _agentUpdatedRotation = agent.updateRotation;
             agent.isStopped = true;
             agent.updatePosition = false;
             agent.updateRotation = false;
@@ -139,8 +152,8 @@ public sealed class PushbackReceiver : MonoBehaviour
 
         SyncAgentToTransform(agent);
         agent.updatePosition = _agentUpdatedPosition;
-        agent.updateRotation = _agentUpdatedRotation;
         agent.isStopped = _agentWasStopped;
+        ReconcileNavAgentRotation(agent);
     }
 
     void RestoreNavMeshAgentAfterKnockback()
@@ -154,9 +167,16 @@ public sealed class PushbackReceiver : MonoBehaviour
 
         SyncAgentToTransform(agent);
         agent.updatePosition = _agentUpdatedPosition;
-        agent.updateRotation = _agentUpdatedRotation;
         agent.isStopped = _agentWasStopped;
+        ReconcileNavAgentRotation(agent);
         _agentKnockbackDepth = 0;
+    }
+
+    void ReconcileNavAgentRotation(NavMeshAgent agent)
+    {
+        agent.updateRotation = true;
+        if (TryGetComponent(out EntityAttackController attackController))
+            attackController.SyncNavAgentFacingLock(agent);
     }
 
     void SyncAgentToTransform(NavMeshAgent agent)

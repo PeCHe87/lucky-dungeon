@@ -1604,7 +1604,7 @@ MonoBehaviour:
   maxOrthographicSize: 24
   yawDegrees: -45
   pitchDegrees: 40
-  positionSmoothTime: 0.15
+  positionSmoothTime: 0.5
 --- !u!1 &364741180
 GameObject:
   m_ObjectHideFlags: 0
@@ -7939,7 +7939,7 @@ Transform:
   m_GameObject: {fileID: 1505673134}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0.254, z: 4}
+  m_LocalPosition: {x: -0, y: 0.254, z: 1}
   m_LocalScale: {x: 0.2, y: 0.1, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8656,8 +8656,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -100, y: 450}
-  m_SizeDelta: {x: 200, y: 300}
+  m_AnchoredPosition: {x: -100, y: 500}
+  m_SizeDelta: {x: 200, y: 250}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1661198351
 MonoBehaviour:
@@ -11885,6 +11885,10 @@ PrefabInstance:
       propertyPath: burstAnchor
       value: 
       objectReference: {fileID: 1311685300}
+    - target: {fileID: 9012345678901234513, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: dashSpeed
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 9012345678901234516, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: m_LocalPosition.z
       value: -0
