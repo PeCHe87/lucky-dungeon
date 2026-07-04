@@ -36,6 +36,7 @@ public sealed class PlayerAttackController : MonoBehaviour
     bool _hasPendingMeleeContext;
     AttackContext _pendingMeleeContext;
     bool _movementPriorityCancelActive;
+    bool _rangedAttackDisengagedUntilRelease;
 
     /// <summary>World position used as melee overlap origin (<see cref="AttackContext.attacker"/>).</summary>
     public Transform AttackOriginTransform => transform;
@@ -47,6 +48,10 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     public bool IsAttackInputHeld =>
         _attackProvider != null && _attackProvider.IsAttackHeld();
+
+    /// <summary>True when held attack input should drive combat/animation (false after ranged cancel-by-move until release).</summary>
+    public bool IsAttackHoldActive =>
+        IsAttackInputHeld && !_rangedAttackDisengagedUntilRelease;
 
     public bool IsCurrentWeaponOnCooldown =>
         weaponHolder != null
@@ -83,6 +88,8 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     void Update()
     {
+        ClearRangedAttackDisengageIfReleased();
+
         if (playerEntityState != null && playerEntityState.IsInputBlocked)
             return;
 
@@ -130,8 +137,13 @@ public sealed class PlayerAttackController : MonoBehaviour
             return;
         }
 
+        ClearRangedAttackDisengageIfReleased();
+
+        if (HasMovementPriorityInput())
+            return;
+
         bool pressed = _attackProvider.WasAttackPressedThisFrame();
-        bool held = _attackProvider.IsAttackHeld();
+        bool held = IsAttackHoldActive;
         if (!pressed && !held)
             return;
         if (playerEntityState != null && playerEntityState.IsInputBlocked)
@@ -332,15 +344,45 @@ public sealed class PlayerAttackController : MonoBehaviour
             && activity.IsAttackActive)
             return true;
 
+        if (IsRangedAttackWaitingForNextShot())
+            return true;
+
         return _movement != null && _movement.IsLunging;
+    }
+
+    bool IsRangedAttackWaitingForNextShot()
+    {
+        if (weaponHolder == null || !weaponHolder.IsRangedEquipped())
+            return false;
+        if (!IsAttackHoldActive)
+            return false;
+        if (!IsCurrentWeaponOnCooldown)
+            return false;
+        if (entityStateAnimator != null && entityStateAnimator.IsMeleeAttackClipPlaying)
+            return false;
+
+        return true;
+    }
+
+    void ClearRangedAttackDisengageIfReleased()
+    {
+        if (!_rangedAttackDisengagedUntilRelease)
+            return;
+        if (_attackProvider == null || !_attackProvider.IsAttackHeld())
+            _rangedAttackDisengagedUntilRelease = false;
     }
 
     public void CancelAttackForInterrupt()
     {
-        CancelAttackForMovementPriority();
+        CancelActiveAttackPresentation(disengageRangedHold: false);
     }
 
     void CancelAttackForMovementPriority()
+    {
+        CancelActiveAttackPresentation(disengageRangedHold: true);
+    }
+
+    void CancelActiveAttackPresentation(bool disengageRangedHold)
     {
         if (_meleeApproachPending)
             CancelPendingMeleeApproach();
@@ -348,6 +390,8 @@ public sealed class PlayerAttackController : MonoBehaviour
             _movement.CancelApproachLunge();
 
         weaponHolder?.CancelActiveAttack();
+        if (disengageRangedHold && weaponHolder != null && weaponHolder.IsRangedEquipped())
+            _rangedAttackDisengagedUntilRelease = true;
         _movementPriorityCancelActive = true;
         AttackCancelled?.Invoke();
     }

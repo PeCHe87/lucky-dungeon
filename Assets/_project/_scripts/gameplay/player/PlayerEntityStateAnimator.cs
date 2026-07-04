@@ -31,6 +31,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     MeleeWeapon _meleeWeapon;
     RangedWeapon _rangedWeapon;
     IMoveIntentProvider _moveProvider;
+    TopDownCharacterMovement _movement;
     bool _meleeApproachAnimActive;
 
     RuntimeAnimatorController _defaultController;
@@ -66,6 +67,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             combatFocusLock = GetComponent<CombatTargetFocusLock>();
 
         _moveProvider = GetComponent<IMoveIntentProvider>();
+        _movement = GetComponent<TopDownCharacterMovement>();
         ResolveMeleeWeapon();
         ResolveRangedWeapon();
 
@@ -293,10 +295,20 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         _meleeApproachAnimActive = false;
         _attackReadyAnimActive = false;
 
-        if (playerEntityState == null || profile == null)
+        if (profile == null)
             return;
 
-        PlayForState(playerEntityState.Current, force: false);
+        PlayForState(ResolvePostCancelLocomotionState(), force: false);
+    }
+
+    PlayerEntityStateKind ResolvePostCancelLocomotionState()
+    {
+        if (_movement != null && _movement.IsDashing)
+            return PlayerEntityStateKind.Dashing;
+        if (HasMoveIntentAboveDeadzone())
+            return PlayerEntityStateKind.Running;
+
+        return PlayerEntityStateKind.Idle;
     }
 
     void OnMeleeApproachCancelled()
@@ -394,7 +406,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
     {
         if (attackController == null || profile == null || !profile.HasAttackReadyState)
             return false;
-        if (!attackController.IsAttackInputHeld)
+        if (!attackController.IsAttackHoldActive)
             return false;
         if (!attackController.IsCurrentWeaponOnCooldown)
             return false;
@@ -422,7 +434,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     bool ShouldSuppressLocomotionForHeldAttack()
     {
-        if (attackController == null || !attackController.IsAttackInputHeld)
+        if (attackController == null || !attackController.IsAttackHoldActive)
             return false;
         if (_meleeApproachAnimActive || attackController.IsMeleeApproaching)
             return false;
