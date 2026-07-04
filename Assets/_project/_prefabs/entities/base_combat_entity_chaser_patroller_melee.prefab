@@ -1137,6 +1137,7 @@ GameObject:
   - component: {fileID: 3107365302560389926}
   - component: {fileID: 1976526935618219501}
   - component: {fileID: 5290022941274740886}
+  - component: {fileID: 8880000000000000003}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_melee
   m_TagString: Entity
@@ -1548,6 +1549,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
   faceAttackerOnDamage: 1
   visualPivot: {fileID: 3487530139501138205}
+--- !u!114 &8880000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4088201733402775376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d4e768734c679445b44b0c94c2e1b5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityPlayerTargetIndicator
+  showWhenPlayerDetects: 1
+  ringAnchor: {fileID: 9027769756202637317}
+  ringRadius: 1
+  heightOffset: 0.05
+  lineWidth: 0.08
+  segmentCount: 64
+  ringColor: {r: 1, g: 0.19999999, b: 0.23612669, a: 0.9}
 --- !u!1 &4241429797708282029
 GameObject:
   m_ObjectHideFlags: 0

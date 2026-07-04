@@ -1811,6 +1811,7 @@ GameObject:
   - component: {fileID: 5739746715561559543}
   - component: {fileID: 4672761685668651002}
   - component: {fileID: 2614154267041728895}
+  - component: {fileID: 8880000000000000004}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_range
   m_TagString: Entity
@@ -2237,6 +2238,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntityWeaponDetectionRadiusSync
   weaponHolder: {fileID: 0}
   fieldOfView: {fileID: 0}
+--- !u!114 &8880000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353573894065297185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d4e768734c679445b44b0c94c2e1b5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityPlayerTargetIndicator
+  showWhenPlayerDetects: 1
+  ringAnchor: {fileID: 6934060178787341393}
+  ringRadius: 1
+  heightOffset: 0.05
+  lineWidth: 0.08
+  segmentCount: 64
+  ringColor: {r: 1, g: 0.24479592, b: 0.19999999, a: 0.9}
 --- !u!1 &7360468481391053212
 GameObject:
   m_ObjectHideFlags: 0

@@ -347,6 +347,7 @@ GameObject:
   - component: {fileID: 5943193764982946597}
   - component: {fileID: 9100000000000000001}
   - component: {fileID: 7628415799780738255}
+  - component: {fileID: 8880000000000000002}
   m_Layer: 8
   m_Name: base_combat_entity_chaser
   m_TagString: Entity
@@ -758,6 +759,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
   faceAttackerOnDamage: 1
   visualPivot: {fileID: 2000000000000000012}
+--- !u!114 &8880000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d4e768734c679445b44b0c94c2e1b5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityPlayerTargetIndicator
+  showWhenPlayerDetects: 1
+  ringAnchor: {fileID: 2000000000000000002}
+  ringRadius: 1
+  heightOffset: 0.05
+  lineWidth: 0.08
+  segmentCount: 64
+  ringColor: {r: 1, g: 0.23741853, b: 0.19999999, a: 0.9}
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0

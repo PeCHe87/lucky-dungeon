@@ -24,7 +24,7 @@ public sealed class LevelTargetIndicatorAssistant : MonoBehaviour
     }
 
     Transform _currentTarget;
-    TargetIndicatorView _currentView;
+    EntityPlayerTargetIndicator _currentIndicator;
 
     void Start()
     {
@@ -65,29 +65,20 @@ public sealed class LevelTargetIndicatorAssistant : MonoBehaviour
         if (_currentTarget == target)
             return;
 
-        if (_currentView != null)
-            _currentView.SetDetected(false);
+        if (_currentIndicator != null)
+        {
+            _currentIndicator.SetDetectedByPlayer(false);
+            _currentIndicator = null;
+        }
 
         _currentTarget = target;
-        _currentView = null;
-
-        if (_currentTarget == null)
+        if (target == null)
             return;
 
-        _currentView = GetOrAddView(_currentTarget);
-        if (_currentView != null)
-            _currentView.SetDetected(true);
-    }
+        if (!EntityPlayerTargetIndicator.TryGet(target, out var indicator) || !indicator.CanShowWhenPlayerDetects)
+            return;
 
-    static TargetIndicatorView GetOrAddView(Transform t)
-    {
-        if (t == null)
-            return null;
-
-        if (t.TryGetComponent(out TargetIndicatorView view))
-            return view;
-
-        return t.gameObject.AddComponent<TargetIndicatorView>();
+        _currentIndicator = indicator;
+        indicator.SetDetectedByPlayer(true);
     }
 }
-

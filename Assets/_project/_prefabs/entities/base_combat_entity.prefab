@@ -304,6 +304,7 @@ GameObject:
   - component: {fileID: 3778168348497999318}
   - component: {fileID: 6281216324875384146}
   - component: {fileID: 2669398884229558377}
+  - component: {fileID: 8880000000000000001}
   m_Layer: 8
   m_Name: base_combat_entity
   m_TagString: Entity
@@ -468,6 +469,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageAttackerFacing
   faceAttackerOnDamage: 1
   visualPivot: {fileID: 2000000000000000012}
+--- !u!114 &8880000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d4e768734c679445b44b0c94c2e1b5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityPlayerTargetIndicator
+  showWhenPlayerDetects: 1
+  ringAnchor: {fileID: 2000000000000000002}
+  ringRadius: 0.55
+  heightOffset: 0.05
+  lineWidth: 0.08
+  segmentCount: 64
+  ringColor: {r: 0.2, g: 0.95, b: 1, a: 0.9}
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0
