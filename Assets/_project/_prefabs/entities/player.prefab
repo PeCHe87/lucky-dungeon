@@ -1021,6 +1021,7 @@ GameObject:
   - component: {fileID: 5638600333480182557}
   - component: {fileID: 6697435988216015906}
   - component: {fileID: -412566731822177401}
+  - component: {fileID: 9012345678901234522}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1306,6 +1307,7 @@ MonoBehaviour:
   debugLogState: 0
   debugLogOnStateChange: 1
   debugLogHeartbeatSeconds: 1
+  showStateWorldLabel: 1
 --- !u!114 &-4037862818332867988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1543,6 +1545,25 @@ MonoBehaviour:
   attackController: {fileID: 9012345678901234505}
   movement: {fileID: 2798365246320322531}
   entityStateAnimator: {fileID: -4037862818332867988}
+--- !u!114 &9012345678901234522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3be78744850bb24fb0406c21b7a8d2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerEntityStateWorldLabel
+  playerEntityState: {fileID: 0}
+  label: {fileID: 0}
+  labelRoot: {fileID: 0}
+  localOffset: {x: 0, y: 4, z: 0}
+  fontSize: 60
+  textColor: {r: 1, g: 0.6443302, b: 0, a: 1}
+  canvasWorldScale: 0.01
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0

@@ -27,6 +27,8 @@ public sealed class PlayerEntityState : MonoBehaviour
     [SerializeField] bool debugLogOnStateChange = true;
     [Tooltip("When debug is on, log current state every N seconds even if unchanged. 0 = changes only.")]
     [SerializeField, Min(0f)] float debugLogHeartbeatSeconds = 1f;
+    [Tooltip("Show world-space state text above the player.")]
+    [SerializeField] bool showStateWorldLabel = true;
 
     IMoveIntentProvider _moveProvider;
     IPlayerStateRule[] _rules;
@@ -76,6 +78,19 @@ public sealed class PlayerEntityState : MonoBehaviour
         _rules = BuildRules();
         Current = PlayerEntityStateKind.Idle;
         Previous = PlayerEntityStateKind.Idle;
+        SyncStateWorldLabelVisibility();
+    }
+
+    void OnValidate()
+    {
+        SyncStateWorldLabelVisibility();
+    }
+
+    void SyncStateWorldLabelVisibility()
+    {
+        var worldLabel = GetComponent<PlayerEntityStateWorldLabel>();
+        if (worldLabel != null)
+            worldLabel.SetVisible(showStateWorldLabel);
     }
 
     void LateUpdate()

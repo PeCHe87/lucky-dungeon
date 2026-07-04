@@ -8221,7 +8221,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.1.9.28062026
+  m_text: v.0.1.91.04072026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11780,6 +11780,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9012345678901234506, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: showStateWorldLabel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9012345678901234506, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: debugLogOnStateChange
       value: 0
       objectReference: {fileID: 0}
@@ -11856,9 +11860,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7183177815072600284}
-    - targetCorrespondingSourceObject: {fileID: 7257487282284125000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7183177815072600304}
   m_SourcePrefab: {fileID: 100100000, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
 --- !u!114 &7183177815072600265 stripped
@@ -11872,26 +11873,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
---- !u!114 &7183177815072600284
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662043928}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3be78744850bb24fb0406c21b7a8d2c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerEntityStateWorldLabel
-  playerEntityState: {fileID: 0}
-  label: {fileID: 0}
-  labelRoot: {fileID: 0}
-  localOffset: {x: 0, y: 4, z: 0}
-  fontSize: 60
-  textColor: {r: 1, g: 0.6443302, b: 0, a: 1}
-  canvasWorldScale: 0.01
-  showLabel: 1
 --- !u!114 &7183177815072600287 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9012345678901234506, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}

@@ -19,8 +19,13 @@ public sealed class PlayerEntityStateWorldLabel : MonoBehaviour
     [SerializeField] Color textColor = Color.white;
     [SerializeField, Min(0.001f)] float canvasWorldScale = 0.01f;
 
-    [Header("Visibility")]
-    [SerializeField] bool showLabel = true;
+    bool _visible = true;
+
+    public void SetVisible(bool visible)
+    {
+        _visible = visible;
+        ApplyVisibility();
+    }
 
     void Awake()
     {
@@ -29,6 +34,8 @@ public sealed class PlayerEntityStateWorldLabel : MonoBehaviour
 
         if (label == null)
             EnsureLabelHierarchy();
+
+        ApplyVisibility();
     }
 
     void OnEnable()
@@ -48,11 +55,6 @@ public sealed class PlayerEntityStateWorldLabel : MonoBehaviour
     void Start()
     {
         RefreshLabel();
-    }
-
-    void OnValidate()
-    {
-        ApplyVisibility();
     }
 
     void OnStateChanged(PlayerEntityStateKind previous, PlayerEntityStateKind current)
@@ -76,7 +78,7 @@ public sealed class PlayerEntityStateWorldLabel : MonoBehaviour
     void ApplyVisibility()
     {
         if (labelRoot != null)
-            labelRoot.gameObject.SetActive(showLabel);
+            labelRoot.gameObject.SetActive(_visible);
     }
 
     void EnsureLabelHierarchy()
