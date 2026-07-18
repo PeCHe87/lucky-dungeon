@@ -22,9 +22,14 @@ public sealed class FloatingHealthBarView : MonoBehaviour
     [SerializeField] Color backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.85f);
     [SerializeField] Color fillColor = new Color(0.25f, 0.85f, 0.3f, 1f);
 
+    [Header("Visibility")]
+    [Tooltip("When enabled, the bar stays hidden until the first non-lethal hit.")]
+    [SerializeField] bool hideUntilDamaged;
+
     static Sprite _whiteSprite;
 
     bool _visible = true;
+    bool _revealed;
 
     public void SetVisible(bool visible)
     {
@@ -39,6 +44,12 @@ public sealed class FloatingHealthBarView : MonoBehaviour
 
         if (fillImage == null)
             EnsureBarHierarchy();
+
+        if (hideUntilDamaged)
+        {
+            _revealed = false;
+            _visible = false;
+        }
 
         ApplyVisibility();
         Refresh();
@@ -70,7 +81,19 @@ public sealed class FloatingHealthBarView : MonoBehaviour
         Refresh();
     }
 
-    void OnHealthChanged() => Refresh();
+    void OnHealthChanged()
+    {
+        Refresh();
+
+        if (!hideUntilDamaged || _revealed || health == null)
+            return;
+
+        if (health.CurrentHitPoints > 0f)
+        {
+            _revealed = true;
+            SetVisible(true);
+        }
+    }
 
     void OnDied()
     {
