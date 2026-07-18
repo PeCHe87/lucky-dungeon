@@ -22,7 +22,7 @@ public sealed class HealthPanelView : MonoBehaviour
     {
         if (playerHealth != null)
         {
-            playerHealth.Damaged += OnHealthChanged;
+            playerHealth.HealthChanged += OnHealthChanged;
             playerHealth.Died += OnHealthChanged;
         }
 
@@ -33,7 +33,7 @@ public sealed class HealthPanelView : MonoBehaviour
     {
         if (playerHealth != null)
         {
-            playerHealth.Damaged -= OnHealthChanged;
+            playerHealth.HealthChanged -= OnHealthChanged;
             playerHealth.Died -= OnHealthChanged;
         }
     }
@@ -41,10 +41,16 @@ public sealed class HealthPanelView : MonoBehaviour
     void Start()
     {
         ResolveReferences();
+        if (playerHealth != null)
+        {
+            playerHealth.HealthChanged -= OnHealthChanged;
+            playerHealth.Died -= OnHealthChanged;
+            playerHealth.HealthChanged += OnHealthChanged;
+            playerHealth.Died += OnHealthChanged;
+        }
+
         Refresh();
     }
-
-    void OnHealthChanged(float _) => Refresh();
 
     void OnHealthChanged() => Refresh();
 

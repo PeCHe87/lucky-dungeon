@@ -8561,7 +8561,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.1.94.04072026
+  m_text: v.0.1.95.18072026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12150,6 +12150,18 @@ PrefabInstance:
       propertyPath: assistant
       value: 
       objectReference: {fileID: 179491036}
+    - target: {fileID: 3480502958814903353, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: barSize.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 3480502958814903353, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: barSize.y
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3480502958814903353, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: localOffset.y
+      value: 3.5
+      objectReference: {fileID: 0}
     - target: {fileID: 6685292332853155031, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: m_IsActive
       value: 0

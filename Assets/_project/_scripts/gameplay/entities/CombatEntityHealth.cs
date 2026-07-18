@@ -36,6 +36,9 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
     /// <summary>Fired after HP is reduced by a valid hit; includes optional attacker metadata.</summary>
     public event Action<float, DamageHitInfo> DamagedWithHitInfo;
 
+    /// <summary>Fired whenever current HP changes (damage now; healing can reuse this later).</summary>
+    public event Action HealthChanged;
+
     /// <summary>Fired once when HP reaches zero, before the Die FSM state runs.</summary>
     public event Action Died;
 
@@ -71,6 +74,7 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
         _currentHitPoints -= amount;
         Damaged?.Invoke(amount);
         DamagedWithHitInfo?.Invoke(amount, hitInfo);
+        HealthChanged?.Invoke();
         FloatingDamageTextPresenter.Instance?.Spawn(GetDamageNumberWorldPosition(), amount, style);
 
         if (_currentHitPoints <= 0f)
