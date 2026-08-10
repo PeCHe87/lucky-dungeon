@@ -1139,6 +1139,7 @@ GameObject:
   - component: {fileID: 5290022941274740886}
   - component: {fileID: 8880000000000000003}
   - component: {fileID: 6238054393009998188}
+  - component: {fileID: 5543832951581067729}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_melee
   m_TagString: Entity
@@ -1208,9 +1209,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.4
-  m_Height: 2
+  m_Height: 3
   m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}
+  m_Center: {x: 0, y: 1.7, z: 0}
 --- !u!114 &6287856124056237376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1591,6 +1592,21 @@ MonoBehaviour:
   backgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.85}
   fillColor: {r: 0.8509804, g: 0.2509804, b: 0.27355444, a: 1}
   hideUntilDamaged: 1
+--- !u!114 &5543832951581067729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4088201733402775376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca2d355c4a857a4281d0e8e2a0050f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponVisualPresenter
+  weaponHolder: {fileID: 8191682148270025306}
+  leftHand: {fileID: 2064615191363442889}
+  rightHand: {fileID: 3601656137889570217}
 --- !u!1 &4241429797708282029
 GameObject:
   m_ObjectHideFlags: 0
@@ -2329,35 +2345,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
-  damage: 15
-  cooldown: 0.5
-  range: 3
-  moveForwardDistance: 0
-  moveForwardDuration: 0.15
-  coneAngle: 120
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  maxTargetsPerSwing: 8
-  overlapQueryTriggerInteraction: 1
+  data: {fileID: 11400000, guid: 98a9c116767858c892bc0fb2373af2a2, type: 2}
   onAttackPerformed:
     m_PersistentCalls:
       m_Calls: []
-  attackActiveDuration: 0.15
-  damageElement: 0
-  criticalStrikeChance: 0
-  pushbackDistance: 1.5
-  pushbackDuration: 0.1
-  minPushTravelFraction: 0.9
-  equippedVisualRoots: []
-  animatorController: {fileID: 0}
-  animationProfile: {fileID: 0}
-  targetDetectionRadius: 6
-  omnidirectionalDetectionRadius: 8
-  enableApproachLunge: 0
-  approachStopBuffer: 0.3
-  maxApproachLungeDistance: 6
-  approachLungeSpeed: 12
   logDamagePipeline: 0
   drawDamageRadiusGizmo: 1
 --- !u!1 &7162951368176488441

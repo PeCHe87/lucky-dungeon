@@ -6,61 +6,12 @@ using UnityEngine.Events;
 /// Melee swing: overlap on animation hit event, cone filter, optional <see cref="IDamageable"/>.
 /// <see cref="TryAttack"/> begins the swing (cooldown, lunge); damage runs when
 /// <see cref="ApplyPendingDamage"/> is called from an animation event.
+/// Balance/config comes from <see cref="MeleeWeaponData"/>.
 /// </summary>
-public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresentation, IAttackActivity, IWeaponAttackRange, IWeaponAnimationBinding, IWeaponTargetDetection, IWeaponAttackReadiness
+public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAttackActivity, IWeaponAttackRange, IWeaponAnimationBinding, IWeaponTargetDetection, IWeaponAttackReadiness
 {
-    [SerializeField] float damage = 10f;
-    [SerializeField] float cooldown = 0.35f;
-    [SerializeField] float range = 2.5f;
-    [Tooltip("Moves the attacker forward in facing direction when the attack is processed.")]
-    [SerializeField, Min(0f)] float moveForwardDistance;
-    [Tooltip("Duration in seconds of the forward lunge. Distance / duration = lunge speed.")]
-    [SerializeField, Min(0.01f)] float moveForwardDuration = 0.15f;
-    [Tooltip("Total angle in degrees in the horizontal plane around facing. 360 = no cone limit.")]
-    [SerializeField, Range(1f, 360f)] float coneAngle = 120f;
-    [SerializeField] LayerMask hitLayers = ~0;
-    [SerializeField, Min(1)] int maxTargetsPerSwing = 8;
-    [SerializeField] QueryTriggerInteraction overlapQueryTriggerInteraction = QueryTriggerInteraction.Ignore;
+    [SerializeField] MeleeWeaponData data;
     [SerializeField] UnityEvent onAttackPerformed;
-    [Tooltip("How long <see cref=\"IAttackActivity.IsAttackActive\"/> stays true after a successful attack.")]
-    [SerializeField, Min(0.01f)] float attackActiveDuration = 0.15f;
-    [Header("Damage presentation")]
-    [SerializeField] DamageElement damageElement = DamageElement.Physical;
-    [SerializeField, Range(0f, 1f)] float criticalStrikeChance;
-    [Header("Pushback")]
-    [Tooltip("Horizontal travel applied to victims along attacker forward on hit. 0 = none.")]
-    [SerializeField, Min(0f)] float pushbackDistance = 0.8f;
-    [SerializeField, Min(0.01f)] float pushbackDuration = 0.1f;
-    [Tooltip("Min fraction of push travel that must be unobstructed; lower values allow partial wall clearance.")]
-    [SerializeField, Range(0f, 1f)] float minPushTravelFraction = PushbackGeometryProbe.DefaultMinPushTravelFraction;
-    [Header("Equipped presentation")]
-    [Tooltip("Child object(s) with meshes/VFX to show only when this weapon is equipped. Do not use the GameObject with this script if that would disable attack logic.")]
-    [SerializeField] GameObject[] equippedVisualRoots;
-
-    [Header("Animation")]
-    [SerializeField] RuntimeAnimatorController animatorController;
-    [SerializeField] PlayerEntityStateAnimationProfile animationProfile;
-
-    public RuntimeAnimatorController AnimatorController => animatorController;
-    public PlayerEntityStateAnimationProfile AnimationProfile => animationProfile;
-
-    [Header("Target detection")]
-    [Tooltip("Primary XZ detection radius pushed to NearestTargetQuery when this weapon is equipped.")]
-    [SerializeField, Min(0.01f)] float targetDetectionRadius = 6f;
-    [Tooltip("360° fallback detection radius pushed to NearestTargetQuery when this weapon is equipped.")]
-    [SerializeField, Min(0.01f)] float omnidirectionalDetectionRadius = 8f;
-
-    public float TargetDetectionRadius => targetDetectionRadius;
-    public float OmnidirectionalDetectionRadius => omnidirectionalDetectionRadius;
-
-    [Header("Approach lunge")]
-    [Tooltip("Lunge toward the detected target before the attack clip when outside melee range.")]
-    [SerializeField] bool enableApproachLunge = true;
-    [Tooltip("Stops the approach this far inside damage range (horizontal distance from target).")]
-    [SerializeField, Min(0f)] float approachStopBuffer = 0.3f;
-    [Tooltip("Max horizontal travel per approach lunge.")]
-    [SerializeField, Min(0.01f)] float maxApproachLungeDistance = 6f;
-    [SerializeField, Min(0.01f)] float approachLungeSpeed = 12f;
 
     [Header("Debug")]
     [SerializeField] bool logDamagePipeline;
@@ -78,20 +29,18 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     void Awake()
     {
-        _overlapBuffer = new Collider[Mathf.Max(32, maxTargetsPerSwing * 4)];
+        if (data == null)
+            Debug.LogWarning($"{nameof(MeleeWeapon)} on {name}: {nameof(data)} is not assigned.", this);
+
+        int maxTargets = data != null ? data.MaxTargetsPerSwing : 8;
+        _overlapBuffer = new Collider[Mathf.Max(32, maxTargets * 4)];
     }
 
-    public void SetEquippedVisuals(bool equipped)
-    {
-        if (equippedVisualRoots == null || equippedVisualRoots.Length == 0)
-            return;
-        for (int i = 0; i < equippedVisualRoots.Length; i++)
-        {
-            GameObject root = equippedVisualRoots[i];
-            if (root != null)
-                root.SetActive(equipped);
-        }
-    }
+    public WeaponData Data => data;
+    public RuntimeAnimatorController AnimatorController => data != null ? data.AnimatorController : null;
+    public PlayerEntityStateAnimationProfile AnimationProfile => data != null ? data.AnimationProfile : null;
+    public float TargetDetectionRadius => data != null ? data.TargetDetectionRadius : 6f;
+    public float OmnidirectionalDetectionRadius => data != null ? data.OmnidirectionalDetectionRadius : 8f;
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
@@ -104,15 +53,16 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         _hasPendingHitContext = false;
     }
 
-    public bool EnableApproachLunge => enableApproachLunge;
+    public bool EnableApproachLunge => data != null && data.EnableApproachLunge;
 
     /// <summary>Horizontal distance from target at which approach stops (matches in-range check).</summary>
-    public float ApproachStopDistanceFromTarget => Mathf.Max(0f, range - approachStopBuffer);
+    public float ApproachStopDistanceFromTarget =>
+        data == null ? 0f : Mathf.Max(0f, data.Range - data.ApproachStopBuffer);
 
     /// <summary>Radius used by damage overlap and range gizmo (<see cref="ApplyDamage"/>).</summary>
-    public float DamageOverlapRadius => range;
+    public float DamageOverlapRadius => data != null ? data.Range : 0f;
 
-    public float PushbackDistance => pushbackDistance;
+    public float PushbackDistance => data != null ? data.PushbackDistance : 0f;
 
     /// <summary>True when target is within approach-stop distance (range minus buffer); ignores cone.</summary>
     public bool IsTargetWithinDamageRadius(Vector3 origin, Vector3 targetWorldPos)
@@ -140,9 +90,10 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     public bool IsTargetWithinDamageRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
     {
-        if (!IsTargetWithinDamageRadius(origin, targetWorldPos))
+        if (data == null || !IsTargetWithinDamageRadius(origin, targetWorldPos))
             return false;
 
+        float coneAngle = data.ConeAngle;
         if (coneAngle >= 360f)
             return true;
 
@@ -164,10 +115,10 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
         out float speed)
     {
         stopDistanceFromTarget = DamageOverlapRadius;
-        maxTravel = maxApproachLungeDistance;
-        speed = approachLungeSpeed;
+        maxTravel = data != null ? data.MaxApproachLungeDistance : 0f;
+        speed = data != null ? data.ApproachLungeSpeed : 0f;
 
-        if (!enableApproachLunge)
+        if (data == null || !data.EnableApproachLunge)
             return false;
 
         if (IsTargetWithinOverlapRadius(origin, targetWorldPos))
@@ -217,12 +168,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     public bool TryBeginAttack(in AttackContext ctx)
     {
-        if (ctx.attacker == null)
+        if (data == null || ctx.attacker == null)
             return false;
         if (_cooldownRemaining > 0f)
             return false;
 
-        _cooldownRemaining = cooldown;
+        _cooldownRemaining = data.Cooldown;
 
         Vector3 forward = ctx.facing;
         forward.y = 0f;
@@ -237,7 +188,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
         _armedContext = ctx;
         _hasArmedContext = true;
-        _attackActiveTimer = attackActiveDuration;
+        _attackActiveTimer = data.AttackActiveDuration;
         return true;
     }
 
@@ -286,7 +237,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
     void ApplyDamage(in AttackContext ctx)
     {
-        if (ctx.attacker == null)
+        if (data == null || ctx.attacker == null)
             return;
 
         Vector3 forward = ctx.facing;
@@ -297,22 +248,25 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
             forward.Normalize();
 
         Vector3 origin = ctx.attacker.position;
+        float coneAngle = data.ConeAngle;
+        float range = data.Range;
         float halfCone = coneAngle >= 360f ? 180f : coneAngle * 0.5f;
 
         int count = Physics.OverlapSphereNonAlloc(
             origin,
             range,
             _overlapBuffer,
-            hitLayers,
-            overlapQueryTriggerInteraction);
+            data.HitLayers,
+            data.OverlapQueryTriggerInteraction);
 
         var damagedComponents = new HashSet<int>();
         int candidatesInCone = 0;
         int damagedCount = 0;
+        int maxTargets = data.MaxTargetsPerSwing;
 
         for (int i = 0; i < count; i++)
         {
-            if (damagedCount >= maxTargetsPerSwing)
+            if (damagedCount >= maxTargets)
                 break;
 
             Collider col = _overlapBuffer[i];
@@ -330,7 +284,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                 continue;
 
             candidatesInCone++;
-            if (TryDamageFirstOnHierarchy(col.gameObject, damage, damagedComponents, in ctx, forward))
+            if (TryDamageFirstOnHierarchy(col.gameObject, data.Damage, damagedComponents, in ctx, forward))
                 damagedCount++;
         }
 
@@ -369,18 +323,18 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
                 int id = mb.GetInstanceID();
                 if (!damagedComponents.Add(id))
                     return false;
-                DamageElement element = ctx.damageElementOverride ?? damageElement;
-                bool isCrit = ctx.forceCritical || (criticalStrikeChance > 0f && Random.value < criticalStrikeChance);
+                DamageElement element = ctx.damageElementOverride ?? data.DamageElement;
+                bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && Random.value < data.CriticalStrikeChance);
                 dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit), new DamageHitInfo(ctx.attacker));
 
-                if (pushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection)
+                if (data.PushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection)
                     && !EntityAttackController.ShouldSuppressPushbackOn(tr.gameObject))
                 {
                     PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext
                     {
                         direction = pushbackDirection,
-                        distance = pushbackDistance,
-                        duration = pushbackDuration,
+                        distance = data.PushbackDistance,
+                        duration = data.PushbackDuration,
                     });
                 }
 
@@ -395,7 +349,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
     bool ShouldApplyPushback(Transform victimRoot, Vector3 pushDirection)
     {
         float resistance = PushbackGeometryProbe.ResolvePushbackResistance(victimRoot);
-        float probeDist = pushbackDistance * (1f - resistance);
+        float probeDist = data.PushbackDistance * (1f - resistance);
         LayerMask blockLayers = PushbackGeometryProbe.ResolveBlockLayers(victimRoot);
 
         return PushbackGeometryProbe.ShouldApplyPushbackForce(
@@ -403,12 +357,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
             pushDirection,
             probeDist,
             blockLayers,
-            minPushTravelFraction);
+            data.MinPushTravelFraction);
     }
 
     void TryMoveAttackerForward(Transform attacker, Vector3 forward)
     {
-        if (moveForwardDistance <= 0f || attacker == null)
+        if (data == null || data.MoveForwardDistance <= 0f || attacker == null)
             return;
 
         if (!_movementResolved)
@@ -419,22 +373,26 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
         if (_cachedMovement != null)
         {
-            _cachedMovement.StartAttackLunge(forward, moveForwardDistance / moveForwardDuration, moveForwardDuration);
+            _cachedMovement.StartAttackLunge(
+                forward,
+                data.MoveForwardDistance / data.MoveForwardDuration,
+                data.MoveForwardDuration);
             return;
         }
 
         CharacterController controller = attacker.GetComponent<CharacterController>();
         if (controller != null && controller.enabled)
         {
-            controller.Move(forward * moveForwardDistance);
+            controller.Move(forward * data.MoveForwardDistance);
             return;
         }
 
-        attacker.position += forward * moveForwardDistance;
+        attacker.position += forward * data.MoveForwardDistance;
     }
 
     void OnDrawGizmos()
     {
+        float range = data != null ? data.Range : 0f;
         if (!drawDamageRadiusGizmo || range <= 0f)
             return;
 
@@ -450,6 +408,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponEquippedPresent
 
         NavMeshChaseDriver.DrawXZWireDisc(origin, range, new Color(0.25f, 0.9f, 1f, 0.45f));
 
+        float coneAngle = data.ConeAngle;
         if (coneAngle < 360f)
             DrawDamageConeWire(origin, forwardFlat, range, coneAngle, new Color(0.95f, 0.85f, 0.2f, 1f));
 

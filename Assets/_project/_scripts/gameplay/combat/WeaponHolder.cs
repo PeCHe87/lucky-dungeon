@@ -44,17 +44,8 @@ public sealed class WeaponHolder : MonoBehaviour
 
     void NotifyEquippedWeaponChanged()
     {
-        SyncEquippedWeaponPresentation();
         LogEquippedWeaponTypeIfEnabled();
         EquippedWeaponChanged?.Invoke();
-    }
-
-    void SyncEquippedWeaponPresentation()
-    {
-        if (meleeWeapon is IWeaponEquippedPresentation meleePresentation)
-            meleePresentation.SetEquippedVisuals(IsMeleeEquipped());
-        if (rangedWeapon is IWeaponEquippedPresentation rangedPresentation)
-            rangedPresentation.SetEquippedVisuals(IsRangedEquipped());
     }
 
     void LogEquippedWeaponTypeIfEnabled()

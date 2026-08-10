@@ -255,6 +255,88 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
         UnityEditor.AssetDatabase.SaveAssets();
     }
 
+    public const string PistolAssetPath = "Assets/_project/_animation/PlayerPistolAnimationProfile.asset";
+
+    public static void EnsurePistolAssetExists()
+    {
+        if (UnityEditor.AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(PistolAssetPath) != null)
+            return;
+
+        var profile = CreateInstance<PlayerEntityStateAnimationProfile>();
+        profile.defaultCrossFadeSeconds = 0.15f;
+        profile.attackReadyAnimatorStateName = "AttackReady";
+        profile.attackReadyCrossFadeSeconds = 0.15f;
+        profile.entries = new List<PlayerEntityStateAnimationEntry>
+        {
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Idle,
+                animatorStateName = "Idle",
+                crossFadeSeconds = 0.15f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Walking,
+                animatorStateName = "Walking",
+                crossFadeSeconds = 0.15f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Running,
+                animatorStateName = "Running",
+                crossFadeSeconds = 0.15f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Dashing,
+                animatorStateName = "Dashing",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Attacking,
+                animatorStateName = "Attacking1",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.TakingDamage,
+                animatorStateName = "Hit",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Dying,
+                animatorStateName = "Die",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+        };
+        profile.meleeAttackSequence = new MeleeAttackAnimationSequence
+        {
+            animatorStateNames = new[] { "Attacking1", "Attacking2" },
+            crossFadeSeconds = 0.15f,
+            comboResetSeconds = 1f,
+            attackCompletionNormalizedTime = 0.95f,
+        };
+
+        if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/_project/_animation"))
+        {
+            if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/_project"))
+                UnityEditor.AssetDatabase.CreateFolder("Assets", "_project");
+            UnityEditor.AssetDatabase.CreateFolder("Assets/_project", "_animation");
+        }
+
+        UnityEditor.AssetDatabase.CreateAsset(profile, PistolAssetPath);
+        UnityEditor.AssetDatabase.SaveAssets();
+    }
+
     [ContextMenu("Validate All PlayerEntityStateKind Values")]
     void EditorValidateCoverage()
     {

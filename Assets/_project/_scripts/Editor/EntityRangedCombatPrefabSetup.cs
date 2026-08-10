@@ -30,6 +30,12 @@ public static class EntityRangedCombatPrefabSetup
 
     static void EnsureRangeCombatPrefab()
     {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+        {
+            EditorApplication.delayCall += EnsureRangeCombatPrefab;
+            return;
+        }
+
         RangedAttackAnimationEventSetup.EnsureRangedFireAnimationEvents();
         ValidateEntityBowAttackFireEvents();
 
@@ -52,20 +58,20 @@ public static class EntityRangedCombatPrefabSetup
 
             var weaponHolder = root.GetComponent<WeaponHolder>();
             var rangedWeapon = root.GetComponentInChildren<RangedWeapon>(true);
-            if (rangedWeapon != null)
+            if (rangedWeapon != null && weaponHolder != null)
             {
                 var weaponHolderSo = new SerializedObject(weaponHolder);
-                var startingWeapon = weaponHolderSo.FindProperty("startingWeapon");
-                var rangedWeaponSlot = weaponHolderSo.FindProperty("rangedWeapon");
+                SerializedProperty startingWeapon = weaponHolderSo.FindProperty("startingWeapon");
+                SerializedProperty rangedWeaponSlot = weaponHolderSo.FindProperty("rangedWeapon");
                 var rangedMb = rangedWeapon as MonoBehaviour;
 
-                if (startingWeapon.objectReferenceValue != rangedMb)
+                if (startingWeapon != null && startingWeapon.objectReferenceValue != rangedMb)
                 {
                     startingWeapon.objectReferenceValue = rangedMb;
                     changed = true;
                 }
 
-                if (rangedWeaponSlot.objectReferenceValue != rangedMb)
+                if (rangedWeaponSlot != null && rangedWeaponSlot.objectReferenceValue != rangedMb)
                 {
                     rangedWeaponSlot.objectReferenceValue = rangedMb;
                     changed = true;
@@ -86,17 +92,17 @@ public static class EntityRangedCombatPrefabSetup
                 }
 
                 var receiverSo = new SerializedObject(fireReceiver);
-                var receiverRanged = receiverSo.FindProperty("rangedWeapon");
-                var receiverHolder = receiverSo.FindProperty("weaponHolder");
+                SerializedProperty receiverRanged = receiverSo.FindProperty("rangedWeapon");
+                SerializedProperty receiverHolder = receiverSo.FindProperty("weaponHolder");
                 var rangedMb = rangedWeapon as MonoBehaviour;
 
-                if (receiverRanged.objectReferenceValue != rangedMb)
+                if (receiverRanged != null && receiverRanged.objectReferenceValue != rangedMb)
                 {
                     receiverRanged.objectReferenceValue = rangedMb;
                     changed = true;
                 }
 
-                if (receiverHolder.objectReferenceValue != weaponHolder)
+                if (receiverHolder != null && receiverHolder.objectReferenceValue != weaponHolder)
                 {
                     receiverHolder.objectReferenceValue = weaponHolder;
                     changed = true;
@@ -109,23 +115,36 @@ public static class EntityRangedCombatPrefabSetup
             if (rangedWeapon != null)
             {
                 var rangedSo = new SerializedObject(rangedWeapon);
-                LayerMask enemyHitLayers = CombatHitLayers.EnemyRangedProjectile;
-                var hitLayers = rangedSo.FindProperty("hitLayers");
-                if (hitLayers.intValue != enemyHitLayers.value)
+                SerializedProperty dataProp = rangedSo.FindProperty("data");
+                if (dataProp != null)
                 {
-                    hitLayers.intValue = enemyHitLayers.value;
-                    changed = true;
-                }
-
-                Transform bowVisual = FindChildByName(root.transform, "BowBasic");
-                if (bowVisual != null)
-                {
-                    var visuals = rangedSo.FindProperty("equippedVisualRoots");
-                    if (visuals.arraySize != 1 || visuals.GetArrayElementAtIndex(0).objectReferenceValue != bowVisual.gameObject)
+                    AssaultWeaponData assaultData = dataProp.objectReferenceValue as AssaultWeaponData;
+                    if (assaultData == null)
                     {
-                        visuals.arraySize = 1;
-                        visuals.GetArrayElementAtIndex(0).objectReferenceValue = bowVisual.gameObject;
-                        changed = true;
+                        assaultData = AssetDatabase.LoadAssetAtPath<AssaultWeaponData>(
+                            "Assets/_project/_data/weapons/EnemyAssaultWeapon.asset");
+                        if (assaultData != null)
+                        {
+                            dataProp.objectReferenceValue = assaultData;
+                            changed = true;
+                        }
+                    }
+
+                    if (assaultData != null)
+                    {
+                        var dataSo = new SerializedObject(assaultData);
+                        SerializedProperty hitLayers = dataSo.FindProperty("hitLayers");
+                        if (hitLayers != null)
+                        {
+                            int enemyHitLayers = CombatHitLayers.EnemyRangedProjectile.value;
+                            if (hitLayers.intValue != enemyHitLayers)
+                            {
+                                hitLayers.intValue = enemyHitLayers;
+                                dataSo.ApplyModifiedPropertiesWithoutUndo();
+                                EditorUtility.SetDirty(assaultData);
+                                changed = true;
+                            }
+                        }
                     }
                 }
 

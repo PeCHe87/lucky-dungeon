@@ -117,67 +117,87 @@ static class PlayerAnimationEditorSetup
         if (meleeWeapon != null)
         {
             var meleeSo = new SerializedObject(meleeWeapon);
-            if (locomotion != null
-                && meleeSo.FindProperty("animatorController").objectReferenceValue != locomotion)
+            SerializedProperty meleeDataProp = meleeSo.FindProperty("data");
+            if (meleeDataProp != null && meleeDataProp.objectReferenceValue is MeleeWeaponData meleeData)
             {
-                meleeSo.FindProperty("animatorController").objectReferenceValue = locomotion;
-                dirty = true;
-            }
+                var dataSo = new SerializedObject(meleeData);
+                bool dataDirty = false;
 
-            if (profile != null
-                && meleeSo.FindProperty("animationProfile").objectReferenceValue != profile)
-            {
-                meleeSo.FindProperty("animationProfile").objectReferenceValue = profile;
-                dirty = true;
-            }
+                if (locomotion != null
+                    && dataSo.FindProperty("animatorController").objectReferenceValue != locomotion)
+                {
+                    dataSo.FindProperty("animatorController").objectReferenceValue = locomotion;
+                    dataDirty = true;
+                }
 
-            if (meleeSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
-            {
-                meleeSo.FindProperty("targetDetectionRadius").floatValue = 6f;
-                dirty = true;
-            }
+                if (profile != null
+                    && dataSo.FindProperty("animationProfile").objectReferenceValue != profile)
+                {
+                    dataSo.FindProperty("animationProfile").objectReferenceValue = profile;
+                    dataDirty = true;
+                }
 
-            if (meleeSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
-            {
-                meleeSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 8f;
-                dirty = true;
-            }
+                if (dataSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
+                {
+                    dataSo.FindProperty("targetDetectionRadius").floatValue = 6f;
+                    dataDirty = true;
+                }
 
-            if (meleeSo.ApplyModifiedPropertiesWithoutUndo())
-                dirty = true;
+                if (dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
+                {
+                    dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 8f;
+                    dataDirty = true;
+                }
+
+                if (dataDirty && dataSo.ApplyModifiedPropertiesWithoutUndo())
+                {
+                    EditorUtility.SetDirty(meleeData);
+                    dirty = true;
+                }
+            }
         }
 
         if (rangedWeapon != null)
         {
             var rangedSo = new SerializedObject(rangedWeapon);
-            if (bowController != null
-                && rangedSo.FindProperty("animatorController").objectReferenceValue != bowController)
+            SerializedProperty rangedDataProp = rangedSo.FindProperty("data");
+            if (rangedDataProp != null && rangedDataProp.objectReferenceValue is AssaultWeaponData assaultData)
             {
-                rangedSo.FindProperty("animatorController").objectReferenceValue = bowController;
-                dirty = true;
-            }
+                var dataSo = new SerializedObject(assaultData);
+                bool dataDirty = false;
 
-            if (bowProfile != null
-                && rangedSo.FindProperty("animationProfile").objectReferenceValue != bowProfile)
-            {
-                rangedSo.FindProperty("animationProfile").objectReferenceValue = bowProfile;
-                dirty = true;
-            }
+                if (bowController != null
+                    && dataSo.FindProperty("animatorController").objectReferenceValue != bowController)
+                {
+                    dataSo.FindProperty("animatorController").objectReferenceValue = bowController;
+                    dataDirty = true;
+                }
 
-            if (rangedSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
-            {
-                rangedSo.FindProperty("targetDetectionRadius").floatValue = 15f;
-                dirty = true;
-            }
+                if (bowProfile != null
+                    && dataSo.FindProperty("animationProfile").objectReferenceValue != bowProfile)
+                {
+                    dataSo.FindProperty("animationProfile").objectReferenceValue = bowProfile;
+                    dataDirty = true;
+                }
 
-            if (rangedSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
-            {
-                rangedSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 20f;
-                dirty = true;
-            }
+                if (dataSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
+                {
+                    dataSo.FindProperty("targetDetectionRadius").floatValue = 15f;
+                    dataDirty = true;
+                }
 
-            if (rangedSo.ApplyModifiedPropertiesWithoutUndo())
-                dirty = true;
+                if (dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
+                {
+                    dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 20f;
+                    dataDirty = true;
+                }
+
+                if (dataDirty && dataSo.ApplyModifiedPropertiesWithoutUndo())
+                {
+                    EditorUtility.SetDirty(assaultData);
+                    dirty = true;
+                }
+            }
         }
 
         if (nearestTargetQuery != null && weaponHolder != null)

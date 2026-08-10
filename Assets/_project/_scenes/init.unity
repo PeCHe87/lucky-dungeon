@@ -8561,7 +8561,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.1.95.18072026
+  m_text: v.0.1.96.10082026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11545,6 +11545,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: healthPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 7826670464442846080, guid: ea1cb18a212b9ca44912013567f439cc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12156,7 +12160,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3480502958814903353, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: barSize.y
-      value: 25
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 3480502958814903353, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: localOffset.y
@@ -12245,7 +12249,7 @@ PrefabInstance:
     - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: startingWeapon
       value: 
-      objectReference: {fileID: 23414263}
+      objectReference: {fileID: 7183177815072600267}
     - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: facingRoot
       value: 
@@ -12262,6 +12266,10 @@ PrefabInstance:
       propertyPath: entityStateAnimator
       value: 
       objectReference: {fileID: 7183177815072600289}
+    - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: logIgnoredAttackInput
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: snapFacingToNearestTargetBeforeAttack
       value: 1
@@ -12378,6 +12386,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8e9f0d1c2b3647586970a1b2c3d4e5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FeneraxJoystickMoveIntentProvider
+--- !u!114 &7183177815072600267 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1827364555011111003, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+  m_PrefabInstance: {fileID: 7183177815072600264}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d1d1d1123456789012345678abc001, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectilePool
 --- !u!114 &7183177815072600287 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9012345678901234506, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}

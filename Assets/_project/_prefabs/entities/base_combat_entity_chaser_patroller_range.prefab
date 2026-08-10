@@ -140,35 +140,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
-  damage: 1
-  cooldown: 0.5
-  range: 3
-  moveForwardDistance: 0
-  moveForwardDuration: 0.15
-  coneAngle: 120
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  maxTargetsPerSwing: 8
-  overlapQueryTriggerInteraction: 1
+  data: {fileID: 11400000, guid: d1282f60875e452fc24e6aaabbe0a003, type: 2}
   onAttackPerformed:
     m_PersistentCalls:
       m_Calls: []
-  attackActiveDuration: 0.15
-  damageElement: 0
-  criticalStrikeChance: 0
-  pushbackDistance: 1.5
-  pushbackDuration: 0.1
-  minPushTravelFraction: 0.9
-  equippedVisualRoots: []
-  animatorController: {fileID: 0}
-  animationProfile: {fileID: 0}
-  targetDetectionRadius: 6
-  omnidirectionalDetectionRadius: 8
-  enableApproachLunge: 0
-  approachStopBuffer: 0.3
-  maxApproachLungeDistance: 6
-  approachLungeSpeed: 12
   logDamagePipeline: 0
   drawDamageRadiusGizmo: 1
 --- !u!1 &1123156813330723143
@@ -976,35 +951,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1d1d1d1123456789012345678abc003, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RangedWeapon
+  data: {fileID: 11400000, guid: 4592d7c7459b4eb40e8a2c4f89f9a754, type: 2}
   projectilePool: {fileID: 922903480926245887}
-  firePoint: {fileID: 7717955869499183769}
-  damage: 5
-  cooldown: 1
-  projectileSpeed: 30
-  projectileLifetime: 5
-  projectileMaxDistance: 45
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 3393
-  spawnOffset: {x: 0, y: 0, z: 0}
+  firePoint: {fileID: 0}
+  spawnOffset: {x: 0, y: 0, z: 1}
   onAttackPerformed:
     m_PersistentCalls:
       m_Calls: []
-  attackActiveDuration: 0.2
-  damageElement: 0
-  criticalStrikeChance: 0
-  pushbackDistance: 0.4
-  pushbackDuration: 0.08
-  equippedVisualRoots:
-  - {fileID: 924456650385763442}
-  animatorController: {fileID: 9100000, guid: b96b7f5ff05fde648bdb8df74d2deade, type: 2}
-  animationProfile: {fileID: 11400000, guid: d9884aae61c0b53449b8b7f6c662b7a9, type: 2}
-  maxAttackRange: 0
-  minAttackRange: 3
-  attackConeAngle: 360
-  approachStopDistanceBuffer: 2
-  targetDetectionRadius: 15
-  omnidirectionalDetectionRadius: 20
 --- !u!1 &3144641206601486897
 GameObject:
   m_ObjectHideFlags: 0
@@ -1813,6 +1766,7 @@ GameObject:
   - component: {fileID: 2614154267041728895}
   - component: {fileID: 8880000000000000004}
   - component: {fileID: 6130574277704718171}
+  - component: {fileID: 2358170560755285425}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_range
   m_TagString: Entity
@@ -1883,9 +1837,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.4
-  m_Height: 2
+  m_Height: 3
   m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}
+  m_Center: {x: 0, y: 1.7, z: 0}
 --- !u!114 &1481322956266869193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2280,6 +2234,21 @@ MonoBehaviour:
   backgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.85}
   fillColor: {r: 0.8509804, g: 0.2509804, b: 0.27450982, a: 1}
   hideUntilDamaged: 1
+--- !u!114 &2358170560755285425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353573894065297185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca2d355c4a857a4281d0e8e2a0050f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponVisualPresenter
+  weaponHolder: {fileID: 8293907887644116175}
+  leftHand: {fileID: 2388105885006812196}
+  rightHand: {fileID: 6728160560040788139}
 --- !u!1 &7360468481391053212
 GameObject:
   m_ObjectHideFlags: 0
@@ -3026,6 +2995,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BowBasic
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 66f0e5410080bb741b469b7f3adc0b29, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3034,11 +3007,6 @@ PrefabInstance:
 --- !u!4 &549303641522960072 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 66f0e5410080bb741b469b7f3adc0b29, type: 3}
-  m_PrefabInstance: {fileID: 5978856811958563}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &924456650385763442 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 66f0e5410080bb741b469b7f3adc0b29, type: 3}
   m_PrefabInstance: {fileID: 5978856811958563}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2106096882780075408
