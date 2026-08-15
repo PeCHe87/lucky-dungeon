@@ -1594,7 +1594,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcheroStyleCameraFollow
   target: {fileID: 1505673135}
   verticalOffset: 25
-  forwardOffset: 30
+  forwardOffset: 40
   zoom: 0.45
   baseFieldOfView: 36.5
   minFieldOfView: 10
@@ -1603,7 +1603,7 @@ MonoBehaviour:
   minOrthographicSize: 2
   maxOrthographicSize: 24
   yawDegrees: -45
-  pitchDegrees: 40
+  pitchDegrees: 35
   positionSmoothTime: 0.5
 --- !u!1 &364741180
 GameObject:
@@ -8561,7 +8561,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.1.96.10082026
+  m_text: v.0.1.97.15082026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
