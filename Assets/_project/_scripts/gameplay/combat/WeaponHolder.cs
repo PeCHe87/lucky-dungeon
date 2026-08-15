@@ -2,15 +2,23 @@ using System;
 using UnityEngine;
 
 /// <summary>Holds the currently equipped weapon; swap via <see cref="Equip"/> for pickups / loadouts.</summary>
+[DefaultExecutionOrder(-100)]
 public sealed class WeaponHolder : MonoBehaviour
 {
-    [Tooltip("MonoBehaviour on this object or a child that implements IWeapon (e.g. MeleeWeapon).")]
+    [Tooltip("Optional. When set, Awake equips the matching melee/ranged slot from this asset by type.")]
+    [SerializeField] WeaponData startingWeaponData;
+    [Tooltip("Fallback when startingWeaponData is null. MonoBehaviour that implements IWeapon.")]
     [SerializeField] MonoBehaviour startingWeapon;
     [Header("Weapon slots for UI / loadout")]
     [Tooltip("MeleeWeapon or any component on this hierarchy that implements IWeapon; used by EquipMelee.")]
     [SerializeField] MonoBehaviour meleeWeapon;
     [Tooltip("RangedWeapon or any component on this hierarchy that implements IWeapon; used by EquipRanged.")]
     [SerializeField] MonoBehaviour rangedWeapon;
+    [Header("Weapon data")]
+    [Tooltip("Applied to meleeWeapon when it is a MeleeWeapon.")]
+    [SerializeField] MeleeWeaponData meleeWeaponData;
+    [Tooltip("Applied to rangedWeapon when it is a RangedWeapon.")]
+    [SerializeField] AssaultWeaponData rangedWeaponData;
     [Header("Debug")]
     [SerializeField] bool logEquippedWeaponChanges = true;
 
@@ -22,6 +30,69 @@ public sealed class WeaponHolder : MonoBehaviour
     public event Action EquippedWeaponChanged;
 
     void Awake()
+    {
+        ApplySlotWeaponData();
+
+        if (TryEquipFromStartingWeaponData())
+            return;
+
+        EquipFromStartingWeaponComponent();
+    }
+
+    void ApplySlotWeaponData()
+    {
+        if (meleeWeaponData != null && meleeWeapon is MeleeWeapon melee)
+            melee.SetData(meleeWeaponData);
+
+        if (rangedWeaponData != null && rangedWeapon is RangedWeapon ranged)
+            ranged.SetData(rangedWeaponData);
+    }
+
+    bool TryEquipFromStartingWeaponData()
+    {
+        if (startingWeaponData == null)
+            return false;
+
+        if (startingWeaponData is MeleeWeaponData meleeData)
+        {
+            if (meleeWeapon is MeleeWeapon melee)
+            {
+                melee.SetData(meleeData);
+                Equip(melee);
+                return true;
+            }
+
+            Debug.LogWarning(
+                $"{nameof(WeaponHolder)} on {name}: {nameof(startingWeaponData)} is melee but {nameof(meleeWeapon)} is missing or not a {nameof(MeleeWeapon)}.",
+                this);
+            NotifyEquippedWeaponChanged();
+            return true;
+        }
+
+        if (startingWeaponData is AssaultWeaponData assaultData)
+        {
+            if (rangedWeapon is RangedWeapon ranged)
+            {
+                ranged.SetData(assaultData);
+                Equip(ranged);
+                return true;
+            }
+
+            Debug.LogWarning(
+                $"{nameof(WeaponHolder)} on {name}: {nameof(startingWeaponData)} is ranged but {nameof(rangedWeapon)} is missing or not a {nameof(RangedWeapon)}.",
+                this);
+            NotifyEquippedWeaponChanged();
+            return true;
+        }
+
+        Debug.LogWarning(
+            $"{nameof(WeaponHolder)} on {name}: unsupported {nameof(startingWeaponData)} type '{startingWeaponData.GetType().Name}'.",
+            this);
+        NotifyEquippedWeaponChanged();
+        return true;
+    }
+
+    void EquipFromStartingWeaponComponent()
     {
         if (startingWeapon == null)
         {

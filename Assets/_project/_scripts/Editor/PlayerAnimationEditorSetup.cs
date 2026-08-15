@@ -59,10 +59,8 @@ static class PlayerAnimationEditorSetup
             return;
 
         var locomotion = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(LocomotionControllerPath);
-        var bowController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BowControllerPath);
         var profile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(
             PlayerEntityStateAnimationProfile.DefaultAssetPath);
-        var bowProfile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(BowProfilePath);
 
         bool dirty = false;
 
@@ -112,92 +110,6 @@ static class PlayerAnimationEditorSetup
                 dirty = true;
             }
 
-        }
-
-        if (meleeWeapon != null)
-        {
-            var meleeSo = new SerializedObject(meleeWeapon);
-            SerializedProperty meleeDataProp = meleeSo.FindProperty("data");
-            if (meleeDataProp != null && meleeDataProp.objectReferenceValue is MeleeWeaponData meleeData)
-            {
-                var dataSo = new SerializedObject(meleeData);
-                bool dataDirty = false;
-
-                if (locomotion != null
-                    && dataSo.FindProperty("animatorController").objectReferenceValue != locomotion)
-                {
-                    dataSo.FindProperty("animatorController").objectReferenceValue = locomotion;
-                    dataDirty = true;
-                }
-
-                if (profile != null
-                    && dataSo.FindProperty("animationProfile").objectReferenceValue != profile)
-                {
-                    dataSo.FindProperty("animationProfile").objectReferenceValue = profile;
-                    dataDirty = true;
-                }
-
-                if (dataSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
-                {
-                    dataSo.FindProperty("targetDetectionRadius").floatValue = 6f;
-                    dataDirty = true;
-                }
-
-                if (dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
-                {
-                    dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 8f;
-                    dataDirty = true;
-                }
-
-                if (dataDirty && dataSo.ApplyModifiedPropertiesWithoutUndo())
-                {
-                    EditorUtility.SetDirty(meleeData);
-                    dirty = true;
-                }
-            }
-        }
-
-        if (rangedWeapon != null)
-        {
-            var rangedSo = new SerializedObject(rangedWeapon);
-            SerializedProperty rangedDataProp = rangedSo.FindProperty("data");
-            if (rangedDataProp != null && rangedDataProp.objectReferenceValue is AssaultWeaponData assaultData)
-            {
-                var dataSo = new SerializedObject(assaultData);
-                bool dataDirty = false;
-
-                if (bowController != null
-                    && dataSo.FindProperty("animatorController").objectReferenceValue != bowController)
-                {
-                    dataSo.FindProperty("animatorController").objectReferenceValue = bowController;
-                    dataDirty = true;
-                }
-
-                if (bowProfile != null
-                    && dataSo.FindProperty("animationProfile").objectReferenceValue != bowProfile)
-                {
-                    dataSo.FindProperty("animationProfile").objectReferenceValue = bowProfile;
-                    dataDirty = true;
-                }
-
-                if (dataSo.FindProperty("targetDetectionRadius").floatValue <= 0f)
-                {
-                    dataSo.FindProperty("targetDetectionRadius").floatValue = 15f;
-                    dataDirty = true;
-                }
-
-                if (dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue <= 0f)
-                {
-                    dataSo.FindProperty("omnidirectionalDetectionRadius").floatValue = 20f;
-                    dataDirty = true;
-                }
-
-                if (dataDirty && dataSo.ApplyModifiedPropertiesWithoutUndo())
-                {
-                    EditorUtility.SetDirty(assaultData);
-                    dirty = true;
-                }
-            }
         }
 
         if (nearestTargetQuery != null && weaponHolder != null)

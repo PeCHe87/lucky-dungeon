@@ -36,6 +36,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
         _overlapBuffer = new Collider[Mathf.Max(32, maxTargets * 4)];
     }
 
+    /// <summary>Assigns balance/config. Prefer setting via <see cref="WeaponHolder"/>; local SerializeField is a fallback.</summary>
+    public void SetData(MeleeWeaponData value)
+    {
+        data = value;
+    }
+
     public WeaponData Data => data;
     public RuntimeAnimatorController AnimatorController => data != null ? data.AnimatorController : null;
     public PlayerEntityStateAnimationProfile AnimationProfile => data != null ? data.AnimationProfile : null;

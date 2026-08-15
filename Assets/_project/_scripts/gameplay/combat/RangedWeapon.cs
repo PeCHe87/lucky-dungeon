@@ -38,6 +38,15 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
             RefillMagazine();
     }
 
+    /// <summary>Assigns balance/config. Prefer setting via <see cref="WeaponHolder"/>; local SerializeField is a fallback.</summary>
+    public void SetData(AssaultWeaponData value)
+    {
+        data = value;
+        if (data == null || _isReloading)
+            return;
+        RefillMagazine();
+    }
+
     public WeaponData Data => data;
     public RuntimeAnimatorController AnimatorController => data != null ? data.AnimatorController : null;
     public PlayerEntityStateAnimationProfile AnimationProfile => data != null ? data.AnimationProfile : null;

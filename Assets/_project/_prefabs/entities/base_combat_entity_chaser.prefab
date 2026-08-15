@@ -652,6 +652,8 @@ MonoBehaviour:
   startingWeapon: {fileID: 5496652954333487408}
   meleeWeapon: {fileID: 5496652954333487408}
   rangedWeapon: {fileID: 0}
+  meleeWeaponData: {fileID: 11400000, guid: 8d26473a2b6f474d9bd80d7eecfe419f, type: 2}
+  rangedWeaponData: {fileID: 0}
   logEquippedWeaponChanges: 0
 --- !u!114 &296380223609299007
 MonoBehaviour:

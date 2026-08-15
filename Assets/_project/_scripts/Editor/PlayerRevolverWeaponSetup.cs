@@ -4,9 +4,10 @@ using UnityEngine;
 
 /// <summary>
 /// Creates player revolver <see cref="AssaultWeaponData"/> (pistol visual + pistol anim)
-/// and assigns it to the player's existing ranged slot.
+/// and assigns it on the player's <see cref="WeaponHolder"/> ranged data slot (and RangedWeapon fallback).
+/// Create-only for SO field defaults — never overwrites an existing asset's tuned values.
+/// Menu-only — does not auto-run on domain reload / Play.
 /// </summary>
-[InitializeOnLoad]
 public static class PlayerRevolverWeaponSetup
 {
     public const string RevolverDataPath = "Assets/_project/_data/weapons/player_weapon_revolver.asset";
@@ -14,22 +15,6 @@ public static class PlayerRevolverWeaponSetup
     const string PistolVisualPath = "Assets/_project/_prefabs/combat/weapons/pistol_visual.prefab";
     const string PistolControllerPath = PlayerPistolAnimationEditorSetup.PistolControllerPath;
     const string PistolProfilePath = PlayerPistolAnimationEditorSetup.PistolProfilePath;
-
-    static PlayerRevolverWeaponSetup()
-    {
-        EditorApplication.delayCall += EnsureSetup;
-    }
-
-    static void EnsureSetup()
-    {
-        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
-        {
-            EditorApplication.delayCall += EnsureSetup;
-            return;
-        }
-
-        SetupAll();
-    }
 
     [MenuItem("Tools/Combat/Setup Player Revolver Weapon")]
     public static void SetupAllMenu() => SetupAll();
@@ -56,12 +41,11 @@ public static class PlayerRevolverWeaponSetup
         EnsureFolder("Assets/_project/_data/weapons");
 
         var asset = AssetDatabase.LoadAssetAtPath<AssaultWeaponData>(RevolverDataPath);
-        bool created = asset == null;
-        if (created)
-        {
-            asset = ScriptableObject.CreateInstance<AssaultWeaponData>();
-            AssetDatabase.CreateAsset(asset, RevolverDataPath);
-        }
+        if (asset != null)
+            return asset;
+
+        asset = ScriptableObject.CreateInstance<AssaultWeaponData>();
+        AssetDatabase.CreateAsset(asset, RevolverDataPath);
 
         var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(PistolControllerPath);
         var profile = AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(PistolProfilePath);
@@ -105,14 +89,24 @@ public static class PlayerRevolverWeaponSetup
         GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
         try
         {
-            RangedWeapon[] weapons = root.GetComponentsInChildren<RangedWeapon>(true);
-            if (weapons.Length == 0)
+            var holder = root.GetComponent<WeaponHolder>();
+            if (holder == null)
             {
-                Debug.LogWarning("[PlayerRevolverWeaponSetup] No RangedWeapon on player prefab.");
+                Debug.LogWarning("[PlayerRevolverWeaponSetup] No WeaponHolder on player prefab.");
                 return;
             }
 
             bool changed = false;
+            var holderSo = new SerializedObject(holder);
+            SerializedProperty holderDataProp = holderSo.FindProperty("rangedWeaponData");
+            if (holderDataProp != null && holderDataProp.objectReferenceValue != data)
+            {
+                holderDataProp.objectReferenceValue = data;
+                holderSo.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
+
+            RangedWeapon[] weapons = root.GetComponentsInChildren<RangedWeapon>(true);
             for (int i = 0; i < weapons.Length; i++)
             {
                 var so = new SerializedObject(weapons[i]);

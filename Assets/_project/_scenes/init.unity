@@ -1594,7 +1594,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcheroStyleCameraFollow
   target: {fileID: 1505673135}
   verticalOffset: 25
-  forwardOffset: 40
+  forwardOffset: 45
   zoom: 0.45
   baseFieldOfView: 36.5
   minFieldOfView: 10
@@ -12253,7 +12253,15 @@ PrefabInstance:
     - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: startingWeapon
       value: 
-      objectReference: {fileID: 7183177815072600267}
+      objectReference: {fileID: 0}
+    - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: meleeWeaponData
+      value: 
+      objectReference: {fileID: 11400000, guid: c9070ea9c586a43cf63bdc376a8cfc4c, type: 2}
+    - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: startingWeaponData
+      value: 
+      objectReference: {fileID: 11400000, guid: c9070ea9c586a43cf63bdc376a8cfc4c, type: 2}
     - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: facingRoot
       value: 
@@ -12390,17 +12398,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8e9f0d1c2b3647586970a1b2c3d4e5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FeneraxJoystickMoveIntentProvider
---- !u!114 &7183177815072600267 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1827364555011111003, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
-  m_PrefabInstance: {fileID: 7183177815072600264}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1d1d1d1123456789012345678abc001, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectilePool
 --- !u!114 &7183177815072600287 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9012345678901234506, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}

@@ -5,8 +5,8 @@ using UnityEngine;
 /// <summary>
 /// Creates starter <see cref="MeleeWeaponData"/> / <see cref="AssaultWeaponData"/> assets and assigns them
 /// on entity prefabs after the weapon ScriptableObject refactor.
+/// Menu-only — does not auto-run on domain reload / Play.
 /// </summary>
-[InitializeOnLoad]
 public static class WeaponDataPrefabSetup
 {
     const string WeaponsFolder = "Assets/_project/_data/weapons";
@@ -27,22 +27,6 @@ public static class WeaponDataPrefabSetup
     const string PlayerMeleeProfileGuid = "23438f43f4ac2d441b21f5b3c030f092";
     const string BowAnimatorGuid = "b96b7f5ff05fde648bdb8df74d2deade";
     const string BowProfileGuid = "d9884aae61c0b53449b8b7f6c662b7a9";
-
-    static WeaponDataPrefabSetup()
-    {
-        EditorApplication.delayCall += EnsureWeaponDataSetup;
-    }
-
-    static void EnsureWeaponDataSetup()
-    {
-        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
-        {
-            EditorApplication.delayCall += EnsureWeaponDataSetup;
-            return;
-        }
-
-        SetupAll();
-    }
 
     [MenuItem("Tools/Combat/Setup Weapon Data Assets And Prefabs")]
     public static void SetupAllMenu() => SetupAll();
@@ -265,14 +249,24 @@ public static class WeaponDataPrefabSetup
         GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
         try
         {
-            MeleeWeapon[] weapons = root.GetComponentsInChildren<MeleeWeapon>(true);
-            if (weapons.Length == 0)
+            var holder = root.GetComponent<WeaponHolder>();
+            if (holder == null)
             {
-                Debug.LogWarning("[WeaponDataPrefabSetup] No MeleeWeapon on " + prefabPath);
+                Debug.LogWarning("[WeaponDataPrefabSetup] No WeaponHolder on " + prefabPath);
                 return;
             }
 
             bool changed = false;
+            var holderSo = new SerializedObject(holder);
+            SerializedProperty holderDataProp = holderSo.FindProperty("meleeWeaponData");
+            if (holderDataProp != null && holderDataProp.objectReferenceValue != data)
+            {
+                holderDataProp.objectReferenceValue = data;
+                holderSo.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
+
+            MeleeWeapon[] weapons = root.GetComponentsInChildren<MeleeWeapon>(true);
             for (int i = 0; i < weapons.Length; i++)
             {
                 var so = new SerializedObject(weapons[i]);
@@ -299,14 +293,24 @@ public static class WeaponDataPrefabSetup
         GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
         try
         {
-            RangedWeapon[] weapons = root.GetComponentsInChildren<RangedWeapon>(true);
-            if (weapons.Length == 0)
+            var holder = root.GetComponent<WeaponHolder>();
+            if (holder == null)
             {
-                Debug.LogWarning("[WeaponDataPrefabSetup] No RangedWeapon on " + prefabPath);
+                Debug.LogWarning("[WeaponDataPrefabSetup] No WeaponHolder on " + prefabPath);
                 return;
             }
 
             bool changed = false;
+            var holderSo = new SerializedObject(holder);
+            SerializedProperty holderDataProp = holderSo.FindProperty("rangedWeaponData");
+            if (holderDataProp != null && holderDataProp.objectReferenceValue != data)
+            {
+                holderDataProp.objectReferenceValue = data;
+                holderSo.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
+
+            RangedWeapon[] weapons = root.GetComponentsInChildren<RangedWeapon>(true);
             for (int i = 0; i < weapons.Length; i++)
             {
                 var so = new SerializedObject(weapons[i]);
