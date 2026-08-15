@@ -20,6 +20,11 @@ public sealed class AssaultWeaponData : WeaponData
     [Tooltip("NavMesh stopping distance buffer subtracted from max attack range.")]
     [SerializeField, Min(0f)] float approachStopDistanceBuffer = 2f;
 
+    [Header("Magazine")]
+    [SerializeField, Min(1)] int magazineSize = 6;
+    [Tooltip("Magazine reload duration in seconds (scaled time).")]
+    [SerializeField, Min(0f)] float reloadTime = 1.5f;
+
     public float ProjectileSpeed => projectileSpeed;
     public float ProjectileLifetime => projectileLifetime;
     public float ProjectileMaxDistance => projectileMaxDistance;
@@ -27,4 +32,6 @@ public sealed class AssaultWeaponData : WeaponData
     public float MinAttackRange => minAttackRange;
     public float AttackConeAngle => attackConeAngle;
     public float ApproachStopDistanceBuffer => approachStopDistanceBuffer;
+    public int MagazineSize => magazineSize;
+    public float ReloadTime => reloadTime;
 }

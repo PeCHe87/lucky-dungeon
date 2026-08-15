@@ -251,6 +251,8 @@ public static class WeaponDataPrefabSetup
         SetFloat(so, "approachStopDistanceBuffer", 2f);
         SetFloat(so, "targetDetectionRadius", targetDetectionRadius);
         SetFloat(so, "omnidirectionalDetectionRadius", omnidirectionalDetectionRadius);
+        SetInt(so, "magazineSize", 6);
+        SetFloat(so, "reloadTime", 1.5f);
         SetObjectRef(so, "animatorController", LoadByGuid<RuntimeAnimatorController>(animatorGuid));
         SetObjectRef(so, "animationProfile", LoadByGuid<PlayerEntityStateAnimationProfile>(profileGuid));
         so.ApplyModifiedPropertiesWithoutUndo();
@@ -339,6 +341,13 @@ public static class WeaponDataPrefabSetup
         SerializedProperty prop = so.FindProperty(propertyName);
         if (prop != null)
             prop.floatValue = value;
+    }
+
+    static void SetInt(SerializedObject so, string propertyName, int value)
+    {
+        SerializedProperty prop = so.FindProperty(propertyName);
+        if (prop != null)
+            prop.intValue = value;
     }
 
     static void SetBool(SerializedObject so, string propertyName, bool value)

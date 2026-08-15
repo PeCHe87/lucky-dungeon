@@ -81,6 +81,8 @@ public static class PlayerRevolverWeaponSetup
         so.FindProperty("approachStopDistanceBuffer").floatValue = 2f;
         so.FindProperty("targetDetectionRadius").floatValue = 15f;
         so.FindProperty("omnidirectionalDetectionRadius").floatValue = 20f;
+        so.FindProperty("magazineSize").intValue = 6;
+        so.FindProperty("reloadTime").floatValue = 1.5f;
         so.FindProperty("animatorController").objectReferenceValue = controller;
         so.FindProperty("animationProfile").objectReferenceValue = profile;
 

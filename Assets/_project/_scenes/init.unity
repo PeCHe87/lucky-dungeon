@@ -12011,6 +12011,10 @@ PrefabInstance:
       value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 1827364555011111004, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: logMagazineReload
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1827364555011111004, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: 'equippedVisualRoots.Array.data[0]'
       value: 
       objectReference: {fileID: 2072252418}

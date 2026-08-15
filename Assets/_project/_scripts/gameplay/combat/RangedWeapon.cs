@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -14,6 +15,9 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     [SerializeField] Vector3 spawnOffset;
     [SerializeField] UnityEvent onAttackPerformed;
 
+    [Header("Debug")]
+    [SerializeField] bool logMagazineReload;
+
     float _cooldownRemaining;
     float _attackActiveTimer;
     bool _hasArmedContext;
@@ -21,10 +25,17 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     bool _hasPendingFireContext;
     AttackContext _pendingFireContext;
 
+    int _currentAmmo;
+    float _reloadEndTime;
+    float _reloadDuration;
+    bool _isReloading;
+
     void Awake()
     {
         if (data == null)
             Debug.LogWarning($"{nameof(RangedWeapon)} on {name}: {nameof(data)} is not assigned.", this);
+        else
+            RefillMagazine();
     }
 
     public WeaponData Data => data;
@@ -32,6 +43,26 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     public PlayerEntityStateAnimationProfile AnimationProfile => data != null ? data.AnimationProfile : null;
     public float TargetDetectionRadius => data != null ? data.TargetDetectionRadius : 15f;
     public float OmnidirectionalDetectionRadius => data != null ? data.OmnidirectionalDetectionRadius : 20f;
+
+    public int CurrentAmmo => _currentAmmo;
+    public int MagazineSize => data != null ? data.MagazineSize : 0;
+    public bool IsReloading => _isReloading;
+
+    /// <summary>0–1 while reloading (empty → full). 1 when not reloading or reload duration is 0.</summary>
+    public float ReloadProgress
+    {
+        get
+        {
+            if (!_isReloading)
+                return 1f;
+            if (_reloadDuration <= 0f)
+                return 1f;
+            return 1f - Mathf.Clamp01((_reloadEndTime - Time.time) / _reloadDuration);
+        }
+    }
+
+    public event Action ReloadStarted;
+    public event Action AmmoChanged;
 
     public float EffectiveMaxAttackRange
     {
@@ -66,7 +97,10 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
 
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
-    public bool IsAttackReady => _cooldownRemaining <= 0f;
+    public bool IsAttackReady =>
+        !_isReloading
+        && _currentAmmo > 0
+        && _cooldownRemaining <= 0f;
 
     /// <summary>Updates the projectile spawn origin (typically the muzzle on a spawned bow visual).</summary>
     public void SetFirePoint(Transform point) => firePoint = point;
@@ -84,6 +118,14 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
             _cooldownRemaining -= Time.deltaTime;
         if (_attackActiveTimer > 0f)
             _attackActiveTimer -= Time.deltaTime;
+
+        if (!_isReloading)
+            return;
+
+        if (Time.time < _reloadEndTime)
+            return;
+
+        FinishReload();
     }
 
     public bool IsTargetWithinAttackRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
@@ -114,6 +156,8 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     public bool TryBeginAttack(in AttackContext ctx)
     {
         if (data == null || ctx.attacker == null)
+            return false;
+        if (_isReloading || _currentAmmo <= 0)
             return false;
         if (_cooldownRemaining > 0f)
             return false;
@@ -168,7 +212,7 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         Quaternion spawnRot = Quaternion.LookRotation(forward, Vector3.up);
 
         DamageElement element = ctx.damageElementOverride ?? data.DamageElement;
-        bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && Random.value < data.CriticalStrikeChance);
+        bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && UnityEngine.Random.value < data.CriticalStrikeChance);
         var style = new DamageNumberStyle(element, isCrit);
 
         DamageProjectile projectile = shot.GetComponent<DamageProjectile>();
@@ -195,5 +239,58 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
 
         shot.SetActive(true);
         onAttackPerformed?.Invoke();
+        ConsumeAmmo();
+    }
+
+    void ConsumeAmmo()
+    {
+        if (data == null || _currentAmmo <= 0)
+            return;
+
+        _currentAmmo--;
+        LogMagazine($"Bullet consumed ({_currentAmmo}/{data.MagazineSize}).");
+        AmmoChanged?.Invoke();
+
+        if (_currentAmmo > 0)
+            return;
+
+        StartReload();
+    }
+
+    void StartReload()
+    {
+        if (data == null || _isReloading)
+            return;
+
+        _isReloading = true;
+        _reloadDuration = data.ReloadTime;
+        _reloadEndTime = Time.time + _reloadDuration;
+        LogMagazine($"Reload started ({data.ReloadTime:0.##}s).");
+        ReloadStarted?.Invoke();
+
+        if (_reloadDuration <= 0f)
+            FinishReload();
+    }
+
+    void FinishReload()
+    {
+        _isReloading = false;
+        _reloadEndTime = 0f;
+        _reloadDuration = 0f;
+        RefillMagazine();
+        LogMagazine($"Reload finished. Magazine refilled ({_currentAmmo}/{(data != null ? data.MagazineSize : 0)}).");
+        AmmoChanged?.Invoke();
+    }
+
+    void RefillMagazine()
+    {
+        _currentAmmo = data != null ? data.MagazineSize : 0;
+    }
+
+    void LogMagazine(string message)
+    {
+        if (!logMagazineReload)
+            return;
+        Debug.Log($"[RangedWeapon:{name}] {message}", this);
     }
 }

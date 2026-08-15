@@ -337,11 +337,38 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
 
     void DrainQueuedAttackPresses(int layer)
     {
+        if (!CanDrainQueuedRangedCombo())
+        {
+            _queuedAttackPressCount = 0;
+            return;
+        }
+
         while (_queuedAttackPressCount > 0 && !IsAttackClipPlaying(layer))
         {
+            if (!CanDrainQueuedRangedCombo())
+            {
+                _queuedAttackPressCount = 0;
+                return;
+            }
+
             _queuedAttackPressCount--;
             TryPlayNextAttack(layer);
         }
+    }
+
+    bool CanDrainQueuedRangedCombo()
+    {
+        if (weaponHolder == null || !weaponHolder.IsRangedEquipped())
+            return true;
+
+        ResolveRangedWeapon();
+        if (_rangedWeapon == null)
+            return true;
+
+        if (_rangedWeapon.IsReloading || _rangedWeapon.CurrentAmmo <= 0)
+            return false;
+
+        return true;
     }
 
     void TryApplyPendingLocomotion(int layer)
