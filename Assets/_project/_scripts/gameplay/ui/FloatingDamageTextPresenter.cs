@@ -55,6 +55,10 @@ public sealed class FloatingDamageTextPresenter : MonoBehaviour
         new DamageElementColorPair { element = DamageElement.Poison, color = new Color(0.55f, 1f, 0.35f) },
     };
 
+    [Header("Heal")]
+    [SerializeField] Color healColor = new Color(0.35f, 0.95f, 0.4f, 1f);
+    [SerializeField, Min(1f)] float healFontSize = 42f;
+
     readonly Stack<FloatingDamageTextInstance> _available = new Stack<FloatingDamageTextInstance>();
     readonly List<FloatingDamageTextInstance> _all = new List<FloatingDamageTextInstance>();
     readonly Dictionary<DamageElement, Color> _colorByElement = new Dictionary<DamageElement, Color>();
@@ -144,6 +148,28 @@ public sealed class FloatingDamageTextPresenter : MonoBehaviour
 
     public void Spawn(Vector3 worldPosition, float damageAmount, DamageNumberStyle style)
     {
+        string text = FormatDamage(damageAmount);
+        float fontSize = baseFontSize * (style.IsCritical ? criticalFontScale : 1f);
+        Color color = ResolveColor(style);
+        SpawnStyled(worldPosition, text, color, fontSize);
+    }
+
+    public void SpawnHeal(Vector3 worldPosition, float healAmount)
+    {
+        SpawnHeal(worldPosition, healAmount, healFontSize);
+    }
+
+    public void SpawnHeal(Vector3 worldPosition, float healAmount, float fontSize)
+    {
+        if (healAmount <= 0f)
+            return;
+
+        string text = $"+{Mathf.RoundToInt(healAmount)}";
+        SpawnStyled(worldPosition, text, healColor, fontSize);
+    }
+
+    void SpawnStyled(Vector3 worldPosition, string text, Color color, float fontSize)
+    {
         if (prefab == null || canvas == null)
             return;
 
@@ -197,12 +223,7 @@ public sealed class FloatingDamageTextPresenter : MonoBehaviour
             local.x += Random.Range(-spread, spread);
         local.y += verticalScreenOffsetPixels;
 
-        string text = FormatDamage(damageAmount);
-        float fontSize = baseFontSize * (style.IsCritical ? criticalFontScale : 1f);
-        Color color = ResolveColor(style);
-        Vector2 drift = driftPixelsPerSecond;
-
-        inst.Play(Return, local, text, color, fontSize, lifetimeSeconds, drift);
+        inst.Play(Return, local, text, color, fontSize, lifetimeSeconds, driftPixelsPerSecond);
     }
 
     string FormatDamage(float amount)

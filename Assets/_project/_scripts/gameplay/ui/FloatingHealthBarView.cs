@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,6 +27,21 @@ public sealed class FloatingHealthBarView : MonoBehaviour
     [Tooltip("When enabled, the bar stays hidden until the first non-lethal hit.")]
     [SerializeField] bool hideUntilDamaged;
 
+    [Header("Health label")]
+    [Tooltip("When enabled, shows current HP as text on the bar.")]
+    [SerializeField] bool showHealthNumbers;
+    [SerializeField] TextMeshProUGUI healthLabel;
+    [SerializeField] TMP_FontAsset healthLabelFont;
+    [SerializeField, Min(1f)] float healthLabelFontSize = 10f;
+    [SerializeField] bool healthLabelBold;
+    [SerializeField] Color healthLabelColor = Color.white;
+    [Tooltip("Vertical offset in canvas pixels (positive moves the label up).")]
+    [SerializeField] float healthLabelVerticalOffset;
+    [SerializeField] bool healthLabelOutline;
+    [SerializeField] Color healthLabelOutlineColor = Color.black;
+    [Tooltip("TMP shader-space outline width (typical range ~0.05–0.3).")]
+    [SerializeField, Range(0f, 1f)] float healthLabelOutlineWidth = 0.2f;
+
     static Sprite _whiteSprite;
 
     bool _visible = true;
@@ -44,6 +60,8 @@ public sealed class FloatingHealthBarView : MonoBehaviour
 
         if (fillImage == null)
             EnsureBarHierarchy();
+        else if (showHealthNumbers)
+            EnsureHealthLabel();
 
         if (hideUntilDamaged)
         {
@@ -116,6 +134,108 @@ public sealed class FloatingHealthBarView : MonoBehaviour
             ? health.CurrentHitPoints / health.MaxHitPoints
             : 0f;
         fillImage.fillAmount = Mathf.Clamp01(ratio);
+        RefreshHealthLabel();
+    }
+
+    void RefreshHealthLabel()
+    {
+        if (!showHealthNumbers)
+        {
+            if (healthLabel != null)
+                healthLabel.gameObject.SetActive(false);
+            return;
+        }
+
+        EnsureHealthLabel();
+
+        if (healthLabel == null)
+            return;
+
+        healthLabel.gameObject.SetActive(true);
+        ApplyHealthLabelStyle();
+        healthLabel.text = Mathf.CeilToInt(health.CurrentHitPoints).ToString();
+    }
+
+    void ApplyHealthLabelStyle()
+    {
+        if (healthLabel == null)
+            return;
+
+        if (healthLabelFont != null)
+            healthLabel.font = healthLabelFont;
+
+        healthLabel.fontSize = healthLabelFontSize;
+        healthLabel.fontStyle = healthLabelBold ? FontStyles.Bold : FontStyles.Normal;
+        healthLabel.color = healthLabelColor;
+
+        RectTransform labelRect = healthLabel.rectTransform;
+        labelRect.offsetMin = new Vector2(labelRect.offsetMin.x, healthLabelVerticalOffset);
+        labelRect.offsetMax = new Vector2(labelRect.offsetMax.x, healthLabelVerticalOffset);
+        ApplyHealthLabelOutline();
+    }
+
+    void ApplyHealthLabelOutline()
+    {
+        if (healthLabel == null)
+            return;
+
+        TextMeshProOutline outline = healthLabel.GetComponent<TextMeshProOutline>();
+        if (!healthLabelOutline)
+        {
+            if (outline != null)
+                outline.Configure(false, healthLabelOutlineColor, 0f);
+            return;
+        }
+
+        if (outline == null)
+            outline = healthLabel.gameObject.AddComponent<TextMeshProOutline>();
+
+        outline.Configure(true, healthLabelOutlineColor, healthLabelOutlineWidth);
+    }
+
+    void EnsureHealthLabel()
+    {
+        if (!showHealthNumbers || healthLabel != null)
+            return;
+
+        if (barRoot != null)
+        {
+            Transform existing = barRoot.Find("Canvas/HealthLabel");
+            if (existing != null)
+            {
+                healthLabel = existing.GetComponent<TextMeshProUGUI>();
+                if (healthLabel != null)
+                    return;
+            }
+        }
+
+        Transform canvasTransform = fillImage != null
+            ? fillImage.transform.parent?.parent
+            : barRoot != null ? barRoot.Find("Canvas") : null;
+
+        if (canvasTransform == null)
+            return;
+
+        healthLabel = CreateHealthLabel(canvasTransform);
+    }
+
+    TextMeshProUGUI CreateHealthLabel(Transform canvasTransform)
+    {
+        var labelGo = new GameObject("HealthLabel");
+        labelGo.transform.SetParent(canvasTransform, false);
+
+        var labelRect = labelGo.AddComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+
+        var label = labelGo.AddComponent<TextMeshProUGUI>();
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+        healthLabel = label;
+        ApplyHealthLabelStyle();
+        return label;
     }
 
     void EnsureBarHierarchy()
@@ -169,6 +289,9 @@ public sealed class FloatingHealthBarView : MonoBehaviour
         fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
         fillImage.fillAmount = 1f;
         fillImage.raycastTarget = false;
+
+        if (showHealthNumbers)
+            healthLabel = CreateHealthLabel(canvasGo.transform);
 
         canvasGo.AddComponent<BillboardFacingCamera>();
     }

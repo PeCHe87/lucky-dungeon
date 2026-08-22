@@ -75,7 +75,7 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
         Damaged?.Invoke(amount);
         DamagedWithHitInfo?.Invoke(amount, hitInfo);
         HealthChanged?.Invoke();
-        FloatingDamageTextPresenter.Instance?.Spawn(GetDamageNumberWorldPosition(), amount, style);
+        FloatingDamageTextPresenter.Instance?.Spawn(GetFloatingTextWorldPosition(), amount, style);
 
         if (_currentHitPoints <= 0f)
         {
@@ -93,6 +93,19 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
     bool IsDamageInterruptSuppressed() =>
         _attackController != null && _attackController.ShouldSuppressDamageInterrupt;
 
+    public void Heal(float amount)
+    {
+        if (_defeated || amount <= 0f)
+            return;
+
+        float before = _currentHitPoints;
+        _currentHitPoints = Mathf.Min(_currentHitPoints + amount, maxHitPoints);
+        if (Mathf.Approximately(_currentHitPoints, before))
+            return;
+
+        HealthChanged?.Invoke();
+    }
+
     void Die()
     {
         if (_defeated)
@@ -105,7 +118,7 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
             stateMachine.ForceTransition(dieState);
     }
 
-    Vector3 GetDamageNumberWorldPosition()
+    public Vector3 GetFloatingTextWorldPosition()
     {
         Vector3 p = damageNumberAnchor != null ? damageNumberAnchor.position : transform.position;
         p.y += damageNumberHeightOffset;
