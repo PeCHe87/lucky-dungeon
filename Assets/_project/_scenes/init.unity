@@ -12261,7 +12261,7 @@ PrefabInstance:
     - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: startingWeaponData
       value: 
-      objectReference: {fileID: 11400000, guid: c9070ea9c586a43cf63bdc376a8cfc4c, type: 2}
+      objectReference: {fileID: 11400000, guid: 0317dfdd7d66362194a0d911afe09a85, type: 2}
     - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: facingRoot
       value: 
