@@ -8,6 +8,8 @@ public class TopDownCharacterMovement : MonoBehaviour
     [Tooltip("Implements IMoveIntentProvider (e.g. PlayerInputMoveIntentProvider). If unset, uses first IMoveIntentProvider on this GameObject.")]
     [SerializeField] MonoBehaviour moveIntentProvider;
     [SerializeField] PlayerEntityState playerEntityState;
+    [Tooltip("If unset, uses PlayerAttackController on this GameObject.")]
+    [SerializeField] PlayerAttackController attackController;
 
     [Header("Movement")]
     [SerializeField] float moveSpeed = 6f;
@@ -61,6 +63,18 @@ public class TopDownCharacterMovement : MonoBehaviour
 
     public bool IsLunging => _lungeTimeRemaining > 0f;
 
+    bool ShouldBlockLocomotionInput()
+    {
+        if (_provider is FeneraxJoystickMoveIntentProvider stickProvider
+            && stickProvider.IsVirtualStickSuppressed)
+            return true;
+
+        if (attackController != null && attackController.IsAttackBlockingLocomotion)
+            return true;
+
+        return false;
+    }
+
     void Awake()
     {
         _characterController = GetComponent<CharacterController>();
@@ -73,12 +87,17 @@ public class TopDownCharacterMovement : MonoBehaviour
 
         if (playerEntityState == null)
             playerEntityState = GetComponent<PlayerEntityState>();
+
+        if (attackController == null)
+            attackController = GetComponent<PlayerAttackController>();
     }
 
     void Update()
     {
         Vector2 intent = _provider != null ? _provider.GetMoveIntent() : Vector2.zero;
         if (playerEntityState != null && playerEntityState.IsInputBlocked)
+            intent = Vector2.zero;
+        if (ShouldBlockLocomotionInput())
             intent = Vector2.zero;
         Vector3 moveDir = GetHorizontalMoveDirection(intent);
         Vector3 velocityDir = moveDir;

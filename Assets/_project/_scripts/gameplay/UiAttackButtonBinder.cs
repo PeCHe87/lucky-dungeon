@@ -47,7 +47,11 @@ public class UiAttackButtonBinder : MonoBehaviour, IPointerDownHandler, IPointer
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (!_hasIntentProvider || IsAttackBlocked())
+        if (!_hasIntentProvider)
+            return;
+
+        // Dying / hit-react / dash still block. Walking/Running must not — attack cancels stick.
+        if (IsAttackBlocked())
             return;
 
         if (enableHoldAttack)

@@ -23,6 +23,8 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     [Tooltip("Assign FixedJoystick, VariableJoystick, or FloatingJoystick from Joystick Pack (Fenerax).")]
     [SerializeField] MonoBehaviour virtualJoystick;
     [SerializeField] float stickDeadzone = 0.08f;
+    [Tooltip("If unset, uses first TapOrDragJoystickGate in the scene.")]
+    [SerializeField] TapOrDragJoystickGate joystickGate;
 
     InputAction _moveFromEnabledAssetMap;
     InputAction _attackFromEnabledAssetMap;
@@ -36,6 +38,8 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     {
         if (playerInput == null)
             TryGetComponent(out playerInput);
+        if (joystickGate == null)
+            joystickGate = FindFirstObjectByType<TapOrDragJoystickGate>();
 
         CacheVirtualStickReader();
     }
@@ -130,12 +134,14 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
     /// <summary>Called from UI (e.g. <see cref="UiAttackButtonBinder"/>) to request an attack on the next gameplay read.</summary>
     public void RegisterUiAttackFromUi()
     {
+        CancelActiveMoveInput();
         _uiAttackThisFrame = true;
     }
 
     /// <summary>Called from UI pointer down to begin a held attack.</summary>
     public void RegisterUiAttackPointerDown()
     {
+        CancelActiveMoveInput();
         _uiAttackHeld = true;
         _uiAttackThisFrame = true;
     }
@@ -146,6 +152,21 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
         _uiAttackHeld = false;
     }
 
+    void CancelActiveMoveInput()
+    {
+        if (joystickGate == null)
+            joystickGate = FindFirstObjectByType<TapOrDragJoystickGate>();
+        if (joystickGate != null)
+            joystickGate.ForceCancelActivePointer();
+    }
+
+    /// <summary>Public entry for gameplay systems to force-cancel stick on attack press.</summary>
+    public void CancelVirtualStickForAttack() => CancelActiveMoveInput();
+
+    /// <summary>True after UI attack force-cancelled the stick until a fresh drag.</summary>
+    public bool IsVirtualStickSuppressed =>
+        joystickGate != null && joystickGate.IsStickSuppressed;
+
     public Vector2 GetMoveIntent()
     {
         InputAction action = moveAction.action;
@@ -155,6 +176,13 @@ public class FeneraxJoystickMoveIntentProvider : MonoBehaviour, IMoveIntentProvi
             action = _moveFromEnabledAssetMap;
 
         Vector2 fromActions = action != null ? action.ReadValue<Vector2>() : Vector2.zero;
+
+        if (joystickGate == null)
+            joystickGate = FindFirstObjectByType<TapOrDragJoystickGate>();
+
+        // Attack force-cancel: ignore stick until player releases and re-drags.
+        if (joystickGate != null && joystickGate.IsStickSuppressed)
+            return fromActions;
 
         if (_readVirtualStick == null)
             return fromActions;

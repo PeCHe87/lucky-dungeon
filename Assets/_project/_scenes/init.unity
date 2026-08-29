@@ -2490,7 +2490,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOverScreen
   showDelaySeconds: 2
-  retryButton: {fileID: 1334747029}
 --- !u!1 &466104391
 GameObject:
   m_ObjectHideFlags: 0
@@ -3740,8 +3739,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScreenTapAttackInput
   intentProvider: {fileID: 7183177815072600266}
   playerEntityState: {fileID: 0}
-  maxTapMovementPixels: 16
-  maxTapHoldDuration: 0.18
 --- !u!114 &730831436
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6134,6 +6131,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2392129893036482542, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
+      propertyPath: m_Radius
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 4032996479380869087, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: healAmount
       value: 50
@@ -6447,6 +6448,10 @@ PrefabInstance:
     - target: {fileID: 252015039485517170, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2392129893036482542, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
+      propertyPath: m_Radius
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 5311517489054248528, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_Name
@@ -7058,7 +7063,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 252015039485517170, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -17.68
+      value: -22.98
       objectReference: {fileID: 0}
     - target: {fileID: 252015039485517170, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -7066,7 +7071,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 252015039485517170, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.23
+      value: 5.72
       objectReference: {fileID: 0}
     - target: {fileID: 252015039485517170, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7095,6 +7100,10 @@ PrefabInstance:
     - target: {fileID: 252015039485517170, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2392129893036482542, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
+      propertyPath: m_Radius
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 5311517489054248528, guid: c11dc8cec5beba848abb62a6f36ef11d, type: 3}
       propertyPath: m_Name
@@ -9015,7 +9024,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.2.01.29082026
+  m_text: v.0.2.02e.29082026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11804,6 +11813,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3881087803549984438, guid: ec536a7718376554185e4a856d5ae230, type: 3}
+      propertyPath: m_Color.a
+      value: 0.003921569
+      objectReference: {fileID: 0}
     - target: {fileID: 3881087803549984439, guid: ec536a7718376554185e4a856d5ae230, type: 3}
       propertyPath: joystickType
       value: 1
@@ -11900,6 +11913,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TapOrDragJoystickGate
   intentProvider: {fileID: 7183177815072600266}
   playerEntityState: {fileID: 0}
+  attackController: {fileID: 0}
   dragActivationPixels: 16
   maxTapHoldDuration: 0.18
 --- !u!1001 &535854424256076792
@@ -12721,6 +12735,10 @@ PrefabInstance:
       propertyPath: facingRoot
       value: 
       objectReference: {fileID: 1911952147}
+    - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
+      propertyPath: logAttackPress
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9012345678901234505, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: playerEntityState
       value: 

@@ -25,6 +25,8 @@ public sealed class PlayerAttackController : MonoBehaviour
     [SerializeField] bool logProcessedAttack;
     [Tooltip("If true, logs ignored, buffered, consumed, and cleared attack input.")]
     [SerializeField] bool logIgnoredAttackInput;
+    [Tooltip("If true, logs weapon / moving / canProcess on every attack press (works on device).")]
+    [SerializeField] bool logAttackPress;
     [Tooltip("If unset, uses PlayerEntityState on this GameObject or in the scene.")]
     [SerializeField] PlayerEntityState playerEntityState;
     [Tooltip("If unset, uses PlayerEntityStateAnimator on this GameObject.")]
@@ -56,6 +58,18 @@ public sealed class PlayerAttackController : MonoBehaviour
     /// <summary>True when held attack input should drive combat/animation (false after ranged cancel-by-move until release).</summary>
     public bool IsAttackHoldActive =>
         IsAttackInputHeld && !_rangedAttackDisengagedUntilRelease;
+
+    /// <summary>
+    /// True while attack hold, melee approach, active attack window, or melee attack clip
+    /// should prevent locomotion resume.
+    /// </summary>
+    public bool IsAttackBlockingLocomotion =>
+        _meleeApproachPending
+        || IsAttackHoldActive
+        || (entityStateAnimator != null && entityStateAnimator.IsMeleeAttackClipPlaying)
+        || (weaponHolder != null
+            && weaponHolder.Current is IAttackActivity activity
+            && activity.IsAttackActive);
 
     public bool IsCurrentWeaponOnCooldown =>
         weaponHolder != null
@@ -174,6 +188,13 @@ public sealed class PlayerAttackController : MonoBehaviour
             return;
 
         bool pressed = _attackProvider.WasAttackPressedThisFrame();
+        if (pressed)
+        {
+            // Safety: cancel stick even if UI cancel ran in a different order this frame.
+            if (_attackProvider is FeneraxJoystickMoveIntentProvider moveIntent)
+                moveIntent.CancelVirtualStickForAttack();
+            LogAttackPressDebug();
+        }
 
         if (_meleeApproachPending)
         {
@@ -207,7 +228,11 @@ public sealed class PlayerAttackController : MonoBehaviour
 
         ClearRangedAttackDisengageIfReleased();
 
-        if (HasMovementPriorityInput())
+        // Dash keeps priority. Stick no longer blocks an explicit attack press (UI attack force-cancels stick).
+        if (_movement != null && _movement.IsDashing)
+            return;
+
+        if (HasMovementPriorityInput() && !pressed)
             return;
 
         if (IsEquippedRangedReloading())
@@ -509,6 +534,11 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (_dashProvider != null && _dashProvider.WasDashPressedThisFrame())
             return true;
 
+        // Stick force-cancelled by attack: do not cancel the attack or treat residual stick as move.
+        if (_moveProvider is FeneraxJoystickMoveIntentProvider fenerax
+            && fenerax.IsVirtualStickSuppressed)
+            return false;
+
         if (_moveProvider == null)
             return false;
 
@@ -602,18 +632,112 @@ public sealed class PlayerAttackController : MonoBehaviour
         Debug.Log($"[PlayerAttackController] {message}", this);
     }
 
+    void LogAttackPressDebug()
+    {
+        if (!logAttackPress)
+            return;
+
+        bool moving = IsStickMoveActive();
+        bool suppressed = _moveProvider is FeneraxJoystickMoveIntentProvider fenerax
+            && fenerax.IsVirtualStickSuppressed;
+        string state = playerEntityState != null ? playerEntityState.Current.ToString() : "<no state>";
+        bool canProcess = TryGetAttackPressProcessability(out string reason);
+        string canLabel = canProcess ? "true" : $"false reason={reason}";
+
+        Debug.Log(
+            $"[PlayerAttackController] Attack press — weapon={FormatEquippedWeaponLabel()}, moving={moving}, stickSuppressed={suppressed}, attackBlockingMove={IsAttackBlockingLocomotion}, state={state}, canProcess={canLabel}",
+            this);
+    }
+
+    bool IsStickMoveActive()
+    {
+        if (_moveProvider is FeneraxJoystickMoveIntentProvider fenerax
+            && fenerax.IsVirtualStickSuppressed)
+            return false;
+
+        if (_moveProvider == null)
+            return false;
+
+        float deadzone = playerEntityState != null ? playerEntityState.MoveDeadzone : 0.08f;
+        Vector2 intent = _moveProvider.GetMoveIntent();
+        return intent.sqrMagnitude > deadzone * deadzone;
+    }
+
+    bool TryGetAttackPressProcessability(out string reason)
+    {
+        if (_meleeApproachPending)
+        {
+            reason = "melee approach pending (press buffered if available)";
+            return false;
+        }
+
+        if (_movement != null && _movement.IsDashing)
+        {
+            reason = "dashing";
+            return false;
+        }
+
+        if (IsEquippedRangedReloading())
+        {
+            reason = "ranged reloading";
+            return false;
+        }
+
+        if (playerEntityState != null && playerEntityState.IsInputBlocked)
+        {
+            reason = "input blocked";
+            return false;
+        }
+
+        if (playerEntityState != null && playerEntityState.IsAttackInputBlocked)
+        {
+            reason = "attack input blocked";
+            return false;
+        }
+
+        if (_movement != null && _movement.IsLunging)
+        {
+            reason = "lunging";
+            return false;
+        }
+
+        if (weaponHolder == null || weaponHolder.Current == null)
+        {
+            reason = "no weapon";
+            return false;
+        }
+
+        if (IsExplicitAttackPressUnavailable())
+        {
+            reason = "cooldown or attack in progress (may buffer)";
+            return false;
+        }
+
+        reason = "ok";
+        return true;
+    }
+
+    string FormatEquippedWeaponLabel()
+    {
+        if (weaponHolder == null)
+            return "<none>";
+
+        IWeapon w = weaponHolder.Current;
+        MonoBehaviour wmb = w as MonoBehaviour;
+        if (wmb != null)
+            return $"'{wmb.name}' ({wmb.GetType().Name})";
+        return w != null ? $"({w.GetType().Name})" : "<none>";
+    }
+
     void LogProcessedAttackIfEnabled()
     {
 #if UNITY_EDITOR
         if (!logProcessedAttack)
             return;
 
-        IWeapon w = weaponHolder.Current;
-        MonoBehaviour wmb = w as MonoBehaviour;
-        string label = wmb != null
-            ? $"'{wmb.name}' ({wmb.GetType().Name})"
-            : (w != null ? $"({w.GetType().Name})" : "<none>");
-        Debug.Log($"{nameof(PlayerAttackController)} on {name}: attack processed with <color=yellow>{label}</color>", this);
+        Debug.Log(
+            $"{nameof(PlayerAttackController)} on {name}: attack processed with <color=yellow>{FormatEquippedWeaponLabel()}</color>",
+            this);
 #endif
     }
 }

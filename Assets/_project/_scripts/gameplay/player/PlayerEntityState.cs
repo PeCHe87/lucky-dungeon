@@ -44,11 +44,9 @@ public sealed class PlayerEntityState : MonoBehaviour
         Current == PlayerEntityStateKind.Dying
         || Current == PlayerEntityStateKind.TakingDamage;
 
-    /// <summary>True while walking, running, dashing, or taking damage; attack input should be ignored.</summary>
+    /// <summary>True while dying, hit-reacting, or dashing; attack input should be ignored.</summary>
     public bool IsAttackInputBlocked =>
         IsInputBlocked
-        || Current == PlayerEntityStateKind.Walking
-        || Current == PlayerEntityStateKind.Running
         || Current == PlayerEntityStateKind.Dashing;
 
     public event Action<PlayerEntityStateKind, PlayerEntityStateKind> StateChanged;

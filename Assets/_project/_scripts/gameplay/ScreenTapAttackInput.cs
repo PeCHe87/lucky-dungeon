@@ -1,27 +1,22 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Full-screen transparent panel: a tap (short contact with minimal movement) registers an attack.
-/// Place below interactive HUD controls so weapon buttons keep priority.
+/// Full-screen transparent panel: pointer down registers an attack (multi-touch safe).
+/// Place below interactive HUD controls so joystick / buttons keep priority.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Image))]
-public sealed class ScreenTapAttackInput : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
+public sealed class ScreenTapAttackInput : MonoBehaviour, IPointerDownHandler
 {
     [SerializeField] FeneraxJoystickMoveIntentProvider intentProvider;
     [Tooltip("If unset, uses first PlayerEntityState in the scene.")]
     [SerializeField] PlayerEntityState playerEntityState;
-    [SerializeField, Min(1f)] float maxTapMovementPixels = 16f;
-    [SerializeField, Range(0.05f, 0.35f)] float maxTapHoldDuration = 0.18f;
 
     Image _image;
-    bool _pointerActive;
-    bool _blockedByInteractiveUi;
-    Vector2 _downPosition;
-    float _downTime;
-    float _maxTapMovementPixelsSq;
+    readonly List<RaycastResult> _raycastResults = new List<RaycastResult>(16);
 
     void Awake()
     {
@@ -40,46 +35,12 @@ public sealed class ScreenTapAttackInput : MonoBehaviour, IPointerDownHandler, I
         }
     }
 
-    void Start()
-    {
-        _maxTapMovementPixelsSq = maxTapMovementPixels * maxTapMovementPixels;
-    }
-
     public void OnPointerDown(PointerEventData eventData)
     {
         if (!CanAcceptInput())
             return;
 
-        _pointerActive = true;
-        _blockedByInteractiveUi = IsBlockedByInteractiveUi(eventData);
-        _downPosition = eventData.position;
-        _downTime = Time.unscaledTime;
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        if (!_pointerActive)
-            return;
-
-        if ((eventData.position - _downPosition).sqrMagnitude > _maxTapMovementPixelsSq)
-            _pointerActive = false;
-    }
-
-    public void OnPointerUp(PointerEventData eventData)
-    {
-        if (!_pointerActive)
-            return;
-
-        _pointerActive = false;
-
-        if (_blockedByInteractiveUi || !CanAcceptInput())
-            return;
-
-        float holdDuration = Time.unscaledTime - _downTime;
-        if (holdDuration > maxTapHoldDuration)
-            return;
-
-        if ((eventData.position - _downPosition).sqrMagnitude > _maxTapMovementPixelsSq)
+        if (IsBlockedByInteractiveUi(eventData))
             return;
 
         if (intentProvider != null)
@@ -95,12 +56,12 @@ public sealed class ScreenTapAttackInput : MonoBehaviour, IPointerDownHandler, I
         if (eventSystem == null)
             return false;
 
-        var results = new System.Collections.Generic.List<RaycastResult>();
-        eventSystem.RaycastAll(eventData, results);
+        _raycastResults.Clear();
+        eventSystem.RaycastAll(eventData, _raycastResults);
 
-        for (int i = 0; i < results.Count; i++)
+        for (int i = 0; i < _raycastResults.Count; i++)
         {
-            GameObject hit = results[i].gameObject;
+            GameObject hit = _raycastResults[i].gameObject;
             if (hit == null || hit == gameObject || hit.transform.IsChildOf(transform))
                 continue;
 

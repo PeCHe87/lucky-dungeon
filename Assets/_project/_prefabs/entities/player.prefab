@@ -1599,6 +1599,7 @@ MonoBehaviour:
   snapFacingToNearestTargetBeforeAttack: 1
   logProcessedAttack: 0
   logIgnoredAttackInput: 0
+  logAttackPress: 0
   playerEntityState: {fileID: 0}
   entityStateAnimator: {fileID: 0}
 --- !u!114 &9012345678901234506
