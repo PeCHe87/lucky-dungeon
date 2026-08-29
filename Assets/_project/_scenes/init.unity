@@ -9024,7 +9024,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.0.2.02e.29082026
+  m_text: v.0.2.02g.29082026
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11916,6 +11916,7 @@ MonoBehaviour:
   attackController: {fileID: 0}
   dragActivationPixels: 16
   maxTapHoldDuration: 0.18
+  autoResumeMoveAfterAttackSeconds: 0.35
 --- !u!1001 &535854424256076792
 PrefabInstance:
   m_ObjectHideFlags: 0
