@@ -19,6 +19,7 @@ public sealed class TapOrDragJoystickGate : MonoBehaviour, IPointerDownHandler, 
     Joystick _joystick;
     bool _pointerActive;
     bool _dragActive;
+    int _activePointerId = int.MinValue;
     Vector2 _downPosition;
     float _downTime;
     float _dragActivationPixelsSq;
@@ -41,18 +42,19 @@ public sealed class TapOrDragJoystickGate : MonoBehaviour, IPointerDownHandler, 
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (!CanAcceptInput())
+        if (_pointerActive || !CanAcceptInput())
             return;
 
         _pointerActive = true;
         _dragActive = false;
+        _activePointerId = eventData.pointerId;
         _downPosition = eventData.position;
         _downTime = Time.unscaledTime;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (!_pointerActive || !CanAcceptInput())
+        if (!_pointerActive || eventData.pointerId != _activePointerId || !CanAcceptInput())
             return;
 
         if (_dragActive)
@@ -71,10 +73,11 @@ public sealed class TapOrDragJoystickGate : MonoBehaviour, IPointerDownHandler, 
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (!_pointerActive)
+        if (!_pointerActive || eventData.pointerId != _activePointerId)
             return;
 
         _pointerActive = false;
+        _activePointerId = int.MinValue;
 
         if (_dragActive)
         {

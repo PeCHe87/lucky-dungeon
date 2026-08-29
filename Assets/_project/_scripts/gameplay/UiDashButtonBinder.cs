@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [DefaultExecutionOrder(101)]
 [RequireComponent(typeof(Button))]
-public class UiDashButtonBinder : MonoBehaviour
+public class UiDashButtonBinder : MonoBehaviour, IPointerDownHandler
 {
     [SerializeField] FeneraxJoystickMoveIntentProvider intentProvider;
     [SerializeField] DashJoystickDoubleTapController dashController;
@@ -24,14 +25,6 @@ public class UiDashButtonBinder : MonoBehaviour
         _canvasGroup = GetComponent<CanvasGroup>();
         if (_canvasGroup == null)
             _canvasGroup = gameObject.AddComponent<CanvasGroup>();
-
-        _button.onClick.AddListener(OnDashClicked);
-    }
-
-    void OnDestroy()
-    {
-        if (_button != null)
-            _button.onClick.RemoveListener(OnDashClicked);
     }
 
     void LateUpdate()
@@ -39,7 +32,7 @@ public class UiDashButtonBinder : MonoBehaviour
         RefreshBlockedVisual();
     }
 
-    void OnDashClicked()
+    public void OnPointerDown(PointerEventData eventData)
     {
         if (dashController != null && !dashController.IsDashAvailable)
             return;

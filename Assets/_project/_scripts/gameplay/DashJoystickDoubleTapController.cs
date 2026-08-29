@@ -86,7 +86,7 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour
         if (!IsDashAvailable)
             return;
 
-        Vector3 dashDir = movement.GetFacingHorizontalDirection();
+        Vector3 dashDir = ResolveDashDirection();
         if (!movement.TryStartDirectedDash(dashDir, dashDuration, dashSpeed))
             return;
 
@@ -97,5 +97,21 @@ public sealed class DashJoystickDoubleTapController : MonoBehaviour
             trailEffect.Play(dashDir, dashDuration);
         if (cooldownRing != null)
             cooldownRing.SetFill01(0f);
+    }
+
+    Vector3 ResolveDashDirection()
+    {
+        if (joystickProvider != null)
+        {
+            Vector2 stick = joystickProvider.GetMoveIntent();
+            if (stick.sqrMagnitude > 1e-4f)
+            {
+                Vector3 fromStick = movement.GetHorizontalMoveDirectionFromStick(stick);
+                if (fromStick.sqrMagnitude > 1e-6f)
+                    return fromStick;
+            }
+        }
+
+        return movement.GetFacingHorizontalDirection();
     }
 }
