@@ -164,7 +164,7 @@ GameObject:
   - component: {fileID: 80036949542080901}
   - component: {fileID: 4527784741690648241}
   m_Layer: 0
-  m_Name: ui_WeaponHUD
+  m_Name: ui_RangeWeaponHUD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

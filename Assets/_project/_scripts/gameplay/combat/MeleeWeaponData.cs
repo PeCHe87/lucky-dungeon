@@ -26,6 +26,11 @@ public sealed class MeleeWeaponData : WeaponData
     [SerializeField, Min(0.01f)] float maxApproachLungeDistance = 6f;
     [SerializeField, Min(0.01f)] float approachLungeSpeed = 12f;
 
+    [Header("Magazine")]
+    [SerializeField, Min(1)] int magazineSize = 6;
+    [Tooltip("Magazine reload duration in seconds (scaled time).")]
+    [SerializeField, Min(0f)] float reloadTime = 1.5f;
+
     public float Range => range;
     public float MoveForwardDistance => moveForwardDistance;
     public float MoveForwardDuration => moveForwardDuration;
@@ -37,4 +42,6 @@ public sealed class MeleeWeaponData : WeaponData
     public float ApproachStopBuffer => approachStopBuffer;
     public float MaxApproachLungeDistance => maxApproachLungeDistance;
     public float ApproachLungeSpeed => approachLungeSpeed;
+    public int MagazineSize => magazineSize;
+    public float ReloadTime => reloadTime;
 }

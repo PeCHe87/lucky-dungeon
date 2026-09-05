@@ -43,6 +43,7 @@ public sealed class PlayerAttackController : MonoBehaviour
     bool _rangedAttackDisengagedUntilRelease;
     bool _hasBufferedAttackPress;
     RangedWeapon _subscribedRangedWeapon;
+    MeleeWeapon _subscribedMeleeWeapon;
 
     /// <summary>World position used as melee overlap origin (<see cref="AttackContext.attacker"/>).</summary>
     public Transform AttackOriginTransform => transform;
@@ -112,7 +113,7 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (weaponHolder != null)
             weaponHolder.EquippedWeaponChanged += OnEquippedWeaponChanged;
 
-        RefreshRangedReloadSubscription();
+        RefreshWeaponReloadSubscription();
     }
 
     void OnDisable()
@@ -123,36 +124,57 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (weaponHolder != null)
             weaponHolder.EquippedWeaponChanged -= OnEquippedWeaponChanged;
 
-        UnsubscribeRangedReload();
+        UnsubscribeWeaponReload();
     }
 
-    void OnEquippedWeaponChanged() => RefreshRangedReloadSubscription();
+    void OnEquippedWeaponChanged() => RefreshWeaponReloadSubscription();
 
-    void RefreshRangedReloadSubscription()
+    void RefreshWeaponReloadSubscription()
     {
-        RangedWeapon next = weaponHolder != null && weaponHolder.Current is RangedWeapon ranged
+        RangedWeapon nextRanged = weaponHolder != null && weaponHolder.Current is RangedWeapon ranged
             ? ranged
             : null;
+        MeleeWeapon nextMelee = weaponHolder != null && weaponHolder.Current is MeleeWeapon melee
+            ? melee
+            : null;
 
-        if (_subscribedRangedWeapon == next)
-            return;
+        if (_subscribedRangedWeapon != nextRanged)
+        {
+            if (_subscribedRangedWeapon != null)
+                _subscribedRangedWeapon.ReloadStarted -= OnWeaponReloadStarted;
 
-        UnsubscribeRangedReload();
-        _subscribedRangedWeapon = next;
-        if (_subscribedRangedWeapon != null)
-            _subscribedRangedWeapon.ReloadStarted += OnRangedReloadStarted;
+            _subscribedRangedWeapon = nextRanged;
+            if (_subscribedRangedWeapon != null)
+                _subscribedRangedWeapon.ReloadStarted += OnWeaponReloadStarted;
+        }
+
+        if (_subscribedMeleeWeapon != nextMelee)
+        {
+            if (_subscribedMeleeWeapon != null)
+                _subscribedMeleeWeapon.ReloadStarted -= OnWeaponReloadStarted;
+
+            _subscribedMeleeWeapon = nextMelee;
+            if (_subscribedMeleeWeapon != null)
+                _subscribedMeleeWeapon.ReloadStarted += OnWeaponReloadStarted;
+        }
     }
 
-    void UnsubscribeRangedReload()
+    void UnsubscribeWeaponReload()
     {
-        if (_subscribedRangedWeapon == null)
-            return;
+        if (_subscribedRangedWeapon != null)
+        {
+            _subscribedRangedWeapon.ReloadStarted -= OnWeaponReloadStarted;
+            _subscribedRangedWeapon = null;
+        }
 
-        _subscribedRangedWeapon.ReloadStarted -= OnRangedReloadStarted;
-        _subscribedRangedWeapon = null;
+        if (_subscribedMeleeWeapon != null)
+        {
+            _subscribedMeleeWeapon.ReloadStarted -= OnWeaponReloadStarted;
+            _subscribedMeleeWeapon = null;
+        }
     }
 
-    void OnRangedReloadStarted() => CancelComboForMagazineEmpty();
+    void OnWeaponReloadStarted() => CancelComboForMagazineEmpty();
 
     void CancelComboForMagazineEmpty()
     {
@@ -235,9 +257,9 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (HasMovementPriorityInput() && !pressed)
             return;
 
-        if (IsEquippedRangedReloading())
+        if (IsEquippedWeaponReloading())
         {
-            ClearBufferedAttackPress("ranged reloading");
+            ClearBufferedAttackPress("weapon reloading");
             return;
         }
 
@@ -273,10 +295,19 @@ public sealed class PlayerAttackController : MonoBehaviour
             TryHandleExplicitPressBuffering(pressed);
     }
 
-    bool IsEquippedRangedReloading() =>
-        weaponHolder != null
-        && weaponHolder.Current is RangedWeapon ranged
-        && ranged.IsReloading;
+    bool IsEquippedWeaponReloading()
+    {
+        if (weaponHolder == null)
+            return false;
+
+        if (weaponHolder.Current is RangedWeapon ranged && ranged.IsReloading)
+            return true;
+
+        if (weaponHolder.Current is MeleeWeapon melee && melee.IsReloading)
+            return true;
+
+        return false;
+    }
 
     bool IsExplicitAttackPressUnavailable() =>
         IsCurrentWeaponOnCooldown || IsAttackInProgress();
@@ -289,9 +320,9 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (playerEntityState != null && playerEntityState.IsInputBlocked)
             return;
 
-        if (IsEquippedRangedReloading())
+        if (IsEquippedWeaponReloading())
         {
-            LogIgnoredAttackInput("ranged reloading");
+            LogIgnoredAttackInput("weapon reloading");
             return;
         }
 
@@ -677,9 +708,9 @@ public sealed class PlayerAttackController : MonoBehaviour
             return false;
         }
 
-        if (IsEquippedRangedReloading())
+        if (IsEquippedWeaponReloading())
         {
-            reason = "ranged reloading";
+            reason = "weapon reloading";
             return false;
         }
 

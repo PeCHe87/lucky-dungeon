@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -16,6 +17,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     [Header("Debug")]
     [SerializeField] bool logDamagePipeline;
     [SerializeField] bool drawDamageRadiusGizmo = true;
+    [SerializeField] bool logMagazineReload;
 
     float _cooldownRemaining;
     float _attackActiveTimer;
@@ -27,10 +29,17 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     bool _hasPendingHitContext;
     AttackContext _pendingHitContext;
 
+    int _currentAmmo;
+    float _reloadEndTime;
+    float _reloadDuration;
+    bool _isReloading;
+
     void Awake()
     {
         if (data == null)
             Debug.LogWarning($"{nameof(MeleeWeapon)} on {name}: {nameof(data)} is not assigned.", this);
+        else
+            RefillMagazine();
 
         int maxTargets = data != null ? data.MaxTargetsPerSwing : 8;
         _overlapBuffer = new Collider[Mathf.Max(32, maxTargets * 4)];
@@ -40,6 +49,9 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     public void SetData(MeleeWeaponData value)
     {
         data = value;
+        if (data == null || _isReloading)
+            return;
+        RefillMagazine();
     }
 
     public WeaponData Data => data;
@@ -48,9 +60,32 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     public float TargetDetectionRadius => data != null ? data.TargetDetectionRadius : 6f;
     public float OmnidirectionalDetectionRadius => data != null ? data.OmnidirectionalDetectionRadius : 8f;
 
+    public int CurrentAmmo => _currentAmmo;
+    public int MagazineSize => data != null ? data.MagazineSize : 0;
+    public bool IsReloading => _isReloading;
+
+    /// <summary>0–1 while reloading (empty → full). 1 when not reloading or reload duration is 0.</summary>
+    public float ReloadProgress
+    {
+        get
+        {
+            if (!_isReloading)
+                return 1f;
+            if (_reloadDuration <= 0f)
+                return 1f;
+            return 1f - Mathf.Clamp01((_reloadEndTime - Time.time) / _reloadDuration);
+        }
+    }
+
+    public event Action ReloadStarted;
+    public event Action AmmoChanged;
+
     public bool IsAttackActive => _attackActiveTimer > 0f;
 
-    public bool IsAttackReady => _cooldownRemaining <= 0f;
+    public bool IsAttackReady =>
+        !_isReloading
+        && _currentAmmo > 0
+        && _cooldownRemaining <= 0f;
 
     public void CancelAttack()
     {
@@ -167,6 +202,14 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
             _cooldownRemaining -= Time.deltaTime;
         if (_attackActiveTimer > 0f)
             _attackActiveTimer -= Time.deltaTime;
+
+        if (!_isReloading)
+            return;
+
+        if (Time.time < _reloadEndTime)
+            return;
+
+        FinishReload();
     }
 
     /// <summary>Begins a melee swing: cooldown, lunge, arms context for the next clip start. No overlap yet.</summary>
@@ -175,6 +218,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     public bool TryBeginAttack(in AttackContext ctx)
     {
         if (data == null || ctx.attacker == null)
+            return false;
+        if (_isReloading || _currentAmmo <= 0)
             return false;
         if (_cooldownRemaining > 0f)
             return false;
@@ -239,6 +284,59 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
 
         ApplyDamage(in ctx);
         onAttackPerformed?.Invoke();
+        ConsumeAmmo();
+    }
+
+    void ConsumeAmmo()
+    {
+        if (data == null || _currentAmmo <= 0)
+            return;
+
+        _currentAmmo--;
+        LogMagazine($"Charge consumed ({_currentAmmo}/{data.MagazineSize}).");
+        AmmoChanged?.Invoke();
+
+        if (_currentAmmo > 0)
+            return;
+
+        StartReload();
+    }
+
+    void StartReload()
+    {
+        if (data == null || _isReloading)
+            return;
+
+        _isReloading = true;
+        _reloadDuration = data.ReloadTime;
+        _reloadEndTime = Time.time + _reloadDuration;
+        LogMagazine($"Reload started ({data.ReloadTime:0.##}s).");
+        ReloadStarted?.Invoke();
+
+        if (_reloadDuration <= 0f)
+            FinishReload();
+    }
+
+    void FinishReload()
+    {
+        _isReloading = false;
+        _reloadEndTime = 0f;
+        _reloadDuration = 0f;
+        RefillMagazine();
+        LogMagazine($"Reload finished. Magazine refilled ({_currentAmmo}/{(data != null ? data.MagazineSize : 0)}).");
+        AmmoChanged?.Invoke();
+    }
+
+    void RefillMagazine()
+    {
+        _currentAmmo = data != null ? data.MagazineSize : 0;
+    }
+
+    void LogMagazine(string message)
+    {
+        if (!logMagazineReload)
+            return;
+        Debug.Log($"[MeleeWeapon:{name}] {message}", this);
     }
 
     void ApplyDamage(in AttackContext ctx)
@@ -330,7 +428,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
                 if (!damagedComponents.Add(id))
                     return false;
                 DamageElement element = ctx.damageElementOverride ?? data.DamageElement;
-                bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && Random.value < data.CriticalStrikeChance);
+                bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && UnityEngine.Random.value < data.CriticalStrikeChance);
                 dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit), new DamageHitInfo(ctx.attacker));
 
                 if (data.PushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection)
