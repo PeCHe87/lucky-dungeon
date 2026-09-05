@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Drives the ranged weapon info fill Image and ammo count from equipped <see cref="RangedWeapon"/>.
-/// While reloading, animates fill 0→1, uses <see cref="reloadFillColor"/>, and hides <c>txtAmmo</c>.
+/// When not reloading, fill stays at 100%. While reloading, snaps fill to 0 then animates 0→1,
+/// uses <see cref="reloadFillColor"/>, and hides <c>txtAmmo</c>.
 /// Host must stay active (player root); do not place on the toggled <c>rangedWeaponInfo</c> root.
 /// </summary>
 public sealed class RangedWeaponInfoAmmoFill : MonoBehaviour
@@ -66,7 +67,16 @@ public sealed class RangedWeaponInfoAmmoFill : MonoBehaviour
 
     void OnAmmoChanged() => Refresh();
 
-    void OnReloadStarted() => Refresh();
+    void OnReloadStarted()
+    {
+        ResolveRefs();
+        if (fillImage != null)
+        {
+            fillImage.fillAmount = 0f;
+            ApplyFillColor(reloading: true);
+        }
+        ApplyAmmoLabel(show: false, ammo: 0);
+    }
 
     void RefreshSubscription()
     {
@@ -126,8 +136,7 @@ public sealed class RangedWeaponInfoAmmoFill : MonoBehaviour
 
         if (fillImage != null)
         {
-            fillImage.fillAmount = Mathf.Clamp01(
-                _subscribedWeapon.CurrentAmmo / (float)_subscribedWeapon.MagazineSize);
+            fillImage.fillAmount = 1f;
             ApplyFillColor(reloading: false);
         }
         ApplyAmmoLabel(show: true, ammo: _subscribedWeapon.CurrentAmmo);
