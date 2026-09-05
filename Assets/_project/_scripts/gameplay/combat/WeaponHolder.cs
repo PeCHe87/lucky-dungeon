@@ -151,6 +151,15 @@ public sealed class WeaponHolder : MonoBehaviour
     /// <summary>UI / input: equips <see cref="rangedWeapon"/> if it implements <see cref="IWeapon"/>.</summary>
     public void EquipRanged() => TryEquipFromSlot(rangedWeapon, nameof(rangedWeapon));
 
+    /// <summary>UI / input: toggles between melee and ranged slots.</summary>
+    public void SwapEquippedWeapon()
+    {
+        if (IsRangedEquipped())
+            EquipMelee();
+        else
+            EquipRanged();
+    }
+
     void TryEquipFromSlot(MonoBehaviour slot, string fieldName)
     {
         if (slot == null)
