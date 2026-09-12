@@ -3,6 +3,13 @@ using UnityEngine;
 /// <summary>Shared balance/config for any weapon; subclass for melee or assault/ranged specifics.</summary>
 public abstract class WeaponData : ScriptableObject
 {
+    [Header("Identity")]
+    [Tooltip("Stable unique id for lookups (e.g. crates/rewards). Melee: m_<name>_<nnn> (m_sword_000). Ranged: r_<name>_<nnn> (r_bow_004).")]
+    [SerializeField] string weaponId;
+    [Tooltip("Player-facing name shown in UI.")]
+    [SerializeField] string displayName;
+    [SerializeField] WeaponType weaponType = WeaponType.None;
+
     [Header("Combat")]
     [SerializeField] float damage = 10f;
     [SerializeField] float cooldown = 0.35f;
@@ -34,6 +41,9 @@ public abstract class WeaponData : ScriptableObject
     [Tooltip("Optional mesh prefabs spawned under hand bones when this weapon is equipped. Empty = no world model.")]
     [SerializeField] WeaponVisualSocket[] visualSockets;
 
+    public string WeaponId => weaponId;
+    public string DisplayName => displayName;
+    public WeaponType WeaponType => weaponType;
     public float Damage => damage;
     public float Cooldown => cooldown;
     public float AttackActiveDuration => attackActiveDuration;

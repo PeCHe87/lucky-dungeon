@@ -160,6 +160,102 @@ public sealed class WeaponHolder : MonoBehaviour
             EquipRanged();
     }
 
+    /// <summary>
+    /// Returns the configured data for the melee or ranged slot (not necessarily currently equipped).
+    /// </summary>
+    public WeaponData GetSlotWeaponData(WeaponType type)
+    {
+        switch (type)
+        {
+            case WeaponType.Melee:
+                if (meleeWeapon is IWeaponDataSource meleeSource && meleeSource.Data != null)
+                    return meleeSource.Data;
+                return meleeWeaponData;
+            case WeaponType.Range:
+                if (rangedWeapon is IWeaponDataSource rangedSource && rangedSource.Data != null)
+                    return rangedSource.Data;
+                return rangedWeaponData;
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Replaces the matching slot's <see cref="WeaponData"/>, applies it to the slot component, and equips that slot.
+    /// </summary>
+    public bool TryReplaceSlotWeapon(WeaponData data)
+    {
+        if (data == null)
+        {
+            Debug.LogWarning($"{nameof(WeaponHolder)} on {name}: {nameof(TryReplaceSlotWeapon)} called with null data.", this);
+            return false;
+        }
+
+        WeaponType type = data.WeaponType;
+        if (type == WeaponType.None)
+        {
+            if (data is MeleeWeaponData)
+                type = WeaponType.Melee;
+            else if (data is AssaultWeaponData)
+                type = WeaponType.Range;
+        }
+
+        switch (type)
+        {
+            case WeaponType.Melee:
+            {
+                if (data is not MeleeWeaponData meleeData)
+                {
+                    Debug.LogWarning(
+                        $"{nameof(WeaponHolder)} on {name}: melee replace requires {nameof(MeleeWeaponData)}, got '{data.GetType().Name}'.",
+                        this);
+                    return false;
+                }
+
+                if (meleeWeapon is not MeleeWeapon melee)
+                {
+                    Debug.LogWarning(
+                        $"{nameof(WeaponHolder)} on {name}: {nameof(meleeWeapon)} is missing or not a {nameof(MeleeWeapon)}.",
+                        this);
+                    return false;
+                }
+
+                meleeWeaponData = meleeData;
+                melee.SetData(meleeData);
+                Equip(melee);
+                return true;
+            }
+            case WeaponType.Range:
+            {
+                if (data is not AssaultWeaponData rangedData)
+                {
+                    Debug.LogWarning(
+                        $"{nameof(WeaponHolder)} on {name}: range replace requires {nameof(AssaultWeaponData)}, got '{data.GetType().Name}'.",
+                        this);
+                    return false;
+                }
+
+                if (rangedWeapon is not RangedWeapon ranged)
+                {
+                    Debug.LogWarning(
+                        $"{nameof(WeaponHolder)} on {name}: {nameof(rangedWeapon)} is missing or not a {nameof(RangedWeapon)}.",
+                        this);
+                    return false;
+                }
+
+                rangedWeaponData = rangedData;
+                ranged.SetData(rangedData);
+                Equip(ranged);
+                return true;
+            }
+            default:
+                Debug.LogWarning(
+                    $"{nameof(WeaponHolder)} on {name}: cannot replace slot for WeaponType '{type}' ({data.WeaponId}).",
+                    this);
+                return false;
+        }
+    }
+
     void TryEquipFromSlot(MonoBehaviour slot, string fieldName)
     {
         if (slot == null)
