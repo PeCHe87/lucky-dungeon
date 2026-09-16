@@ -361,7 +361,7 @@ public static class EntityNavChaseAttackSupport
 
         if (attackController.IsAttackCommitActive)
         {
-            if (attackController.IsBusy)
+            if (attackController.IsAttackActionInProgress)
                 return AttackTickResult.StayAttacking;
 
             attackController.CompleteAttackCommit();
@@ -516,6 +516,9 @@ public static class EntityNavChaseAttackSupport
         out AttackTickResult result)
     {
         result = AttackTickResult.StayAttacking;
+
+        if (attackController.IsAttackCommitActive || attackController.IsAttackActionInProgress)
+            return false;
 
         if (!attackController.IsTargetBeyondAttackEngagement(target))
             return false;

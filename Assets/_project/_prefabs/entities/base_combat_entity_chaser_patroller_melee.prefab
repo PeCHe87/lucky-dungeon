@@ -1439,6 +1439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
+  startingWeaponData: {fileID: 0}
   startingWeapon: {fileID: 3069475849036746691}
   meleeWeapon: {fileID: 3069475849036746691}
   rangedWeapon: {fileID: 0}
@@ -1465,7 +1466,7 @@ MonoBehaviour:
   preAttackDuration: 0.75
   cancelAttackOnDamage: 1
   attackCooldownAfterDamage: 0.4
-  suppressDamageInterruptDuringAttack: 0
+  suppressDamageInterruptDuringAttack: 1
   suppressPushbackDuringAttack: 0
   enableBetweenAttackRecovery: 1
   pinnedTravelThreshold: 0.05
@@ -1594,6 +1595,16 @@ MonoBehaviour:
   backgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.85}
   fillColor: {r: 0.8509804, g: 0.2509804, b: 0.27355444, a: 1}
   hideUntilDamaged: 1
+  showHealthNumbers: 0
+  healthLabel: {fileID: 0}
+  healthLabelFont: {fileID: 0}
+  healthLabelFontSize: 10
+  healthLabelBold: 0
+  healthLabelColor: {r: 1, g: 1, b: 1, a: 1}
+  healthLabelVerticalOffset: 0
+  healthLabelOutline: 0
+  healthLabelOutlineColor: {r: 0, g: 0, b: 0, a: 1}
+  healthLabelOutlineWidth: 0.2
 --- !u!114 &5543832951581067729
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2353,6 +2364,7 @@ MonoBehaviour:
       m_Calls: []
   logDamagePipeline: 0
   drawDamageRadiusGizmo: 1
+  logMagazineReload: 0
 --- !u!1 &7162951368176488441
 GameObject:
   m_ObjectHideFlags: 0

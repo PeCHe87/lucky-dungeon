@@ -20,13 +20,13 @@ public sealed class EntityAttackController : MonoBehaviour
     [SerializeField, Min(0.01f)] float preAttackDuration = 0.4f;
 
     [Header("Damage interrupt")]
-    [Tooltip("When enabled, cancels the in-progress attack when this entity takes damage.")]
+    [Tooltip("When enabled, cancels the in-progress attack when this entity takes damage (ignored while a committed attack is suppressed).")]
     [SerializeField] bool cancelAttackOnDamage = true;
     [Tooltip("Blocks starting new attacks for this many seconds after taking damage. 0 = no block (cancel only).")]
     [SerializeField, Min(0f)] float attackCooldownAfterDamage = 0.4f;
-    [Tooltip("While in pre-attack telegraph or attack clip (not AttackReady), suppress TakeDamage FSM, attack cancel, nav reset, facing snap, and damage shake.")]
-    [SerializeField] bool suppressDamageInterruptDuringAttack;
-    [Tooltip("While in pre-attack telegraph or attack clip (not AttackReady), block weapon pushback.")]
+    [Tooltip("Once a pre-attack or attack has started, finish it while alive: suppress TakeDamage FSM, attack cancel, nav reset, facing snap, and damage shake.")]
+    [SerializeField] bool suppressDamageInterruptDuringAttack = true;
+    [Tooltip("While a committed pre-attack or attack is in progress, block weapon pushback.")]
     [SerializeField] bool suppressPushbackDuringAttack;
 
     [Header("Between-attack recovery")]
@@ -87,22 +87,31 @@ public sealed class EntityAttackController : MonoBehaviour
 
     public bool IsOnlyDamageBlocked =>
         IsAttackBlocked
-        && !IsTelegraphing
         && !IsAttackCommitActive
-        && !IsWeaponAttackActive
-        && (attackAnimator == null || !attackAnimator.IsAttackClipPlaying);
+        && !IsAttackActionInProgress;
+
+    /// <summary>
+    /// True while telegraph, weapon swing, or pre-attack/attack clips are in progress.
+    /// Does not include the damage attack-block cooldown.
+    /// </summary>
+    public bool IsAttackActionInProgress =>
+        IsTelegraphing
+        || IsWeaponAttackActive
+        || (attackAnimator != null
+            && (attackAnimator.IsPreAttackClipPlaying || attackAnimator.IsAttackClipPlaying));
 
     public bool IsBusy =>
         IsAttackBlocked
-        || IsTelegraphing
-        || IsWeaponAttackActive
-        || (attackAnimator != null && attackAnimator.IsAttackClipPlaying);
+        || IsAttackCommitActive
+        || IsAttackActionInProgress;
 
+    /// <summary>
+    /// True from the start of a committed pre-attack/attack until that action finishes
+    /// (covers animator crossfade gaps where clips are not yet reported as playing).
+    /// </summary>
     public bool IsActivelyAttacking =>
         !IsHoldingAttackReadyStance
-        && (IsTelegraphing
-            || (attackAnimator != null
-                && (attackAnimator.IsPreAttackClipPlaying || attackAnimator.IsAttackClipPlaying)));
+        && (IsAttackCommitActive || IsAttackActionInProgress);
 
     public bool ShouldSuppressDamageInterrupt =>
         suppressDamageInterruptDuringAttack && IsActivelyAttacking;
@@ -164,13 +173,19 @@ public sealed class EntityAttackController : MonoBehaviour
 
     void OnDamaged(float _)
     {
+        // Committed pre-attack/attack must finish while alive.
         if (ShouldSuppressDamageInterrupt)
             return;
 
         if (IsActivelyAttacking)
-            CancelActiveAttack();
+        {
+            if (cancelAttackOnDamage)
+                CancelActiveAttack();
+        }
         else
+        {
             EndBetweenAttackRecovery();
+        }
 
         if (attackCooldownAfterDamage > 0f)
         {
@@ -334,7 +349,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (!enablePreAttackTelegraph || target == null)
             return false;
 
-        if (IsAttackBlocked || IsTelegraphing || IsWaitingForNextAttack)
+        if (IsAttackBlocked || IsTelegraphing || IsWaitingForNextAttack || IsAttackCommitActive)
             return false;
 
         if (snapFacingToTargetBeforeAttack)
@@ -372,6 +387,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (!weaponHolder.TryAttack(in ctx))
             return false;
 
+        _isAttackCommitActive = true;
         AttackStarted?.Invoke();
         return true;
     }
@@ -406,7 +422,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (target == null || weaponHolder == null)
             return false;
 
-        if (IsAttackBlocked || IsTelegraphing || IsWaitingForNextAttack)
+        if (IsAttackBlocked || IsTelegraphing || IsWaitingForNextAttack || IsAttackCommitActive)
             return false;
 
         if (snapFacingToTargetBeforeAttack)
@@ -427,6 +443,7 @@ public sealed class EntityAttackController : MonoBehaviour
         if (!weaponHolder.TryAttack(in ctx))
             return false;
 
+        _isAttackCommitActive = true;
         AttackStarted?.Invoke();
         return true;
     }

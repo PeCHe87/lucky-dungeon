@@ -100,6 +100,10 @@ public class NavMeshDetectChaseBehavior : MonoBehaviour, IEntityNavBehavior, IEn
             return;
         }
 
+        // Committed pre-attack/attack must finish; do not yank the nav phase back to chase.
+        if (attackController != null && attackController.IsAttackCommitActive)
+            return;
+
         if (_phase == Phase.AttackReady
             && attackController != null
             && attackController.EnableBetweenAttackRecovery
