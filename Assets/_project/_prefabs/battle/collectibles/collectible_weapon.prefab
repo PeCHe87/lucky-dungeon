@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3135223643934368516}
   - component: {fileID: 1082123988093030510}
   m_Layer: 9
-  m_Name: weaponCollectible
+  m_Name: collectible_weapon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -493,7 +493,8 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
         if (!profile.TryGetMeleeAttackState(_attackComboIndex, out string stateName, out _))
             return false;
 
-        PlayAttackState(stateName, layer);
+        int swingIndex = _attackComboIndex;
+        PlayAttackState(stateName, layer, swingIndex);
 
         _attackComboIndex = (_attackComboIndex + 1) % sequence.Count;
         _lastAttackPressTime = Time.time;
@@ -637,7 +638,7 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             _rangedWeapon = GetComponentInChildren<RangedWeapon>(true);
     }
 
-    void PlayAttackState(string stateName, int layer)
+    void PlayAttackState(string stateName, int layer, int swingIndex = 0)
     {
         if (animator == null)
             return;
@@ -684,10 +685,10 @@ public sealed class PlayerEntityStateAnimator : MonoBehaviour
             return;
         }
 
-        _meleeWeapon.ArmHitForCurrentSwing();
+        _meleeWeapon.ArmHitForCurrentSwing(swingIndex);
 
         if (logAttackAnimation)
-            Debug.Log($"[PlayerEntityStateAnimator] ArmHitForCurrentSwing on '{_meleeWeapon.name}'.", this);
+            Debug.Log($"[PlayerEntityStateAnimator] ArmHitForCurrentSwing({swingIndex}) on '{_meleeWeapon.name}'.", this);
     }
 
     void RebuildHashCache()

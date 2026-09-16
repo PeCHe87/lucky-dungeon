@@ -31,6 +31,10 @@ public sealed class MeleeWeaponData : WeaponData
     [Tooltip("Magazine reload duration in seconds (scaled time).")]
     [SerializeField, Min(0f)] float reloadTime = 1.5f;
 
+    [Header("Attack VFX")]
+    [Tooltip("Optional VFX per combo step. Index 0 = Attacking1, 1 = Attacking2, etc. Empty prefab = no VFX.")]
+    [SerializeField] MeleeAttackSwingVfx[] attackSwingVfx;
+
     public float Range => range;
     public float MoveForwardDistance => moveForwardDistance;
     public float MoveForwardDuration => moveForwardDuration;
@@ -44,4 +48,14 @@ public sealed class MeleeWeaponData : WeaponData
     public float ApproachLungeSpeed => approachLungeSpeed;
     public int MagazineSize => magazineSize;
     public float ReloadTime => reloadTime;
+
+    public bool TryGetAttackSwingVfx(int swingIndex, out MeleeAttackSwingVfx entry)
+    {
+        entry = default;
+        if (attackSwingVfx == null || swingIndex < 0 || swingIndex >= attackSwingVfx.Length)
+            return false;
+
+        entry = attackSwingVfx[swingIndex];
+        return entry.prefab != null;
+    }
 }

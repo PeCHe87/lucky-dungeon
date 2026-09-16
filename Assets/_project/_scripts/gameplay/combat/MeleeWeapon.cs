@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -28,6 +29,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     AttackContext _armedContext;
     bool _hasPendingHitContext;
     AttackContext _pendingHitContext;
+    Coroutine _pendingSwingVfxCoroutine;
 
     int _currentAmmo;
     float _reloadEndTime;
@@ -92,6 +94,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
         _attackActiveTimer = 0f;
         _hasArmedContext = false;
         _hasPendingHitContext = false;
+        CancelPendingSwingVfx();
     }
 
     public bool EnableApproachLunge => data != null && data.EnableApproachLunge;
@@ -243,8 +246,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
         return true;
     }
 
-    /// <summary>Called when an attack animator state starts; links armed context to the clip's hit event.</summary>
-    public void ArmHitForCurrentSwing()
+    /// <summary>
+    /// Called when an attack animator state starts; links armed context to the clip's hit event
+    /// and schedules optional per-combo VFX. <paramref name="swingIndex"/> matches meleeAttackSequence
+    /// (0 = Attacking1).
+    /// </summary>
+    public void ArmHitForCurrentSwing(int swingIndex = 0)
     {
         if (!_hasArmedContext)
         {
@@ -257,8 +264,62 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
         _hasPendingHitContext = true;
         _hasArmedContext = false;
 
+        ScheduleSwingVfx(swingIndex, in _pendingHitContext);
+
         if (logDamagePipeline)
             Debug.Log("[MeleeWeapon] Pending hit context armed for animation event.", this);
+    }
+
+    void ScheduleSwingVfx(int swingIndex, in AttackContext ctx)
+    {
+        CancelPendingSwingVfx();
+
+        if (data == null || !data.TryGetAttackSwingVfx(swingIndex, out MeleeAttackSwingVfx vfx))
+            return;
+
+        _pendingSwingVfxCoroutine = StartCoroutine(SpawnSwingVfxAfterDelay(vfx, ctx));
+    }
+
+    void CancelPendingSwingVfx()
+    {
+        if (_pendingSwingVfxCoroutine == null)
+            return;
+
+        StopCoroutine(_pendingSwingVfxCoroutine);
+        _pendingSwingVfxCoroutine = null;
+    }
+
+    IEnumerator SpawnSwingVfxAfterDelay(MeleeAttackSwingVfx vfx, AttackContext ctx)
+    {
+        float delay = vfx.ResolveSpawnDelaySeconds();
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        _pendingSwingVfxCoroutine = null;
+        SpawnSwingVfx(vfx, in ctx);
+    }
+
+    static void SpawnSwingVfx(in MeleeAttackSwingVfx vfx, in AttackContext ctx)
+    {
+        if (vfx.prefab == null || ctx.attacker == null)
+            return;
+
+        Vector3 facing = ctx.facing;
+        facing.y = 0f;
+        if (facing.sqrMagnitude < 1e-8f)
+            facing = Vector3.forward;
+        else
+            facing.Normalize();
+
+        Vector3 position = ctx.attacker.position + Quaternion.LookRotation(facing) * vfx.localOffset;
+        GameObject instance = UnityEngine.Object.Instantiate(vfx.prefab, position, Quaternion.identity);
+
+        ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < systems.Length; i++)
+            systems[i].Play(true);
+
+        if (vfx.destroyDelaySeconds > 0f)
+            UnityEngine.Object.Destroy(instance, vfx.destroyDelaySeconds);
     }
 
     /// <summary>Called from animation event <c>OnMeleeHitFrame</c> on the Animator object.</summary>
