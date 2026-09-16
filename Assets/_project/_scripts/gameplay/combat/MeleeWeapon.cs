@@ -388,7 +388,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
                 continue;
 
             candidatesInCone++;
-            if (TryDamageFirstOnHierarchy(col.gameObject, data.Damage, damagedComponents, in ctx, forward))
+            if (TryDamageFirstOnHierarchy(col.gameObject, data.Damage, damagedComponents, in ctx, to))
                 damagedCount++;
         }
 

@@ -23,7 +23,7 @@ public abstract class WeaponData : ScriptableObject
     [SerializeField, Range(0f, 1f)] float criticalStrikeChance;
 
     [Header("Pushback")]
-    [Tooltip("Horizontal travel applied to victims along attacker forward on hit. 0 = none.")]
+    [Tooltip("Horizontal travel applied to victims away from the attacker toward the hit. 0 = none.")]
     [SerializeField, Min(0f)] float pushbackDistance = 0.8f;
     [SerializeField, Min(0.01f)] float pushbackDuration = 0.1f;
 
