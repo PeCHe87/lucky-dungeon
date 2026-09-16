@@ -337,6 +337,95 @@ public sealed class PlayerEntityStateAnimationProfile : ScriptableObject
         UnityEditor.AssetDatabase.SaveAssets();
     }
 
+    public const string HammerAssetPath = "Assets/_project/_animation/PlayerHammerAnimationProfile.asset";
+
+    public static void EnsureHammerAssetExists()
+    {
+        if (UnityEditor.AssetDatabase.LoadAssetAtPath<PlayerEntityStateAnimationProfile>(HammerAssetPath) != null)
+            return;
+
+        var profile = CreateInstance<PlayerEntityStateAnimationProfile>();
+        profile.defaultCrossFadeSeconds = 0.15f;
+        profile.attackReadyAnimatorStateName = "AttackReady";
+        profile.attackReadyCrossFadeSeconds = 0.15f;
+        profile.entries = new List<PlayerEntityStateAnimationEntry>
+        {
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Idle,
+                animatorStateName = "Idle",
+                crossFadeSeconds = 0.15f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Walking,
+                animatorStateName = "Walking",
+                crossFadeSeconds = 0.15f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Running,
+                animatorStateName = "Running",
+                crossFadeSeconds = 0.15f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Dashing,
+                animatorStateName = "Dashing",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Attacking,
+                animatorStateName = "Attacking1",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.MeleeApproaching,
+                animatorStateName = "MeleeApproach",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.TakingDamage,
+                animatorStateName = "Hit",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+            new PlayerEntityStateAnimationEntry
+            {
+                kind = PlayerEntityStateKind.Dying,
+                animatorStateName = "Die",
+                crossFadeSeconds = 0.1f,
+                layer = 0,
+            },
+        };
+        profile.meleeAttackSequence = new MeleeAttackAnimationSequence
+        {
+            animatorStateNames = new[] { "Attacking1", "Attacking2", "Attacking3" },
+            crossFadeSeconds = 0.2f,
+            comboResetSeconds = 1.2f,
+            attackCompletionNormalizedTime = 0.95f,
+        };
+
+        if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/_project/_animation"))
+        {
+            if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/_project"))
+                UnityEditor.AssetDatabase.CreateFolder("Assets", "_project");
+            UnityEditor.AssetDatabase.CreateFolder("Assets/_project", "_animation");
+        }
+
+        UnityEditor.AssetDatabase.CreateAsset(profile, HammerAssetPath);
+        UnityEditor.AssetDatabase.SaveAssets();
+    }
+
     [ContextMenu("Validate All PlayerEntityStateKind Values")]
     void EditorValidateCoverage()
     {

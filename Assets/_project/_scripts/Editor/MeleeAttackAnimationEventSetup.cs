@@ -20,10 +20,21 @@ static class MeleeAttackAnimationEventSetup
         (
             "Assets/_assetStore/Shinabro/Platform_Animation/Animation/09_Fighter/Stander@Fighter_Attack3.FBX",
             "Fighter_Attack3"),
+        (
+            "Assets/_assetStore/Shinabro/Platform_Animation/Animation/02_Hammer/Stander@Hammer_Attack1.FBX",
+            "Hammer_Attack1"),
+        (
+            "Assets/_assetStore/Shinabro/Platform_Animation/Animation/02_Hammer/Stander@Hammer_Attack2.FBX",
+            "Hammer_Attack2"),
+        (
+            "Assets/_assetStore/Shinabro/Platform_Animation/Animation/02_Hammer/Stander@Hammer_Attack3.FBX",
+            "Hammer_Attack3"),
     };
 
     [MenuItem("Knight Undead/Combat/Setup Melee Hit Animation Events")]
-    static void SetupMeleeHitAnimationEvents()
+    static void SetupMeleeHitAnimationEventsMenu() => EnsureMeleeHitAnimationEvents();
+
+    public static void EnsureMeleeHitAnimationEvents()
     {
         int updated = 0;
         foreach ((string assetPath, string clipName) in AttackClips)
@@ -61,6 +72,9 @@ static class MeleeAttackAnimationEventSetup
             if (!string.Equals(clip.name, clipName, StringComparison.Ordinal))
                 continue;
 
+            if (HasHitEvent(clip.events))
+                return true;
+
             float duration = (clip.lastFrame - clip.firstFrame) / DefaultSampleRate;
             if (duration <= 0f)
                 duration = 0.5f;
@@ -89,6 +103,20 @@ static class MeleeAttackAnimationEventSetup
         importer.clipAnimations = clips;
         importer.SaveAndReimport();
         return true;
+    }
+
+    static bool HasHitEvent(AnimationEvent[] events)
+    {
+        if (events == null)
+            return false;
+
+        for (int i = 0; i < events.Length; i++)
+        {
+            if (string.Equals(events[i].functionName, HitEventFunctionName, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 }
 #endif

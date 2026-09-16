@@ -9,6 +9,7 @@ using UnityEngine;
 /// Menu-only — does not auto-run on domain reload / Play.
 /// </summary>
 public static class PlayerRevolverWeaponSetup
+
 {
     public const string RevolverDataPath = "Assets/_project/_data/weapons/player_weapon_revolver.asset";
     const string PlayerPrefabPath = "Assets/_project/_prefabs/entities/player.prefab";
