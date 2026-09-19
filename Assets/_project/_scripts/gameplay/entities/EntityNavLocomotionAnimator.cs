@@ -2,8 +2,10 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Cross-fades Idle/Run on the entity <see cref="Animator"/> from <see cref="NavMeshAgent"/> movement
+/// Cross-fades Idle / Walk / Run on the entity <see cref="Animator"/> from <see cref="NavMeshAgent"/> movement
 /// while the FSM is in a locomotion-eligible state (default: Idle only).
+/// Walk is used when moving and an <see cref="IEntityNavLocomotionGait"/> reports patrol gait;
+/// Run is used when chasing (or when walk is unset / no gait provider).
 /// </summary>
 [DefaultExecutionOrder(113)]
 public sealed class EntityNavLocomotionAnimator : MonoBehaviour
@@ -18,13 +20,18 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
     [SerializeField] EntityTargetDetectedTelegraph targetDetectedTelegraph;
     [SerializeField] string locomotionFsmStateId = DefaultLocomotionFsmStateId;
     [SerializeField] string idleStateName = "Idle";
+    [Tooltip("Optional. When set, used while moving in patrol/search gait. Empty = always Run when moving.")]
+    [SerializeField] string walkStateName = "";
     [SerializeField] string runStateName = "Run";
     [SerializeField, Min(0f)] float crossFadeSeconds = 0.15f;
     [SerializeField, Min(0f)] float moveSpeedThreshold = 0.05f;
     [SerializeField, Min(0f)] float remainingDistanceBuffer = 0.05f;
 
+    IEntityNavLocomotionGait _locomotionGait;
     int _idleHash;
+    int _walkHash;
     int _runHash;
+    bool _hasWalk;
     int _lastPlayedHash = int.MinValue;
 
     void Awake()
@@ -40,11 +47,17 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
 
+        _locomotionGait = GetComponent<IEntityNavLocomotionGait>();
+        if (_locomotionGait == null)
+            _locomotionGait = GetComponentInParent<IEntityNavLocomotionGait>();
+
         if (animator != null)
             animator.applyRootMotion = false;
 
         _idleHash = Animator.StringToHash(idleStateName);
         _runHash = Animator.StringToHash(runStateName);
+        _hasWalk = !string.IsNullOrEmpty(walkStateName);
+        _walkHash = _hasWalk ? Animator.StringToHash(walkStateName) : 0;
     }
 
     void LateUpdate()
@@ -71,8 +84,20 @@ public sealed class EntityNavLocomotionAnimator : MonoBehaviour
             return;
         }
 
-        int targetHash = IsAgentMoving() ? _runHash : _idleHash;
+        int targetHash = IsAgentMoving() ? ResolveMovingStateHash() : _idleHash;
         CrossFadeIfNeeded(targetHash);
+    }
+
+    int ResolveMovingStateHash()
+    {
+        if (_hasWalk
+            && _locomotionGait != null
+            && !_locomotionGait.PreferChaseLocomotion)
+        {
+            return _walkHash;
+        }
+
+        return _runHash;
     }
 
     bool CanDriveLocomotion()

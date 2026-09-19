@@ -58,7 +58,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: EntityCombat_Fighter
+  m_Name: EnemyMelee_Walker
   serializedVersion: 5
   m_AnimatorParameters: []
   m_AnimatorLayers:
@@ -172,7 +172,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 1827226128182048838, guid: 1802feb304b486747afd2a22ad6a53a4, type: 3}
+  m_Motion: {fileID: 1827226128182048838, guid: 1490f24a0f24e36418eaed05b7a3e7a6, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -201,7 +201,7 @@ AnimatorStateMachine:
     m_Position: {x: 20, y: 280, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4128705561928473611}
-    m_Position: {x: 20, y: 255, z: 0}
+    m_Position: {x: 20, y: 250, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -6570629347885784376}
     m_Position: {x: 20, y: 530, z: 0}
@@ -224,32 +224,6 @@ AnimatorStateMachine:
   m_ExitPosition: {x: 50, y: 590, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: 1102020431250899872}
---- !u!1102 &4128705561928473611
-AnimatorState:
-  serializedVersion: 6
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Walk
-  m_Speed: 1
-  m_CycleOffset: 0
-  m_Transitions: []
-  m_StateMachineBehaviours: []
-  m_Position: {x: 250, y: 60, z: 0}
-  m_IKOnFeet: 0
-  m_WriteDefaultValues: 1
-  m_Mirror: 0
-  m_SpeedParameterActive: 0
-  m_MirrorParameterActive: 0
-  m_CycleOffsetParameterActive: 0
-  m_TimeParameterActive: 0
-  m_Motion: {fileID: 1827226128182048838, guid: 1490f24a0f24e36418eaed05b7a3e7a6, type: 3}
-  m_Tag: 
-  m_SpeedParameter: 
-  m_MirrorParameter: 
-  m_CycleOffsetParameter: 
-  m_TimeParameter: 
 --- !u!1102 &2412348837253399458
 AnimatorState:
   serializedVersion: 6
@@ -297,6 +271,32 @@ AnimatorState:
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: 7400000, guid: c1897b8564a96a841aafb023786d41be, type: 2}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
+--- !u!1102 &4128705561928473611
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Walk
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 250, y: 60, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 1
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: 1827226128182048838, guid: 1490f24a0f24e36418eaed05b7a3e7a6, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

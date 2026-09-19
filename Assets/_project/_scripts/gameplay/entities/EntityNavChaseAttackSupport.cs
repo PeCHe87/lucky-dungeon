@@ -7,9 +7,31 @@ public interface IEntityNavChaseDestinationCache
     void InvalidateChaseDestinationCache();
 }
 
+/// <summary>
+/// Reports whether locomotion should use chase (Run) vs patrol (Walk) while the agent is moving.
+/// Implemented by nav detect/chase behaviors.
+/// </summary>
+public interface IEntityNavLocomotionGait
+{
+    /// <summary>True while chasing (or briefly arrived); false while idle/search/patrol.</summary>
+    bool PreferChaseLocomotion { get; }
+}
+
 /// <summary>Shared attack-phase helpers for nav detect/chase behaviors.</summary>
 public static class EntityNavChaseAttackSupport
 {
+    /// <summary>
+    /// Sets <see cref="NavMeshAgent.speed"/> when <paramref name="speed"/> is &gt; 0.
+    /// Zero or negative leaves the agent speed unchanged (prefab / inspector fallback).
+    /// </summary>
+    public static void ApplyAgentSpeedIfSet(NavMeshAgent agent, float speed)
+    {
+        if (agent == null || speed <= 0f)
+            return;
+
+        agent.speed = speed;
+    }
+
     public static void InvalidateChaseDestinationCaches(GameObject entityRoot)
     {
         if (entityRoot == null)

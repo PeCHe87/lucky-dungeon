@@ -574,6 +574,8 @@ MonoBehaviour:
   targetDetectedTelegraph: {fileID: 9100000000000000001}
   arrivalRadius: 1
   samplePositionRadius: 2
+  patrolSpeed: 0
+  chaseSpeed: 0
   debugLog: 0
   logDistanceToTargetWhileSearching: 0
   distanceLogInterval: 0.5
@@ -633,6 +635,7 @@ MonoBehaviour:
   targetDetectedTelegraph: {fileID: 9100000000000000001}
   locomotionFsmStateId: Idle
   idleStateName: Idle
+  walkStateName: Walk
   runStateName: Run
   crossFadeSeconds: 0.15
   moveSpeedThreshold: 0.05
@@ -925,7 +928,7 @@ Animator:
   m_GameObject: {fileID: 2101021371559285172}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 61366630e3c077b4b991d36e541d2c9d, type: 3}
-  m_Controller: {fileID: 9100000, guid: 5520041ed251892409726d211eb36323, type: 2}
+  m_Controller: {fileID: 9100000, guid: eae4c60e9c22e9d4ebdcc012a463ec36, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
