@@ -29,6 +29,15 @@ static class MeleeAttackAnimationEventSetup
         (
             "Assets/_assetStore/Shinabro/Platform_Animation/Animation/02_Hammer/Stander@Hammer_Attack3.FBX",
             "Hammer_Attack3"),
+        (
+            "Assets/_assetStore/Shinabro/Platform_Animation/Animation/01_Sword&Shield/Stander@Sword&Shield_Attack1.FBX",
+            "Sword&Shield_Attack1"),
+        (
+            "Assets/_assetStore/Shinabro/Platform_Animation/Animation/01_Sword&Shield/Stander@Sword&Shield_Attack2.FBX",
+            "Sword&Shield_Attack2"),
+        (
+            "Assets/_assetStore/Shinabro/Platform_Animation/Animation/01_Sword&Shield/Stander@Sword&Shield_Attack3.FBX",
+            "Sword&Shield_Attack3"),
     };
 
     [MenuItem("Knight Undead/Combat/Setup Melee Hit Animation Events")]
