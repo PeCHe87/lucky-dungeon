@@ -1,5 +1,6 @@
 {
   "dependencies": {
+
     "com.boxqkrtm.ide.cursor": "https://github.com/boxqkrtm/com.unity.ide.cursor.git",
     "com.unity.ai.navigation": "2.0.12",
     "com.unity.collab-proxy": "2.12.4",
@@ -51,3 +52,4 @@
     "com.unity.modules.xr": "1.0.0"
   }
 }
+
