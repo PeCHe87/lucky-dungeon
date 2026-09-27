@@ -284,7 +284,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 79.200005
+    y: 24
     width: 687.8
     height: 698.8
   m_SerializedDataModeController:
@@ -314,7 +314,7 @@ MonoBehaviour:
   m_UseMipMap: 0
   m_SimulatorState:
     controlPanelVisible: 0
-    controlPanelWidth: 0
+    controlPanelWidth: NaN
     controlPanelFoldoutKeys:
     - UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceUIExtension
     - UnityEditor.DeviceSimulation.ApplicationSettingsPlugin
@@ -327,7 +327,7 @@ MonoBehaviour:
     - '{"m_SerializationStates":{"thermalFoldout":false,"performanceFoldout":false,"developerFoldout":false,"indexerFoldout":false,"scalersFoldout":false,"deviceSettingsFoldout":false}}'
     - '{}'
     - '{}'
-    scale: 23
+    scale: 10
     fitToScreenEnabled: 1
     rotationDegree: 0
     highlightSafeAreaEnabled: 0
@@ -374,68 +374,8 @@ MonoBehaviour:
     m_OverlaysVisible: 1
     m_DynamicPanelBehavior: 0
   m_WidgetStates:
-    m_Keys:
-    - Frequently Used -> Rendering Debug
-    - Frequently Used -> Rendering Debug -> Map Overlays
-    - Frequently Used -> Rendering Debug ->  -> Map Size
-    - Frequently Used -> Rendering Debug -> HDR
-    - Frequently Used -> Rendering Debug -> MSAA
-    - Frequently Used -> Rendering Debug -> TAA Debug Mode
-    - Frequently Used -> Rendering Debug -> Post-processing
-    - Frequently Used -> Rendering Debug -> Additional Wireframe Modes
-    - Frequently Used -> Rendering Debug -> Overdraw Mode
-    - Frequently Used -> Rendering Debug -> Mipmap Streaming -> Disable Mip Caching
-    - Frequently Used -> Rendering Debug -> Mipmap Streaming -> Debug View
-    - Frequently Used -> Material Filters
-    - Frequently Used -> Material Filters -> Material Override
-    - Frequently Used -> Material Filters -> Vertex Attribute
-    - Frequently Used -> Lighting Debug Modes
-    - Frequently Used -> Lighting Debug Modes -> Lighting Debug Mode
-    - Frequently Used -> Lighting Debug Modes -> HDR Debug Mode
-    - Frequently Used -> Lighting Debug Modes -> Lighting Features
-    - Display Stats -> Frame Stats
-    - Display Stats -> Bottlenecks
-    - Display Stats -> Detailed Stats
-    - Rendering -> Pixel Validation
-    - Rendering -> HDR Output
-    - Rendering -> GPU Resident Drawer Settings
-    - Rendering -> Occlusion Context Stats
-    - Rendering -> Instance Culler Stats
-    - Rendering -> Render Graph
-    - Material -> Material Validation
-    - Volume -> Camera
-    - Volume -> Component
-    m_Values:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    m_Keys: []
+    m_Values: []
   m_Settings: {fileID: 0}
 --- !u!114 &13
 MonoBehaviour:
@@ -477,7 +417,7 @@ MonoBehaviour:
     m_DynamicPanelBehavior: 0
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: 166856
+  m_LastSelectedObjectID: 0
 --- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -878,7 +818,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 43.2
+    y: 0
     width: 1536
     height: 36
   m_SerializedDataModeController:
@@ -1143,8 +1083,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Hierarchy\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 688.8
-    y: 79.200005
+    x: 1
+    y: 24
     width: 244.40002
     height: 395.6
   m_SerializedDataModeController:
@@ -1163,8 +1103,7 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs:
-      - m_Data: 166856
+      m_SelectedIDs: []
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
@@ -1966,8 +1905,8 @@ MonoBehaviour:
     m_FarClip: 10000
     m_DynamicClip: 1
     m_OcclusionCulling: 0
-  m_LastSceneViewRotation: {x: -0.3677942, y: 0.39207914, z: -0.17481965, w: -0.8249061}
-  m_LastSceneViewOrtho: 1
+  m_LastSceneViewRotation: {x: -0.08717229, y: 0.89959055, z: -0.21045254, w: -0.3726226}
+  m_LastSceneViewOrtho: 0
   m_Viewpoint:
     m_SceneView: {fileID: 20}
     m_CameraOverscanSettings:
@@ -2003,8 +1942,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Project\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 688.8
-    y: 500.80002
+    x: 1
+    y: 445.6
     width: 244.40002
     height: 277.19998
   m_SerializedDataModeController:
@@ -2053,83 +1992,88 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 51780
-    - m_Data: 51786
-    - m_Data: 51790
-    - m_Data: 53144
-    - m_Data: 56404
-    - m_Data: 56406
-    - m_Data: 56408
-    - m_Data: 56410
-    - m_Data: 56412
-    - m_Data: 56414
-    - m_Data: 56416
-    - m_Data: 56418
-    - m_Data: 56420
-    - m_Data: 56422
-    - m_Data: 56424
-    - m_Data: 56426
-    - m_Data: 56428
-    - m_Data: 56430
-    - m_Data: 56432
-    - m_Data: 56434
-    - m_Data: 56436
-    - m_Data: 56438
-    - m_Data: 56440
-    - m_Data: 56442
-    - m_Data: 56444
-    - m_Data: 56446
-    - m_Data: 56448
-    - m_Data: 56450
-    - m_Data: 56452
-    - m_Data: 56454
-    - m_Data: 56456
-    - m_Data: 56458
-    - m_Data: 56460
-    - m_Data: 56462
-    - m_Data: 56464
-    - m_Data: 56466
-    - m_Data: 56468
-    - m_Data: 56470
-    - m_Data: 56472
-    - m_Data: 56474
-    - m_Data: 56476
-    - m_Data: 56478
-    - m_Data: 56480
-    - m_Data: 56482
-    - m_Data: 56484
-    - m_Data: 56486
-    - m_Data: 56488
-    - m_Data: 56490
-    - m_Data: 56492
-    - m_Data: 56494
-    - m_Data: 56496
-    - m_Data: 56498
-    - m_Data: 56500
-    - m_Data: 56502
-    - m_Data: 56504
-    - m_Data: 56506
-    - m_Data: 56508
-    - m_Data: 56510
-    - m_Data: 56512
-    - m_Data: 56514
-    - m_Data: 56516
-    - m_Data: 56518
-    - m_Data: 56520
-    - m_Data: 56522
-    - m_Data: 56524
-    - m_Data: 56526
-    - m_Data: 56528
-    - m_Data: 56530
-    - m_Data: 56532
-    - m_Data: 56534
-    - m_Data: 56536
-    - m_Data: 56538
-    - m_Data: 56540
-    - m_Data: 56542
-    - m_Data: 56544
-    - m_Data: 56546
-    - m_Data: 56548
+    - m_Data: 50454
+    - m_Data: 51628
+    - m_Data: 52524
+    - m_Data: 52526
+    - m_Data: 52528
+    - m_Data: 52530
+    - m_Data: 52532
+    - m_Data: 52534
+    - m_Data: 52536
+    - m_Data: 52538
+    - m_Data: 52540
+    - m_Data: 52542
+    - m_Data: 52544
+    - m_Data: 52546
+    - m_Data: 52548
+    - m_Data: 52550
+    - m_Data: 52552
+    - m_Data: 52554
+    - m_Data: 52556
+    - m_Data: 52558
+    - m_Data: 52560
+    - m_Data: 52562
+    - m_Data: 52564
+    - m_Data: 52566
+    - m_Data: 52568
+    - m_Data: 52570
+    - m_Data: 52572
+    - m_Data: 52574
+    - m_Data: 52576
+    - m_Data: 52578
+    - m_Data: 52580
+    - m_Data: 52582
+    - m_Data: 52584
+    - m_Data: 52586
+    - m_Data: 52588
+    - m_Data: 52590
+    - m_Data: 52592
+    - m_Data: 52594
+    - m_Data: 52596
+    - m_Data: 52598
+    - m_Data: 52600
+    - m_Data: 52602
+    - m_Data: 52604
+    - m_Data: 52606
+    - m_Data: 52608
+    - m_Data: 52610
+    - m_Data: 52612
+    - m_Data: 52614
+    - m_Data: 52616
+    - m_Data: 52618
+    - m_Data: 52620
+    - m_Data: 52622
+    - m_Data: 52624
+    - m_Data: 52626
+    - m_Data: 52628
+    - m_Data: 52630
+    - m_Data: 52632
+    - m_Data: 52634
+    - m_Data: 52636
+    - m_Data: 52638
+    - m_Data: 52640
+    - m_Data: 52642
+    - m_Data: 52644
+    - m_Data: 52646
+    - m_Data: 52648
+    - m_Data: 52650
+    - m_Data: 52652
+    - m_Data: 52654
+    - m_Data: 52656
+    - m_Data: 52658
+    - m_Data: 52660
+    - m_Data: 52662
+    - m_Data: 52664
+    - m_Data: 52666
+    - m_Data: 52668
+    - m_Data: 52670
+    - m_Data: 52672
+    - m_Data: 52674
+    - m_Data: 52676
+    - m_Data: 52678
+    - m_Data: 52680
+    - m_Data: 52682
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2163,88 +2107,88 @@ MonoBehaviour:
       m_Data: 166856
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 51780
-    - m_Data: 51786
-    - m_Data: 51790
-    - m_Data: 53144
-    - m_Data: 54030
-    - m_Data: 56404
-    - m_Data: 56406
-    - m_Data: 56408
-    - m_Data: 56410
-    - m_Data: 56412
-    - m_Data: 56414
-    - m_Data: 56416
-    - m_Data: 56418
-    - m_Data: 56420
-    - m_Data: 56422
-    - m_Data: 56424
-    - m_Data: 56426
-    - m_Data: 56428
-    - m_Data: 56430
-    - m_Data: 56432
-    - m_Data: 56434
-    - m_Data: 56436
-    - m_Data: 56438
-    - m_Data: 56440
-    - m_Data: 56442
-    - m_Data: 56444
-    - m_Data: 56448
-    - m_Data: 56450
-    - m_Data: 56452
-    - m_Data: 56456
-    - m_Data: 56458
-    - m_Data: 56460
-    - m_Data: 56462
-    - m_Data: 56464
-    - m_Data: 56466
-    - m_Data: 56468
-    - m_Data: 56470
-    - m_Data: 56472
-    - m_Data: 56474
-    - m_Data: 56476
-    - m_Data: 56478
-    - m_Data: 56480
-    - m_Data: 56482
-    - m_Data: 56484
-    - m_Data: 56486
-    - m_Data: 56488
-    - m_Data: 56490
-    - m_Data: 56492
-    - m_Data: 56494
-    - m_Data: 56496
-    - m_Data: 56498
-    - m_Data: 56500
-    - m_Data: 56502
-    - m_Data: 56504
-    - m_Data: 56506
-    - m_Data: 56508
-    - m_Data: 56510
-    - m_Data: 56512
-    - m_Data: 56514
-    - m_Data: 56516
-    - m_Data: 56518
-    - m_Data: 56520
-    - m_Data: 56522
-    - m_Data: 56524
-    - m_Data: 56526
-    - m_Data: 56528
-    - m_Data: 56534
-    - m_Data: 56538
-    - m_Data: 56542
-    - m_Data: 56544
-    - m_Data: 56546
-    - m_Data: 56548
-    - m_Data: 56862
-    - m_Data: 63598
-    - m_Data: 63610
-    - m_Data: 64040
-    - m_Data: 183512
-    - m_Data: 183564
-    - m_Data: 184026
-    - m_Data: 189156
-    - m_Data: 202474
-    - m_Data: 202484
+    - m_Data: 50454
+    - m_Data: 51628
+    - m_Data: 52524
+    - m_Data: 52526
+    - m_Data: 52528
+    - m_Data: 52530
+    - m_Data: 52532
+    - m_Data: 52534
+    - m_Data: 52536
+    - m_Data: 52538
+    - m_Data: 52540
+    - m_Data: 52542
+    - m_Data: 52544
+    - m_Data: 52546
+    - m_Data: 52548
+    - m_Data: 52550
+    - m_Data: 52552
+    - m_Data: 52554
+    - m_Data: 52556
+    - m_Data: 52558
+    - m_Data: 52560
+    - m_Data: 52562
+    - m_Data: 52564
+    - m_Data: 52566
+    - m_Data: 52568
+    - m_Data: 52570
+    - m_Data: 52572
+    - m_Data: 52574
+    - m_Data: 52576
+    - m_Data: 52578
+    - m_Data: 52580
+    - m_Data: 52582
+    - m_Data: 52584
+    - m_Data: 52586
+    - m_Data: 52588
+    - m_Data: 52590
+    - m_Data: 52592
+    - m_Data: 52594
+    - m_Data: 52596
+    - m_Data: 52598
+    - m_Data: 52600
+    - m_Data: 52602
+    - m_Data: 52604
+    - m_Data: 52606
+    - m_Data: 52608
+    - m_Data: 52610
+    - m_Data: 52612
+    - m_Data: 52614
+    - m_Data: 52616
+    - m_Data: 52618
+    - m_Data: 52620
+    - m_Data: 52622
+    - m_Data: 52624
+    - m_Data: 52626
+    - m_Data: 52628
+    - m_Data: 52630
+    - m_Data: 52632
+    - m_Data: 52634
+    - m_Data: 52636
+    - m_Data: 52638
+    - m_Data: 52640
+    - m_Data: 52642
+    - m_Data: 52644
+    - m_Data: 52646
+    - m_Data: 52648
+    - m_Data: 52650
+    - m_Data: 52652
+    - m_Data: 52654
+    - m_Data: 52656
+    - m_Data: 52658
+    - m_Data: 52660
+    - m_Data: 52662
+    - m_Data: 52664
+    - m_Data: 52666
+    - m_Data: 52668
+    - m_Data: 52670
+    - m_Data: 52672
+    - m_Data: 52674
+    - m_Data: 52676
+    - m_Data: 52678
+    - m_Data: 52680
+    - m_Data: 52682
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2377,8 +2321,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Console\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 935.2
-    y: 79.200005
+    x: 936.2
+    y: 24
     width: 599.8
     height: 698.8
   m_SerializedDataModeController:

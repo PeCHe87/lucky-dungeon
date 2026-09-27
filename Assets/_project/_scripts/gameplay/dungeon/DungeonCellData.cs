@@ -16,6 +16,10 @@ public sealed class DungeonCellData : ScriptableObject
     [SerializeField] Sprite icon;
     [SerializeField] DungeonCellType cellType = DungeonCellType.Battle;
 
+    [Header("Presentation")]
+    [Tooltip("UI prefab instantiated for this cell in the dungeon progress strip.")]
+    [SerializeField] DungeonCellView cellPrefab;
+
     [Header("Behavior")]
     [Tooltip("Configurable action executed when the player resolves this cell.")]
     [SerializeField] DungeonCellAction action;
@@ -25,5 +29,6 @@ public sealed class DungeonCellData : ScriptableObject
     public string Description => description;
     public Sprite Icon => icon;
     public DungeonCellType CellType => cellType;
+    public DungeonCellView CellPrefab => cellPrefab;
     public DungeonCellAction Action => action;
 }

@@ -3,8 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 
 /// <summary>
-/// Registers a <see cref="DungeonCellCatalog"/> (optional) and hosts <see cref="DungeonRunController"/> wiring.
-/// Ensures an EventSystem exists so dungeon UI buttons receive clicks.
+/// Ensures <see cref="DungeonRunHost"/> exists, registers catalog, and EventSystem for UI.
 /// </summary>
 public sealed class DungeonRunBootstrap : MonoBehaviour
 {
@@ -15,6 +14,7 @@ public sealed class DungeonRunBootstrap : MonoBehaviour
 
     void Awake()
     {
+        DungeonRunHost.EnsureExists();
         EnsureEventSystem();
 
         if (catalog != null)
@@ -26,6 +26,10 @@ public sealed class DungeonRunBootstrap : MonoBehaviour
 
     void OnDestroy()
     {
+        // Host outlives this scene object — do not clear catalog while a run host remains.
+        if (DungeonRunHost.Instance != null)
+            return;
+
         if (catalog != null && DungeonCellCatalog.Current == catalog)
             DungeonCellCatalog.SetCurrent(null);
     }

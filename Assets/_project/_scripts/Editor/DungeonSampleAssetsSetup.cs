@@ -15,7 +15,10 @@ public static class DungeonSampleAssetsSetup
     public const string CatalogsPath = RootDataPath + "/catalogs";
     public const string CatalogAssetPath = CatalogsPath + "/DungeonCellCatalog.asset";
 
+    const string PrefabsPath = "Assets/_project/_prefabs/ui/dungeon";
+    const string FallbackCellPrefabPath = PrefabsPath + "/ui_dungeon_cell.prefab";
     const string SetupDonePrefKey = "LuckyDungeon.DungeonSampleAssetsSetupDone";
+    const string CellPrefabsWiredPrefKey = "LuckyDungeon.DungeonCellPrefabsWired";
 
     static DungeonSampleAssetsSetup()
     {
@@ -30,20 +33,31 @@ public static class DungeonSampleAssetsSetup
             return;
         }
 
-        if (EditorPrefs.GetBool(SetupDonePrefKey, false)
-            && AssetDatabase.LoadAssetAtPath<DungeonCellCatalog>(CatalogAssetPath) != null)
+        bool catalogReady = AssetDatabase.LoadAssetAtPath<DungeonCellCatalog>(CatalogAssetPath) != null;
+        if (!EditorPrefs.GetBool(SetupDonePrefKey, false) || !catalogReady)
+        {
+            SetupAll();
+            EditorPrefs.SetBool(SetupDonePrefKey, true);
+            EditorPrefs.SetBool(CellPrefabsWiredPrefKey, true);
             return;
+        }
 
-        SetupAll();
-        EditorPrefs.SetBool(SetupDonePrefKey, true);
+        // Existing projects: assign cell prefabs once without recreating assets.
+        if (!EditorPrefs.GetBool(CellPrefabsWiredPrefKey, false))
+        {
+            WireCellPrefabs();
+            EditorPrefs.SetBool(CellPrefabsWiredPrefKey, true);
+        }
     }
 
     [MenuItem("Tools/Dungeon/Setup Sample Cell Assets")]
     public static void SetupAllMenu()
     {
         EditorPrefs.DeleteKey(SetupDonePrefKey);
+        EditorPrefs.DeleteKey(CellPrefabsWiredPrefKey);
         SetupAll();
         EditorPrefs.SetBool(SetupDonePrefKey, true);
+        EditorPrefs.SetBool(CellPrefabsWiredPrefKey, true);
     }
 
     public static void SetupAll()
@@ -83,41 +97,87 @@ public static class DungeonSampleAssetsSetup
             EnsureCell(
                 CellsPath + "/cell_battle_01.asset",
                 "cell_battle_01", "Battle", "Fight enemies in the arena.",
-                DungeonCellType.Battle, battleAction),
+                DungeonCellType.Battle, battleAction,
+                PrefabsPath + "/ui_dungeon_cell_battle_0.prefab"),
             EnsureCell(
-                CellsPath + "/cell_shop_01.asset",
-                "cell_shop_01", "Shop", "Browse goods for this run.",
-                DungeonCellType.Shop, shopAction),
+                CellsPath + "/cell_shop.asset",
+                "cell_shop", "Shop", "Browse goods for this run.",
+                DungeonCellType.Shop, shopAction,
+                PrefabsPath + "/ui_dungeon_cell_shop.prefab"),
             EnsureCell(
                 CellsPath + "/cell_increase_player_hp.asset",
                 "cell_increase_player_hp", "Vitality Boost", "Increase player max HP.",
-                DungeonCellType.IncreasePlayerHp, hpUp),
+                DungeonCellType.IncreasePlayerHp, hpUp,
+                PrefabsPath + "/ui_dungeon_cell_increaseHp.prefab"),
             EnsureCell(
                 CellsPath + "/cell_decrease_player_hp.asset",
                 "cell_decrease_player_hp", "Curse of Frailty", "Decrease player max HP.",
-                DungeonCellType.DecreasePlayerHp, hpDown),
+                DungeonCellType.DecreasePlayerHp, hpDown,
+                FallbackCellPrefabPath),
             EnsureCell(
                 CellsPath + "/cell_increase_player_attack.asset",
                 "cell_increase_player_attack", "Sharpened Edge", "Increase player attack.",
-                DungeonCellType.IncreasePlayerAttack, atkUp),
+                DungeonCellType.IncreasePlayerAttack, atkUp,
+                PrefabsPath + "/ui_dungeon_cell_increaseAttack.prefab"),
             EnsureCell(
                 CellsPath + "/cell_decrease_player_attack.asset",
                 "cell_decrease_player_attack", "Dull Blades", "Decrease player attack.",
-                DungeonCellType.DecreasePlayerAttack, atkDown),
+                DungeonCellType.DecreasePlayerAttack, atkDown,
+                FallbackCellPrefabPath),
             EnsureCell(
                 CellsPath + "/cell_increase_enemies_hp.asset",
                 "cell_increase_enemies_hp", "Hardened Foes", "Enemies gain max HP.",
-                DungeonCellType.IncreaseEnemiesHp, enemyHpUp),
+                DungeonCellType.IncreaseEnemiesHp, enemyHpUp,
+                FallbackCellPrefabPath),
             EnsureCell(
                 CellsPath + "/cell_extra_run_currency.asset",
                 "cell_extra_run_currency", "Coin Cache", "Gain run currency.",
-                DungeonCellType.ExtraRunCurrency, currency),
+                DungeonCellType.ExtraRunCurrency, currency,
+                PrefabsPath + "/ui_dungeon_cell_currency.prefab"),
         };
 
         EnsureCatalog(cells);
+        WireCellPrefabs();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("[DungeonSampleAssetsSetup] Sample dungeon cell/action/catalog assets ready.");
+    }
+
+    /// <summary>Assigns type-specific cell prefabs when <c>cellPrefab</c> is null (does not overwrite).</summary>
+    public static void WireCellPrefabs()
+    {
+        AssignCellPrefabIfNull(CellsPath + "/cell_battle_01.asset", PrefabsPath + "/ui_dungeon_cell_battle_0.prefab");
+        AssignCellPrefabIfNull(CellsPath + "/cell_extra_run_currency.asset", PrefabsPath + "/ui_dungeon_cell_currency.prefab");
+        AssignCellPrefabIfNull(CellsPath + "/cell_increase_player_hp.asset", PrefabsPath + "/ui_dungeon_cell_increaseHp.prefab");
+        AssignCellPrefabIfNull(CellsPath + "/cell_increase_player_attack.asset", PrefabsPath + "/ui_dungeon_cell_increaseAttack.prefab");
+        AssignCellPrefabIfNull(CellsPath + "/cell_shop.asset", PrefabsPath + "/ui_dungeon_cell_shop.prefab");
+        AssignCellPrefabIfNull(CellsPath + "/cell_decrease_player_hp.asset", FallbackCellPrefabPath);
+        AssignCellPrefabIfNull(CellsPath + "/cell_decrease_player_attack.asset", FallbackCellPrefabPath);
+        AssignCellPrefabIfNull(CellsPath + "/cell_increase_enemies_hp.asset", FallbackCellPrefabPath);
+        AssetDatabase.SaveAssets();
+    }
+
+    static void AssignCellPrefabIfNull(string cellAssetPath, string prefabPath)
+    {
+        var cell = AssetDatabase.LoadAssetAtPath<DungeonCellData>(cellAssetPath);
+        if (cell == null)
+            return;
+
+        var prefab = AssetDatabase.LoadAssetAtPath<DungeonCellView>(prefabPath);
+        if (prefab == null)
+        {
+            Debug.LogWarning($"[DungeonSampleAssetsSetup] Missing cell prefab at '{prefabPath}'.");
+            return;
+        }
+
+        var so = new SerializedObject(cell);
+        SerializedProperty prefabProp = so.FindProperty("cellPrefab");
+        if (prefabProp == null || prefabProp.objectReferenceValue != null)
+            return;
+
+        prefabProp.objectReferenceValue = prefab;
+        so.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(cell);
     }
 
     static T EnsureAction<T>(string path) where T : DungeonCellAction
@@ -170,21 +230,27 @@ public static class DungeonSampleAssetsSetup
         string displayName,
         string description,
         DungeonCellType cellType,
-        DungeonCellAction action)
+        DungeonCellAction action,
+        string cellPrefabPath)
     {
         var existing = AssetDatabase.LoadAssetAtPath<DungeonCellData>(path);
         if (existing != null)
+        {
+            AssignCellPrefabIfNull(path, cellPrefabPath);
             return existing;
+        }
 
         var asset = ScriptableObject.CreateInstance<DungeonCellData>();
         AssetDatabase.CreateAsset(asset, path);
 
+        var prefab = AssetDatabase.LoadAssetAtPath<DungeonCellView>(cellPrefabPath);
         var so = new SerializedObject(asset);
         so.FindProperty("cellId").stringValue = cellId;
         so.FindProperty("displayName").stringValue = displayName;
         so.FindProperty("description").stringValue = description;
         so.FindProperty("cellType").enumValueIndex = (int)cellType;
         so.FindProperty("action").objectReferenceValue = action;
+        so.FindProperty("cellPrefab").objectReferenceValue = prefab;
         so.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(asset);
         return asset;

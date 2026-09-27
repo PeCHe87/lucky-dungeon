@@ -482,6 +482,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09b620104a550244dbfb3a81c8501502, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScreensManager
+--- !u!1 &960194098
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 960194101}
+  - component: {fileID: 960194100}
+  - component: {fileID: 960194099}
+  m_Layer: 0
+  m_Name: EventSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &960194099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 960194098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
+  m_SendPointerHoverToParent: 1
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
+--- !u!114 &960194100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 960194098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
+  m_FirstSelected: {fileID: 0}
+  m_sendNavigationEvents: 1
+  m_DragThreshold: 10
+--- !u!4 &960194101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 960194098}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!224 &965623840 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 536372446253047826, guid: 232ac805290d968438370551303835ca, type: 3}
@@ -643,6 +722,7 @@ GameObject:
   - component: {fileID: 1709542474}
   - component: {fileID: 1709542473}
   - component: {fileID: 1709542472}
+  - component: {fileID: 1709542475}
   m_Layer: 0
   m_Name: DungeonRun
   m_TagString: Untagged
@@ -662,13 +742,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1158639d7a962f24ea7f1b6abd9a0cd3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonRunController
-  debugCellDefinitions:
-  - {fileID: 11400000, guid: 02a5307b462e5bb4f89856c19451d4c8, type: 2}
-  - {fileID: 11400000, guid: 1f75a1857aebc3b4bba9cac3211c76d1, type: 2}
-  - {fileID: 11400000, guid: f55d3f0fd9fe6604ca47091549f47fac, type: 2}
-  - {fileID: 11400000, guid: d87d3efabc4676a4e97a08111fa7d4ce, type: 2}
-  - {fileID: 11400000, guid: 02a5307b462e5bb4f89856c19451d4c8, type: 2}
-  startRunOnAwake: 1
 --- !u!114 &1709542473
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -698,6 +771,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1709542475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709542471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: baad22e7b65342748a0fc93f07a40295, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonLayoutBuilder
+  cells:
+  - {fileID: 11400000, guid: 02a5307b462e5bb4f89856c19451d4c8, type: 2}
+  - {fileID: 11400000, guid: f55d3f0fd9fe6604ca47091549f47fac, type: 2}
+  - {fileID: 11400000, guid: 1f75a1857aebc3b4bba9cac3211c76d1, type: 2}
+  - {fileID: 11400000, guid: fc37d6b48052e5643b2f350cb9af242b, type: 2}
+  - {fileID: 11400000, guid: d87d3efabc4676a4e97a08111fa7d4ce, type: 2}
+  - {fileID: 11400000, guid: 86bd425d3fa2bb040ab0753a02437103, type: 2}
+  - {fileID: 11400000, guid: 5903a2ef170f5ce4190f28671b9d53d7, type: 2}
+  - {fileID: 11400000, guid: 02a5307b462e5bb4f89856c19451d4c8, type: 2}
+  - {fileID: 11400000, guid: 4d06d9374fbb8f44ca3896416c8f2764, type: 2}
+  runController: {fileID: 1709542472}
+  buildAndStartOnStart: 1
 --- !u!1 &1796041659
 GameObject:
   m_ObjectHideFlags: 0
@@ -1287,3 +1384,4 @@ SceneRoots:
   - {fileID: 416011470}
   - {fileID: 1988602141}
   - {fileID: 1709542474}
+  - {fileID: 960194101}

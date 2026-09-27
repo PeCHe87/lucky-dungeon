@@ -12,6 +12,7 @@ public static class DungeonSceneSetup
     const string DungeonScenePath = "Assets/_project/_scenes/dungeon.unity";
     const string CatalogAssetPath = DungeonSampleAssetsSetup.CatalogAssetPath;
     const string SetupDonePrefKey = "LuckyDungeon.DungeonSceneSetupDone";
+    const string LayoutBuilderWiredPrefKey = "LuckyDungeon.DungeonLayoutBuilderWired";
 
     static DungeonSceneSetup()
     {
@@ -29,20 +30,30 @@ public static class DungeonSceneSetup
         if (!System.IO.File.Exists(DungeonScenePath))
             return;
 
-        if (EditorPrefs.GetBool(SetupDonePrefKey, false))
+        if (!EditorPrefs.GetBool(SetupDonePrefKey, false))
+        {
+            SetupScene();
+            EditorPrefs.SetBool(SetupDonePrefKey, true);
+            EditorPrefs.SetBool(LayoutBuilderWiredPrefKey, true);
             return;
+        }
 
-        SetupScene();
-        EditorPrefs.SetBool(SetupDonePrefKey, true);
+        if (!EditorPrefs.GetBool(LayoutBuilderWiredPrefKey, false))
+        {
+            SetupScene();
+            EditorPrefs.SetBool(LayoutBuilderWiredPrefKey, true);
+        }
     }
 
     [MenuItem("Tools/Dungeon/Setup Dungeon Scene")]
     public static void SetupSceneMenu()
     {
         EditorPrefs.DeleteKey(SetupDonePrefKey);
+        EditorPrefs.DeleteKey(LayoutBuilderWiredPrefKey);
         DungeonSampleAssetsSetup.SetupAll();
         SetupScene();
         EditorPrefs.SetBool(SetupDonePrefKey, true);
+        EditorPrefs.SetBool(LayoutBuilderWiredPrefKey, true);
     }
 
     public static void SetupScene()
@@ -65,13 +76,17 @@ public static class DungeonSceneSetup
         if (controller == null)
             controller = host.AddComponent<DungeonRunController>();
 
+        var layoutBuilder = host.GetComponent<DungeonLayoutBuilder>();
+        if (layoutBuilder == null)
+            layoutBuilder = host.AddComponent<DungeonLayoutBuilder>();
+
         var catalog = AssetDatabase.LoadAssetAtPath<DungeonCellCatalog>(CatalogAssetPath);
         var bootstrapSo = new SerializedObject(bootstrap);
         bootstrapSo.FindProperty("catalog").objectReferenceValue = catalog;
         bootstrapSo.FindProperty("runController").objectReferenceValue = controller;
         bootstrapSo.ApplyModifiedPropertiesWithoutUndo();
 
-        // Sample linear run for debugging: battle → hp up → currency → shop → battle
+        // Sample linear run: battle → hp up → currency → shop → battle
         DungeonCellData[] samplePath =
         {
             AssetDatabase.LoadAssetAtPath<DungeonCellData>(
@@ -81,18 +96,19 @@ public static class DungeonSceneSetup
             AssetDatabase.LoadAssetAtPath<DungeonCellData>(
                 DungeonSampleAssetsSetup.CellsPath + "/cell_extra_run_currency.asset"),
             AssetDatabase.LoadAssetAtPath<DungeonCellData>(
-                DungeonSampleAssetsSetup.CellsPath + "/cell_shop_01.asset"),
+                DungeonSampleAssetsSetup.CellsPath + "/cell_shop.asset"),
             AssetDatabase.LoadAssetAtPath<DungeonCellData>(
                 DungeonSampleAssetsSetup.CellsPath + "/cell_battle_01.asset"),
         };
 
-        var controllerSo = new SerializedObject(controller);
-        SerializedProperty debugCells = controllerSo.FindProperty("debugCellDefinitions");
-        debugCells.arraySize = samplePath.Length;
+        var layoutSo = new SerializedObject(layoutBuilder);
+        layoutSo.FindProperty("runController").objectReferenceValue = controller;
+        layoutSo.FindProperty("buildAndStartOnStart").boolValue = true;
+        SerializedProperty cellsProp = layoutSo.FindProperty("cells");
+        cellsProp.arraySize = samplePath.Length;
         for (int i = 0; i < samplePath.Length; i++)
-            debugCells.GetArrayElementAtIndex(i).objectReferenceValue = samplePath[i];
-        controllerSo.FindProperty("startRunOnAwake").boolValue = true;
-        controllerSo.ApplyModifiedPropertiesWithoutUndo();
+            cellsProp.GetArrayElementAtIndex(i).objectReferenceValue = samplePath[i];
+        layoutSo.ApplyModifiedPropertiesWithoutUndo();
 
         // Progress presenter on the screen prefab instance if present
         GameObject progressScreen = GameObject.Find("screen_dungeon_progress");
@@ -122,7 +138,6 @@ public static class DungeonSceneSetup
                 presenterSo.FindProperty("levelLabel").objectReferenceValue =
                     txtLevel.GetComponent<TMPro.TextMeshProUGUI>();
 
-            // Leave cellViewPrefab null so the presenter reuses scene-placed cell children.
             EnsureCellViewOnPrefab();
             presenterSo.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -130,7 +145,7 @@ public static class DungeonSceneSetup
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
-        Debug.Log("[DungeonSceneSetup] Dungeon scene wired with run controller and sample path.");
+        Debug.Log("[DungeonSceneSetup] Dungeon scene wired with layout builder and sample path.");
     }
 
     static void EnsureEventSystemInScene()

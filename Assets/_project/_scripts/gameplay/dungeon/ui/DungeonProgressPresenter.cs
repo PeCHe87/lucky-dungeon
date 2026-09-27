@@ -13,6 +13,7 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
 {
     [SerializeField] DungeonRunController runController;
     [SerializeField] Transform cellsContainer;
+    [Tooltip("Used when a cell definition has no CellPrefab assigned.")]
     [SerializeField] DungeonCellView cellViewPrefab;
     [SerializeField] Button goButton;
     [SerializeField] TextMeshProUGUI levelLabel;
@@ -21,6 +22,7 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
     [SerializeField, Min(0.01f)] float slideDuration = 0.35f;
 
     readonly List<DungeonCellView> _cellViews = new List<DungeonCellView>();
+    readonly List<DungeonCellView> _spawnedViews = new List<DungeonCellView>();
     Dungeon _boundDungeon;
     RectTransform _cellsRect;
     bool _goButtonBound;
@@ -55,6 +57,7 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
 
         StopSlide();
         UnbindGoButton();
+        DestroySpawnedViews();
     }
 
     void OnGoClicked()
@@ -63,13 +66,14 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
             return;
 
         ResolveReferences();
-        if (runController == null)
+        DungeonRunHost host = DungeonRunHost.Instance ?? DungeonRunHost.EnsureExists();
+        if (host == null)
         {
-            Debug.LogWarning("[DungeonProgressPresenter] GO pressed but no DungeonRunController found.", this);
+            Debug.LogWarning("[DungeonProgressPresenter] GO pressed but no DungeonRunHost found.", this);
             return;
         }
 
-        runController.ResolveCurrentCell();
+        host.ResolveCurrentCell();
     }
 
     void OnDungeonRunStarted(Dungeon dungeon) => BindDungeon(dungeon);
@@ -94,8 +98,14 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
 
     void RefreshFromController()
     {
-        if (runController != null && runController.ActiveDungeon != null)
-            BindDungeon(runController.ActiveDungeon);
+        Dungeon dungeon = null;
+        if (runController != null)
+            dungeon = runController.ActiveDungeon;
+        if (dungeon == null && DungeonRunHost.Instance != null)
+            dungeon = DungeonRunHost.Instance.ActiveDungeon;
+
+        if (dungeon != null)
+            BindDungeon(dungeon);
     }
 
     void BindDungeon(Dungeon dungeon)
@@ -106,17 +116,15 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
 
         if (dungeon == null)
         {
-            ClearViews();
+            DestroySpawnedViews();
+            HideScenePlaceholderChildren();
             UpdateGoButton(false);
             return;
         }
 
-        EnsureViewCount(dungeon.CellCount);
+        RebuildViewsFromDungeon(dungeon);
         RefreshStatuses();
         SnapCenterToIndex(GetCenterTargetIndex(dungeon));
-
-        if (levelLabel != null)
-            levelLabel.text = $"Cells: {dungeon.CellCount}";
     }
 
     void RefreshStatuses()
@@ -130,7 +138,23 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
                 _cellViews[i].Bind(_boundDungeon.GetCell(i));
         }
 
+        UpdateLevelLabel();
         UpdateGoButton(!_boundDungeon.IsComplete && !_isSliding);
+    }
+
+    void UpdateLevelLabel()
+    {
+        if (levelLabel == null || _boundDungeon == null)
+            return;
+
+        int total = _boundDungeon.CellCount;
+        int current = total == 0
+            ? 0
+            : _boundDungeon.IsComplete
+                ? total
+                : _boundDungeon.CurrentIndex + 1;
+
+        levelLabel.text = $"Level {current}/{total}";
     }
 
     void StartSlideToCurrentThenRefresh()
@@ -255,62 +279,76 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
         _isSliding = false;
     }
 
-    void EnsureViewCount(int count)
+    void RebuildViewsFromDungeon(Dungeon dungeon)
     {
-        if (cellsContainer == null)
+        if (cellsContainer == null || dungeon == null)
             return;
 
-        CollectExistingViews();
+        DestroySpawnedViews();
+        HideScenePlaceholderChildren();
+        _cellViews.Clear();
 
-        while (_cellViews.Count < count)
+        for (int i = 0; i < dungeon.CellCount; i++)
         {
-            if (cellViewPrefab == null)
+            DungeonCellData definition = dungeon.GetCell(i).Definition;
+            DungeonCellView prefab = definition != null ? definition.CellPrefab : null;
+            if (prefab == null)
+                prefab = cellViewPrefab;
+
+            if (prefab == null)
             {
                 Debug.LogWarning(
-                    $"[DungeonProgressPresenter] Need {count} cell views but only {_cellViews.Count} exist and no prefab is assigned.",
+                    $"[DungeonProgressPresenter] No cell prefab for index {i}" +
+                    (definition != null ? $" ('{definition.CellId}')" : string.Empty) +
+                    " and no fallback cellViewPrefab assigned.",
                     this);
-                break;
+                continue;
             }
 
-            DungeonCellView view = Instantiate(cellViewPrefab, cellsContainer);
+            DungeonCellView view = Instantiate(prefab, cellsContainer);
             view.gameObject.SetActive(true);
+            _spawnedViews.Add(view);
             _cellViews.Add(view);
-        }
-
-        for (int i = 0; i < _cellViews.Count; i++)
-        {
-            if (_cellViews[i] == null)
-                continue;
-            _cellViews[i].gameObject.SetActive(i < count);
         }
     }
 
-    void CollectExistingViews()
+    void DestroySpawnedViews()
+    {
+        for (int i = 0; i < _spawnedViews.Count; i++)
+        {
+            if (_spawnedViews[i] == null)
+                continue;
+            Destroy(_spawnedViews[i].gameObject);
+        }
+
+        _spawnedViews.Clear();
+        _cellViews.Clear();
+    }
+
+    void HideScenePlaceholderChildren()
     {
         if (cellsContainer == null)
-            return;
-
-        if (_cellViews.Count > 0)
             return;
 
         for (int i = 0; i < cellsContainer.childCount; i++)
         {
             Transform child = cellsContainer.GetChild(i);
-            DungeonCellView view = child.GetComponent<DungeonCellView>();
-            if (view == null)
-                view = child.GetComponentInChildren<DungeonCellView>(true);
-            if (view == null)
-                view = child.gameObject.AddComponent<DungeonCellView>();
-            _cellViews.Add(view);
-        }
-    }
+            if (child == null)
+                continue;
 
-    void ClearViews()
-    {
-        for (int i = 0; i < _cellViews.Count; i++)
-        {
-            if (_cellViews[i] != null)
-                _cellViews[i].gameObject.SetActive(false);
+            // Skip instances we just spawned this frame (they are already tracked).
+            bool isSpawned = false;
+            for (int s = 0; s < _spawnedViews.Count; s++)
+            {
+                if (_spawnedViews[s] != null && _spawnedViews[s].transform == child)
+                {
+                    isSpawned = true;
+                    break;
+                }
+            }
+
+            if (!isSpawned)
+                child.gameObject.SetActive(false);
         }
     }
 
@@ -342,6 +380,8 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
     {
         if (runController == null)
             runController = FindFirstObjectByType<DungeonRunController>();
+
+        DungeonRunHost.EnsureExists();
 
         if (cellsContainer == null)
         {
