@@ -1007,6 +1007,7 @@ GameObject:
   - component: {fileID: 8755570147294675668}
   - component: {fileID: 5865420521453548396}
   - component: {fileID: 1794001437799425491}
+  - component: {fileID: 3282234479046526349}
   m_Layer: 10
   m_Name: player
   m_TagString: Untagged
@@ -1669,6 +1670,19 @@ MonoBehaviour:
   ammoLabel: {fileID: 9035176938310076823}
   ammoFillColor: {r: 0.9, g: 0.46, b: 0, a: 1}
   reloadFillColor: {r: 0.35, g: 0.75, b: 1, a: 1}
+--- !u!114 &3282234479046526349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7257487282284125000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7788e47de6749fd46810afcba55b533c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRunStateBinder
+  health: {fileID: 9012345678901234521}
 --- !u!1 &8461006855518947097
 GameObject:
   m_ObjectHideFlags: 0

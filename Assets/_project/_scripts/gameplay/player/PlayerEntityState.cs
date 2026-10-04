@@ -73,6 +73,9 @@ public sealed class PlayerEntityState : MonoBehaviour
         if (deathHandler == null)
             deathHandler = GetComponent<PlayerDeathHandler>();
 
+        if (GetComponent<PlayerRunStateBinder>() == null)
+            gameObject.AddComponent<PlayerRunStateBinder>();
+
         _rules = BuildRules();
         Current = PlayerEntityStateKind.Idle;
         Previous = PlayerEntityStateKind.Idle;

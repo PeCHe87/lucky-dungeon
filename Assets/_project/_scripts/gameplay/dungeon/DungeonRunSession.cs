@@ -1,15 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// Owns the active runtime <see cref="Dungeon"/> plus run-scoped modifiers and currency.
+/// Owns the active runtime <see cref="Dungeon"/> plus encounter-scoped modifiers.
+/// Player payload lives on <see cref="PlayerRunState"/> via <see cref="DungeonRunHost"/>.
 /// Survives scene loads when held by <see cref="DungeonRunHost"/>.
 /// </summary>
 public sealed class DungeonRunSession
 {
     public Dungeon Dungeon { get; private set; }
-    public int RunCurrency { get; private set; }
-    public float PlayerMaxHpBonus { get; private set; }
-    public float PlayerAttackBonus { get; private set; }
     public float EnemyMaxHpBonus { get; private set; }
     public bool HasActiveRun => Dungeon != null;
 
@@ -22,9 +20,6 @@ public sealed class DungeonRunSession
     public void StartRun(Dungeon dungeon)
     {
         Dungeon = dungeon;
-        RunCurrency = 0;
-        PlayerMaxHpBonus = 0f;
-        PlayerAttackBonus = 0f;
         EnemyMaxHpBonus = 0f;
         IsAwaitingExternalCell = false;
     }
@@ -32,9 +27,6 @@ public sealed class DungeonRunSession
     public void EndRun()
     {
         Dungeon = null;
-        RunCurrency = 0;
-        PlayerMaxHpBonus = 0f;
-        PlayerAttackBonus = 0f;
         EnemyMaxHpBonus = 0f;
         IsAwaitingExternalCell = false;
     }
@@ -56,23 +48,10 @@ public sealed class DungeonRunSession
         IsAwaitingExternalCell = false;
     }
 
-    public void AddCurrency(int amount)
-    {
-        if (amount <= 0)
-            return;
-        RunCurrency += amount;
-    }
-
     public void ApplyStatModifier(RunStatKind kind, float amount)
     {
         switch (kind)
         {
-            case RunStatKind.PlayerMaxHp:
-                PlayerMaxHpBonus += amount;
-                break;
-            case RunStatKind.PlayerAttack:
-                PlayerAttackBonus += amount;
-                break;
             case RunStatKind.EnemyMaxHp:
                 EnemyMaxHpBonus += amount;
                 break;

@@ -21,6 +21,12 @@ public static class GameEvents
     /// <summary>Fired when the run reaches the end of the dungeon (or is ended early).</summary>
     public static event Action<Dungeon> DungeonRunFinished;
 
+    /// <summary>Fired when run or permanent-earned currency on the active player run changes.</summary>
+    public static event Action PlayerRunWalletChanged;
+
+    /// <summary>Fired when run-scoped player HP (current, base max, or bonus) changes.</summary>
+    public static event Action PlayerRunVitalsChanged;
+
     internal static void RaisePlayerDied() => PlayerDied?.Invoke();
 
     internal static void RaiseDungeonRunStarted(Dungeon dungeon) =>
@@ -34,4 +40,8 @@ public static class GameEvents
 
     internal static void RaiseDungeonRunFinished(Dungeon dungeon) =>
         DungeonRunFinished?.Invoke(dungeon);
+
+    internal static void RaisePlayerRunWalletChanged() => PlayerRunWalletChanged?.Invoke();
+
+    internal static void RaisePlayerRunVitalsChanged() => PlayerRunVitalsChanged?.Invoke();
 }

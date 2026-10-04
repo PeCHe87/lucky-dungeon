@@ -11,11 +11,14 @@ public sealed class DungeonRunHost : MonoBehaviour, IDungeonRunContext
     public static DungeonRunHost Instance { get; private set; }
 
     [SerializeField] string defaultDungeonSceneName = "dungeon";
+    [SerializeField, Min(0.01f)] float defaultPlayerMaxHp = 100f;
 
     DungeonRunSession _session;
+    PlayerRunState _player;
     bool _isResolving;
 
     public DungeonRunSession Session => _session;
+    public PlayerRunState Player => _player;
     public bool HasActiveRun => _session != null && _session.HasActiveRun;
     public Dungeon ActiveDungeon => _session?.Dungeon;
     public DungeonCellData CurrentCellDefinition =>
@@ -73,6 +76,7 @@ public sealed class DungeonRunHost : MonoBehaviour, IDungeonRunContext
 
         EnsureSession();
         _session.StartRun(dungeon);
+        _player.BeginRun(defaultPlayerMaxHp);
         _session.SetDungeonSceneName(defaultDungeonSceneName);
 
         GameEvents.RaiseDungeonRunStarted(dungeon);
@@ -196,6 +200,7 @@ public sealed class DungeonRunHost : MonoBehaviour, IDungeonRunContext
             GameEvents.RaiseDungeonRunFinished(dungeon);
 
         _session.EndRun();
+        _player.Clear();
     }
 
     /// <summary>
@@ -257,5 +262,7 @@ public sealed class DungeonRunHost : MonoBehaviour, IDungeonRunContext
     {
         if (_session == null)
             _session = new DungeonRunSession();
+        if (_player == null)
+            _player = new PlayerRunState();
     }
 }

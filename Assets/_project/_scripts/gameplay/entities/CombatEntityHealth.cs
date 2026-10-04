@@ -93,6 +93,19 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
     bool IsDamageInterruptSuppressed() =>
         _attackController != null && _attackController.ShouldSuppressDamageInterrupt;
 
+    /// <summary>Overwrite current and max HP (player run restore). Does not revive a defeated entity.</summary>
+    public void ApplyVitals(float current, float max)
+    {
+        float newMax = Mathf.Max(0.01f, max);
+        float newCurrent = Mathf.Clamp(current, 0f, newMax);
+        if (Mathf.Approximately(newMax, maxHitPoints) && Mathf.Approximately(newCurrent, _currentHitPoints))
+            return;
+
+        maxHitPoints = newMax;
+        _currentHitPoints = newCurrent;
+        HealthChanged?.Invoke();
+    }
+
     public void Heal(float amount)
     {
         if (_defeated || amount <= 0f)

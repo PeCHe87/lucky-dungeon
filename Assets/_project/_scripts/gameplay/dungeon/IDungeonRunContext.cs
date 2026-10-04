@@ -4,6 +4,7 @@
 public interface IDungeonRunContext
 {
     DungeonRunSession Session { get; }
+    PlayerRunState Player { get; }
     DungeonCellData CurrentCellDefinition { get; }
     void CompleteCurrentCell();
 }

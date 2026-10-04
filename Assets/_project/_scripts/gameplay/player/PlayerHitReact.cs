@@ -58,6 +58,9 @@ public sealed class PlayerHitReact : MonoBehaviour
         if (health == null || health.CurrentHitPoints <= 0f)
             return;
 
+        if (entityStateAnimator != null && entityStateAnimator.IsMeleeAttackClipPlaying)
+            return;
+
         BeginHitReact();
     }
 

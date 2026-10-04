@@ -13,10 +13,31 @@ public sealed class ModifyRunStatCellAction : DungeonCellAction
 
     public override void Execute(IDungeonRunContext context)
     {
-        if (context?.Session == null)
+        if (context == null)
             return;
 
-        context.Session.ApplyStatModifier(statKind, amount);
+        switch (statKind)
+        {
+            case RunStatKind.PlayerMaxHp:
+                if (context.Player == null)
+                    return;
+                context.Player.Vitals.AddMaxHpBonus(amount);
+                break;
+            case RunStatKind.PlayerAttack:
+                if (context.Player == null)
+                    return;
+                context.Player.AddAttackBonus(amount);
+                break;
+            case RunStatKind.EnemyMaxHp:
+                if (context.Session == null)
+                    return;
+                context.Session.ApplyStatModifier(statKind, amount);
+                break;
+            default:
+                Debug.LogWarning($"[ModifyRunStatCellAction] Unhandled RunStatKind '{statKind}'.");
+                break;
+        }
+
         Debug.Log($"[Dungeon] ModifyRunStat: {statKind} += {amount}");
         context.CompleteCurrentCell();
     }

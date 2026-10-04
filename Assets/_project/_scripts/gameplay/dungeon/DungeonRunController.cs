@@ -9,6 +9,7 @@ public sealed class DungeonRunController : MonoBehaviour, IDungeonRunContext
     DungeonRunHost _host;
 
     public DungeonRunSession Session => Host != null ? Host.Session : null;
+    public PlayerRunState Player => Host != null ? Host.Player : null;
     public Dungeon ActiveDungeon => Host != null ? Host.ActiveDungeon : null;
     public DungeonCellData CurrentCellDefinition => Host != null ? Host.CurrentCellDefinition : null;
 
