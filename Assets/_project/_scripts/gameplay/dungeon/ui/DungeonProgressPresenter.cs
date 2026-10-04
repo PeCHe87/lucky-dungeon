@@ -6,8 +6,9 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Binds the dungeon progress UI to the active runtime <see cref="Dungeon"/>.
-/// On cell complete, slides the cells strip so the next current cell is screen-centered,
+/// On cell complete, slides the cells strip upward by a fixed <see cref="slideMovementSize"/>,
 /// then refreshes Locked/Active/Completed visuals.
+/// When loading with existing progress, plays a short resume intro: previous step → delay → slide to current.
 /// </summary>
 public sealed class DungeonProgressPresenter : MonoBehaviour
 {
@@ -17,17 +18,24 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
     [SerializeField] DungeonCellView cellViewPrefab;
     [SerializeField] Button goButton;
     [SerializeField] TextMeshProUGUI levelLabel;
-    [Tooltip("World/UI point the current cell should align under. Defaults to content/currentStage.")]
-    [SerializeField] RectTransform centerAnchor;
     [SerializeField, Min(0.01f)] float slideDuration = 0.35f;
+    [Tooltip("Fixed upward UI units moved per cell advance.")]
+    [SerializeField, Min(0f)] float slideMovementSize = 100f;
+    [Tooltip("Delay before playing the resume slide (previous cell → current) when loading with progress.")]
+    [SerializeField, Min(0f)] float resumeSlideDelay = 0.5f;
 
     readonly List<DungeonCellView> _cellViews = new List<DungeonCellView>();
     readonly List<DungeonCellView> _spawnedViews = new List<DungeonCellView>();
     Dungeon _boundDungeon;
     RectTransform _cellsRect;
+    float _slideBaseY;
+    bool _hasSlideBaseY;
     bool _goButtonBound;
     bool _isSliding;
+    bool _hasPlayedResumeIntro;
     Coroutine _slideRoutine;
+    Coroutine _snapRoutine;
+    Coroutine _resumeIntroRoutine;
 
     void Awake() => ResolveReferences();
 
@@ -56,13 +64,19 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
         GameEvents.DungeonRunFinished -= OnDungeonRunFinished;
 
         StopSlide();
+        StopSnap();
+        StopResumeIntro();
         UnbindGoButton();
         DestroySpawnedViews();
+        _hasSlideBaseY = false;
+        _hasPlayedResumeIntro = false;
     }
+
+    bool IsProgressBusy => _isSliding || _resumeIntroRoutine != null;
 
     void OnGoClicked()
     {
-        if (_isSliding)
+        if (IsProgressBusy)
             return;
 
         ResolveReferences();
@@ -80,7 +94,7 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
 
     void OnDungeonCellCompleted(int index, DungeonCellData definition)
     {
-        if (_boundDungeon == null)
+        if (_boundDungeon == null || _resumeIntroRoutine != null)
             return;
 
         StartSlideToCurrentThenRefresh();
@@ -91,8 +105,8 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
         if (dungeon != null)
             _boundDungeon = dungeon;
 
-        // If a slide is already running from CellCompleted, it will refresh at the end.
-        if (!_isSliding)
+        // If a slide / resume intro is running, it will refresh at the end.
+        if (!IsProgressBusy)
             RefreshStatuses();
     }
 
@@ -111,7 +125,19 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
     void BindDungeon(Dungeon dungeon)
     {
         ResolveReferences();
+
+        // Avoid tearing down / restarting an in-flight resume intro on duplicate binds (OnEnable + Start + Resume).
+        if (ShouldSkipRebind(dungeon))
+        {
+            // Do not RefreshStatuses during resume intro — that would reveal the real current cell early.
+            if (!IsProgressBusy)
+                RefreshStatuses();
+            return;
+        }
+
         StopSlide();
+        StopSnap();
+        StopResumeIntro();
         _boundDungeon = dungeon;
 
         if (dungeon == null)
@@ -123,8 +149,40 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
         }
 
         RebuildViewsFromDungeon(dungeon);
-        RefreshStatuses();
-        SnapCenterToIndex(GetCenterTargetIndex(dungeon));
+        EnsureSlideBaseY();
+
+        int currentSteps = GetProgressSlideSteps(dungeon);
+        // Finished run: snap to last cell as Completed — no resume intro (congrats comes later).
+        bool playResumeIntro = currentSteps > 0
+            && !dungeon.IsComplete
+            && !_hasPlayedResumeIntro
+            && isActiveAndEnabled;
+
+        if (playResumeIntro)
+        {
+            _hasPlayedResumeIntro = true;
+            ApplyResumeIntroStatuses(currentSteps);
+            _resumeIntroRoutine = StartCoroutine(PlayResumeSlideIntro(currentSteps));
+        }
+        else
+        {
+            if (dungeon.IsComplete)
+                _hasPlayedResumeIntro = true;
+
+            RefreshStatuses();
+            ApplyProgressOffset(immediate: true);
+        }
+    }
+
+    bool ShouldSkipRebind(Dungeon dungeon)
+    {
+        if (dungeon == null || _boundDungeon != dungeon)
+            return false;
+
+        if (_cellViews.Count != dungeon.CellCount)
+            return false;
+
+        return _resumeIntroRoutine != null || _isSliding || _hasPlayedResumeIntro;
     }
 
     void RefreshStatuses()
@@ -139,7 +197,7 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
         }
 
         UpdateLevelLabel();
-        UpdateGoButton(!_boundDungeon.IsComplete && !_isSliding);
+        UpdateGoButton(!_boundDungeon.IsComplete && !IsProgressBusy);
     }
 
     void UpdateLevelLabel()
@@ -165,28 +223,38 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
             return;
         }
 
-        int targetIndex = GetCenterTargetIndex(_boundDungeon);
-        if (!TryGetCenteredTargetX(targetIndex, out float targetX))
-        {
-            RefreshStatuses();
-            return;
-        }
+        EnsureSlideBaseY();
+        float targetY = GetSlideTargetY(GetProgressSlideSteps(_boundDungeon));
 
         StopSlide();
-        _slideRoutine = StartCoroutine(SlideToXThenRefresh(targetX));
+        StopSnap();
+        _slideRoutine = StartCoroutine(SlideToYThenRefresh(targetY));
     }
 
-    IEnumerator SlideToXThenRefresh(float targetX)
+    IEnumerator SlideToYThenRefresh(float targetY)
+    {
+        yield return SlideToY(targetY);
+        _slideRoutine = null;
+        RefreshStatuses();
+    }
+
+    IEnumerator SlideToY(float targetY)
     {
         _isSliding = true;
         UpdateGoButton(false);
 
-        float startX = _cellsRect.anchoredPosition.x;
+        if (_cellsRect == null)
+        {
+            _isSliding = false;
+            yield break;
+        }
+
+        float startY = _cellsRect.anchoredPosition.y;
         float elapsed = 0f;
 
-        if (slideDuration <= 0.01f || Mathf.Approximately(startX, targetX))
+        if (slideDuration <= 0.01f || Mathf.Approximately(startY, targetY))
         {
-            SetCellsAnchoredX(targetX);
+            SetCellsAnchoredY(targetY);
         }
         else
         {
@@ -195,76 +263,158 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / slideDuration);
                 float eased = t * t * (3f - 2f * t); // SmoothStep
-                SetCellsAnchoredX(Mathf.Lerp(startX, targetX, eased));
+                SetCellsAnchoredY(Mathf.Lerp(startY, targetY, eased));
                 yield return null;
             }
 
-            SetCellsAnchoredX(targetX);
+            SetCellsAnchoredY(targetY);
         }
 
         _isSliding = false;
-        _slideRoutine = null;
+    }
+
+    /// <summary>
+    /// Resume intro: show previous as Active / current as Locked, wait, slide, then real status refresh.
+    /// Example: current cell index 2 → place at step 1, delay, animate to step 2.
+    /// </summary>
+    IEnumerator PlayResumeSlideIntro(int currentSteps)
+    {
+        int fromSteps = Mathf.Max(0, currentSteps - 1);
+        ApplyResumeIntroStatuses(currentSteps);
+
+        // Survive layout rebuilds at the previous step first.
+        SetCellsAnchoredY(GetSlideTargetY(fromSteps));
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+        if (_cellsRect != null)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_cellsRect);
+        SetCellsAnchoredY(GetSlideTargetY(fromSteps));
+        ApplyResumeIntroStatuses(currentSteps);
+        yield return new WaitForEndOfFrame();
+        SetCellsAnchoredY(GetSlideTargetY(fromSteps));
+        ApplyResumeIntroStatuses(currentSteps);
+
+        if (resumeSlideDelay > 0f)
+            yield return new WaitForSecondsRealtime(resumeSlideDelay);
+
+        float targetY = GetSlideTargetY(currentSteps);
+        yield return SlideToY(targetY);
+
+        _resumeIntroRoutine = null;
         RefreshStatuses();
     }
 
-    void SnapCenterToIndex(int index)
+    /// <summary>
+    /// Temporary visuals for resume intro: previous cell Active (in progress), current Locked.
+    /// Earlier cells Completed; later cells Locked.
+    /// </summary>
+    void ApplyResumeIntroStatuses(int currentSteps)
     {
-        if (!TryGetCenteredTargetX(index, out float targetX))
+        if (_boundDungeon == null)
             return;
 
-        SetCellsAnchoredX(targetX);
+        int fromSteps = Mathf.Max(0, currentSteps - 1);
+        int total = _boundDungeon.CellCount;
+
+        for (int i = 0; i < total && i < _cellViews.Count; i++)
+        {
+            DungeonCellView view = _cellViews[i];
+            if (view == null)
+                continue;
+
+            view.Bind(_boundDungeon.GetCell(i));
+
+            if (i < fromSteps)
+                view.SetStatus(DungeonCellStatus.Completed);
+            else if (i == fromSteps)
+                view.SetStatus(DungeonCellStatus.Active);
+            else
+                view.SetStatus(DungeonCellStatus.Locked);
+        }
+
+        if (levelLabel != null && total > 0)
+            levelLabel.text = $"Level {fromSteps + 1}/{total}";
+
+        UpdateGoButton(false);
     }
 
-    bool TryGetCenteredTargetX(int index, out float targetX)
+    /// <summary>
+    /// Instantly positions the strip for existing progress (completed cells × slideMovementSize).
+    /// Re-applies after layout so VerticalLayoutGroup / ContentSizeFitter cannot wipe it.
+    /// </summary>
+    void ApplyProgressOffset(bool immediate)
     {
-        targetX = 0f;
+        if (_boundDungeon == null || _cellsRect == null)
+            return;
+
+        int steps = GetProgressSlideSteps(_boundDungeon);
+        SetCellsAnchoredY(GetSlideTargetY(steps));
+
+        if (!immediate || !isActiveAndEnabled)
+            return;
+
+        StopSnap();
+        _snapRoutine = StartCoroutine(ReapplyProgressOffsetAfterLayout(steps));
+    }
+
+    IEnumerator ReapplyProgressOffsetAfterLayout(int steps)
+    {
+        // Layout rebuilds can reset anchoredPosition after BindDungeon.
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+        if (_cellsRect != null)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_cellsRect);
+
+        SetCellsAnchoredY(GetSlideTargetY(steps));
+        yield return new WaitForEndOfFrame();
+        SetCellsAnchoredY(GetSlideTargetY(steps));
+
+        _snapRoutine = null;
+    }
+
+    void EnsureSlideBaseY()
+    {
         ResolveReferences();
+        if (_cellsRect == null)
+            return;
 
-        if (_cellsRect == null || centerAnchor == null)
-            return false;
-
-        if (index < 0 || index >= _cellViews.Count || _cellViews[index] == null)
-            return false;
-
-        var cellRect = _cellViews[index].transform as RectTransform;
-        if (cellRect == null)
-            return false;
+        // Keep the unslid layout Y across rebinds so resume does not stack offsets.
+        if (_hasSlideBaseY)
+            return;
 
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(_cellsRect);
-
-        Transform parent = _cellsRect.parent;
-        if (parent == null)
-            return false;
-
-        Vector3 cellWorld = cellRect.TransformPoint(cellRect.rect.center);
-        Vector3 anchorWorld = centerAnchor.TransformPoint(centerAnchor.rect.center);
-        float cellLocalX = parent.InverseTransformPoint(cellWorld).x;
-        float anchorLocalX = parent.InverseTransformPoint(anchorWorld).x;
-        float deltaX = anchorLocalX - cellLocalX;
-
-        targetX = _cellsRect.anchoredPosition.x + deltaX;
-        return true;
+        _slideBaseY = _cellsRect.anchoredPosition.y;
+        _hasSlideBaseY = true;
     }
 
-    static int GetCenterTargetIndex(Dungeon dungeon)
+    float GetSlideTargetY(int completedSteps)
+    {
+        int steps = Mathf.Max(0, completedSteps);
+        // Positive Y moves the strip upward in UI space.
+        return _slideBaseY + steps * slideMovementSize;
+    }
+
+    /// <summary>How many fixed slide steps to apply — equals cells already completed.</summary>
+    static int GetProgressSlideSteps(Dungeon dungeon)
     {
         if (dungeon == null || dungeon.CellCount == 0)
             return 0;
 
         if (dungeon.IsComplete)
-            return dungeon.CellCount - 1;
+            return Mathf.Max(0, dungeon.CellCount - 1);
 
+        // CurrentIndex advances after each completion, so it equals completed count.
         return Mathf.Clamp(dungeon.CurrentIndex, 0, dungeon.CellCount - 1);
     }
 
-    void SetCellsAnchoredX(float x)
+    void SetCellsAnchoredY(float y)
     {
         if (_cellsRect == null)
             return;
 
         Vector2 pos = _cellsRect.anchoredPosition;
-        pos.x = x;
+        pos.y = y;
         _cellsRect.anchoredPosition = pos;
     }
 
@@ -276,6 +426,27 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
             _slideRoutine = null;
         }
 
+        _isSliding = false;
+    }
+
+    void StopSnap()
+    {
+        if (_snapRoutine == null)
+            return;
+
+        StopCoroutine(_snapRoutine);
+        _snapRoutine = null;
+    }
+
+    void StopResumeIntro()
+    {
+        if (_resumeIntroRoutine != null)
+        {
+            StopCoroutine(_resumeIntroRoutine);
+            _resumeIntroRoutine = null;
+        }
+
+        // Nested SlideToY inside the intro may have left this true if the coroutine was stopped early.
         _isSliding = false;
     }
 
@@ -394,15 +565,6 @@ public sealed class DungeonProgressPresenter : MonoBehaviour
 
         if (cellsContainer != null)
             _cellsRect = cellsContainer as RectTransform;
-
-        if (centerAnchor == null)
-        {
-            Transform t = FindDeepChild(transform, "currentStage");
-            if (t == null)
-                t = FindDeepChild(transform, "content");
-            if (t != null)
-                centerAnchor = t as RectTransform;
-        }
 
         if (goButton == null)
         {

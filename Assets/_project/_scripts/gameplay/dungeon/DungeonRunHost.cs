@@ -248,6 +248,8 @@ public sealed class DungeonRunHost : MonoBehaviour, IDungeonRunContext
             : _session.DungeonSceneName;
 
         CompleteCurrentCell();
+        // Always clear — CompleteCurrentCell may early-out before clearing, which would block GO forever.
+        _session.ClearExternalAwait();
         SceneManager.LoadScene(returnScene);
     }
 
