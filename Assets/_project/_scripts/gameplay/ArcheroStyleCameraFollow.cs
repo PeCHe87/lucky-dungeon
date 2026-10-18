@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Archero-style follow: smooth position only; fixed yaw/pitch. Zoom scales perspective FOV
 /// or orthographic size (higher zoom = larger subject on screen).
+/// Yaw rotates the camera around the follow target so the player stays centered.
 /// </summary>
 [RequireComponent(typeof(Camera))]
 public class ArcheroStyleCameraFollow : MonoBehaviour
@@ -33,21 +34,29 @@ public class ArcheroStyleCameraFollow : MonoBehaviour
     [SerializeField, Min(0.01f)] float maxOrthographicSize = 24f;
 
     [Header("Fixed orientation")]
-    [Tooltip("World Y rotation of the camera (left/right orbit). Does not follow the target's facing.")]
+    [Tooltip("World Y rotation of the camera (pivots around the follow target). Does not follow the target's facing.")]
     [SerializeField] float yawDegrees;
     [Tooltip("Tilt down over the arena (typical Archero-style angle ~35–55).")]
     [SerializeField] float pitchDegrees = 48f;
 
     [Header("Smoothing")]
-    [Tooltip("Lower = snappier position follow.")]
+    [Tooltip("Lower = snappier position follow. Applied when the target moves; yaw pivots snap immediately.")]
     [SerializeField] float positionSmoothTime = 0.15f;
+    [Tooltip("Smooth time for forward offset and pitch when SetOrbitOffsets is used.")]
+    [SerializeField] float orbitSmoothTime = 0.35f;
 
     Vector3 _positionVelocity;
     Camera _camera;
+    float _targetForwardOffset;
+    float _targetPitchDegrees;
+    float _forwardOffsetVelocity;
+    float _pitchDegreesVelocity;
 
     void Awake()
     {
         _camera = GetComponent<Camera>();
+        _targetForwardOffset = forwardOffset;
+        _targetPitchDegrees = pitchDegrees;
     }
 
     /// <summary>Higher = zoom in (smaller orthographic size or narrower FOV). Lower = zoom out.</summary>
@@ -57,41 +66,115 @@ public class ArcheroStyleCameraFollow : MonoBehaviour
         set => zoom = Mathf.Max(0.01f, value);
     }
 
+    /// <summary>World Y rotation of the camera around the follow target.</summary>
+    public float YawDegrees
+    {
+        get => yawDegrees;
+        set => yawDegrees = value;
+    }
+
+    /// <summary>Current horizontal orbit distance (may be mid-tween).</summary>
+    public float ForwardOffset => forwardOffset;
+
+    /// <summary>Current pitch in degrees (may be mid-tween).</summary>
+    public float PitchDegrees => pitchDegrees;
+
+    /// <summary>
+    /// Smoothly eases forward offset and pitch toward the given values.
+    /// </summary>
+    public void SetOrbitOffsets(float newForwardOffset, float newPitchDegrees)
+    {
+        _targetForwardOffset = newForwardOffset;
+        _targetPitchDegrees = newPitchDegrees;
+    }
+
+    /// <summary>
+    /// Pivots look yaw around the follow target and snaps position onto the orbit
+    /// so the player stays centered (no SmoothDamp slide between orbit points).
+    /// </summary>
+    public void AddYawDegrees(float deltaDegrees)
+    {
+        if (Mathf.Approximately(deltaDegrees, 0f))
+            return;
+
+        yawDegrees += deltaDegrees;
+        ApplyOrientation();
+        SnapPositionToOrbit();
+    }
+
     void LateUpdate()
     {
         if (target == null)
             return;
 
-        transform.rotation = Quaternion.Euler(pitchDegrees, yawDegrees, 0f);
+        ApplyOrbitSmoothing();
+        ApplyOrientation();
+        ApplyLens();
 
-        if (_camera != null)
-        {
-            if (_camera.orthographic)
-            {
-                float size = baseOrthographicSize / zoom;
-                float lo = Mathf.Min(minOrthographicSize, maxOrthographicSize);
-                float hi = Mathf.Max(minOrthographicSize, maxOrthographicSize);
-                _camera.orthographicSize = Mathf.Clamp(size, lo, hi);
-            }
-            else
-            {
-                float fov = baseFieldOfView / zoom;
-                float lo = Mathf.Min(minFieldOfView, maxFieldOfView);
-                float hi = Mathf.Max(minFieldOfView, maxFieldOfView);
-                _camera.fieldOfView = Mathf.Clamp(fov, lo, hi);
-            }
-        }
-
-        Vector3 flatView = GetFlatViewForward();
-        Vector3 desiredPosition = target.position
-            + Vector3.up * verticalOffset
-            - flatView * forwardOffset;
-
+        Vector3 desiredPosition = GetDesiredOrbitPosition();
         transform.position = Vector3.SmoothDamp(
             transform.position,
             desiredPosition,
             ref _positionVelocity,
             Mathf.Max(0.0001f, positionSmoothTime));
+    }
+
+    void ApplyOrbitSmoothing()
+    {
+        float smooth = Mathf.Max(0.0001f, orbitSmoothTime);
+        forwardOffset = Mathf.SmoothDamp(
+            forwardOffset,
+            _targetForwardOffset,
+            ref _forwardOffsetVelocity,
+            smooth);
+        pitchDegrees = Mathf.SmoothDamp(
+            pitchDegrees,
+            _targetPitchDegrees,
+            ref _pitchDegreesVelocity,
+            smooth);
+    }
+
+    void ApplyOrientation()
+    {
+        transform.rotation = Quaternion.Euler(pitchDegrees, yawDegrees, 0f);
+    }
+
+    void ApplyLens()
+    {
+        if (_camera == null)
+            return;
+
+        if (_camera.orthographic)
+        {
+            float size = baseOrthographicSize / zoom;
+            float lo = Mathf.Min(minOrthographicSize, maxOrthographicSize);
+            float hi = Mathf.Max(minOrthographicSize, maxOrthographicSize);
+            _camera.orthographicSize = Mathf.Clamp(size, lo, hi);
+        }
+        else
+        {
+            float fov = baseFieldOfView / zoom;
+            float lo = Mathf.Min(minFieldOfView, maxFieldOfView);
+            float hi = Mathf.Max(minFieldOfView, maxFieldOfView);
+            _camera.fieldOfView = Mathf.Clamp(fov, lo, hi);
+        }
+    }
+
+    void SnapPositionToOrbit()
+    {
+        if (target == null)
+            return;
+
+        transform.position = GetDesiredOrbitPosition();
+        _positionVelocity = Vector3.zero;
+    }
+
+    Vector3 GetDesiredOrbitPosition()
+    {
+        Vector3 flatView = GetFlatViewForward();
+        return target.position
+            + Vector3.up * verticalOffset
+            - flatView * forwardOffset;
     }
 
     Vector3 GetFlatViewForward()

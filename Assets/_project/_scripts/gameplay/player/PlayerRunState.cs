@@ -6,6 +6,7 @@ public sealed class PlayerRunState
 {
     public PlayerRunWallet Wallet { get; } = new PlayerRunWallet();
     public PlayerRunVitals Vitals { get; } = new PlayerRunVitals();
+    public PlayerRunKeys Keys { get; } = new PlayerRunKeys();
     public float AttackBonus { get; private set; }
 
     public void BeginRun(float baseMaxHp)
@@ -13,6 +14,7 @@ public sealed class PlayerRunState
         AttackBonus = 0f;
         Wallet.BeginRun();
         Vitals.BeginRun(baseMaxHp);
+        Keys.BeginRun();
     }
 
     public void Clear()
@@ -20,6 +22,7 @@ public sealed class PlayerRunState
         AttackBonus = 0f;
         Wallet.Clear();
         Vitals.Clear();
+        Keys.Clear();
     }
 
     public void AddAttackBonus(float amount)
