@@ -27,6 +27,9 @@ public static class GameEvents
     /// <summary>Fired when run-scoped player HP (current, base max, or bonus) changes.</summary>
     public static event Action PlayerRunVitalsChanged;
 
+    /// <summary>Fired when run inventory stacks are added or cleared.</summary>
+    public static event Action PlayerRunInventoryChanged;
+
     internal static void RaisePlayerDied() => PlayerDied?.Invoke();
 
     internal static void RaiseDungeonRunStarted(Dungeon dungeon) =>
@@ -44,4 +47,6 @@ public static class GameEvents
     internal static void RaisePlayerRunWalletChanged() => PlayerRunWalletChanged?.Invoke();
 
     internal static void RaisePlayerRunVitalsChanged() => PlayerRunVitalsChanged?.Invoke();
+
+    internal static void RaisePlayerRunInventoryChanged() => PlayerRunInventoryChanged?.Invoke();
 }

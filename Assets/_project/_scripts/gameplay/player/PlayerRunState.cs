@@ -7,6 +7,7 @@ public sealed class PlayerRunState
     public PlayerRunWallet Wallet { get; } = new PlayerRunWallet();
     public PlayerRunVitals Vitals { get; } = new PlayerRunVitals();
     public PlayerRunKeys Keys { get; } = new PlayerRunKeys();
+    public PlayerRunInventory Inventory { get; } = new PlayerRunInventory();
     public float AttackBonus { get; private set; }
 
     public void BeginRun(float baseMaxHp)
@@ -15,6 +16,7 @@ public sealed class PlayerRunState
         Wallet.BeginRun();
         Vitals.BeginRun(baseMaxHp);
         Keys.BeginRun();
+        Inventory.BeginRun();
     }
 
     public void Clear()
@@ -23,6 +25,7 @@ public sealed class PlayerRunState
         Wallet.Clear();
         Vitals.Clear();
         Keys.Clear();
+        Inventory.Clear();
     }
 
     public void AddAttackBonus(float amount)
