@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// Global gameplay events decoupled from individual prefab references.
@@ -30,6 +31,12 @@ public static class GameEvents
     /// <summary>Fired when run inventory stacks are added or cleared.</summary>
     public static event Action PlayerRunInventoryChanged;
 
+    /// <summary>Fired when at least one searchable loot is in player proximity (true) or none remain (false).</summary>
+    public static event Action<bool> LootInteractAvailableChanged;
+
+    /// <summary>Fired after a loot container finishes opening with the items just granted (merged by id).</summary>
+    public static event Action<IReadOnlyList<(string itemId, int amount)>> LootObtained;
+
     internal static void RaisePlayerDied() => PlayerDied?.Invoke();
 
     internal static void RaiseDungeonRunStarted(Dungeon dungeon) =>
@@ -49,4 +56,10 @@ public static class GameEvents
     internal static void RaisePlayerRunVitalsChanged() => PlayerRunVitalsChanged?.Invoke();
 
     internal static void RaisePlayerRunInventoryChanged() => PlayerRunInventoryChanged?.Invoke();
+
+    internal static void RaiseLootInteractAvailableChanged(bool available) =>
+        LootInteractAvailableChanged?.Invoke(available);
+
+    internal static void RaiseLootObtained(IReadOnlyList<(string itemId, int amount)> entries) =>
+        LootObtained?.Invoke(entries);
 }
