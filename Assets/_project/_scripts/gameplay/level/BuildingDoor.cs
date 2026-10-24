@@ -1,9 +1,12 @@
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 /// <summary>
 /// Building door that opens (rotates) when a valid entity is near.
 /// Place on the non-rotating door root; only the art/hinge child rotates so proximity stays fixed.
+/// When <see cref="requiredItemId"/> is set, the door stays closed until the player interacts with
+/// <c>btnInteract</c> while holding the required item (which is then consumed).
 /// </summary>
 public sealed class BuildingDoor : MonoBehaviour
 {
@@ -14,11 +17,24 @@ public sealed class BuildingDoor : MonoBehaviour
     static int s_entityLayer = -1;
     static readonly Collider[] s_overlap = new Collider[16];
 
+    static int s_unlockableProximityCount;
+    static BuildingDoor s_currentUnlockable;
+
     [Header("Access")]
-    [Tooltip("When enabled, only the player can trigger the door, and only with the required key.")]
-    [SerializeField] bool requiresSpecialKey;
-    [Tooltip("Key id checked on PlayerRunState.Keys when Requires Special Key is enabled.")]
-    [SerializeField] string requiredKeyId;
+    [Tooltip("Inventory item id required to unlock. Empty = unlocked (opens on proximity).")]
+    [SerializeField] string requiredItemId;
+
+    [Header("Lock UI")]
+    [Tooltip("World-space lock UI root. Shown only when Required Item Id is set.")]
+    [SerializeField] GameObject lockUiRoot;
+    [Tooltip("Frame/background image tinted by required item rarity.")]
+    [SerializeField] Image requiredItemFrame;
+    [Tooltip("Image that displays the required item's preview sprite.")]
+    [SerializeField] Image requiredItemIcon;
+    [Tooltip("Check mark shown when the player already owns the required item.")]
+    [SerializeField] GameObject hasItemCheck;
+    [Tooltip("Indexed by ItemRarity: Common, Uncommon, Rare, Epic, Legendary, Mythic.")]
+    [SerializeField] Sprite[] rarityFrames;
 
     [Header("Motion")]
     [Tooltip("Art transform that rotates open. Defaults to child named 'art'. This root transform never rotates.")]
@@ -39,18 +55,52 @@ public sealed class BuildingDoor : MonoBehaviour
     float _openBlend;
     float _openBlendVelocity;
     bool _wantOpen;
-    bool _loggedMissingKey;
+    bool _reportedUnlockInteract;
 
-    public bool RequiresSpecialKey => requiresSpecialKey;
-    public string RequiredKeyId => requiredKeyId;
+    public string RequiredItemId => requiredItemId;
+    public bool IsLocked => !string.IsNullOrEmpty(requiredItemId);
     public Vector3 OpenAngleDegrees => openAngleDegrees;
     public bool IsOpen => _openBlend > 1f - AnimSettledEpsilon;
     public bool IsAnimating => _openBlend > AnimSettledEpsilon && _openBlend < 1f - AnimSettledEpsilon;
+
+    public static BuildingDoor CurrentUnlockable => s_currentUnlockable;
 
     void Awake()
     {
         ResolveHinge();
         _closedLocalRotation = hinge.localRotation;
+    }
+
+    void OnEnable()
+    {
+        GameEvents.PlayerRunInventoryChanged += OnInventoryChanged;
+        GameEvents.DungeonRunStarted += OnDungeonRunStarted;
+        RefreshLockUi();
+    }
+
+    void Start()
+    {
+        // Catalog / run host may finish Awake after OnEnable; refresh once more.
+        RefreshLockUi();
+    }
+
+    void OnDisable()
+    {
+        GameEvents.PlayerRunInventoryChanged -= OnInventoryChanged;
+        GameEvents.DungeonRunStarted -= OnDungeonRunStarted;
+        UpdateUnlockInteract(false);
+    }
+
+    void OnDungeonRunStarted(Dungeon _)
+    {
+        RefreshLockUi();
+        RefreshUnlockInteract();
+    }
+
+    void OnInventoryChanged()
+    {
+        RefreshLockUi();
+        RefreshUnlockInteract();
     }
 
     void ResolveHinge()
@@ -75,6 +125,8 @@ public sealed class BuildingDoor : MonoBehaviour
         if (!IsAnimating)
             EvaluateSensor();
 
+        RefreshUnlockInteract();
+
         float target = _wantOpen ? 1f : 0f;
         _openBlend = Mathf.SmoothDamp(
             _openBlend,
@@ -88,54 +140,146 @@ public sealed class BuildingDoor : MonoBehaviour
 
     void EvaluateSensor()
     {
-        bool playerNear = IsValidActorNear(requirePlayerLayer: true);
-        bool entityNear = !requiresSpecialKey && IsValidActorNear(requirePlayerLayer: false);
-
-        if (requiresSpecialKey)
+        // Locked doors stay closed until unlock interact consumes the required item.
+        if (IsLocked)
         {
-            if (playerNear && PlayerHasRequiredKey())
-            {
-                _wantOpen = true;
-                _loggedMissingKey = false;
-            }
-            else if (playerNear)
-            {
-                _wantOpen = false;
-                if (!_loggedMissingKey)
-                {
-                    _loggedMissingKey = true;
-                    Debug.Log(
-                        $"[{nameof(BuildingDoor)}] '{name}' requires key '{requiredKeyId}'.",
-                        this);
-                }
-            }
-            else if (closeWhenPlayerLeaves)
-            {
-                _wantOpen = false;
-            }
-
+            _wantOpen = false;
             return;
         }
 
+        bool playerNear = IsValidActorNear(requirePlayerLayer: true);
+        bool entityNear = IsValidActorNear(requirePlayerLayer: false);
+
         // Unlocked: player or any living entity opens the door.
         if (playerNear || entityNear)
-        {
             _wantOpen = true;
-            _loggedMissingKey = false;
-        }
         else if (closeWhenPlayerLeaves)
-        {
             _wantOpen = false;
-        }
     }
 
-    bool PlayerHasRequiredKey()
+    void RefreshUnlockInteract()
     {
+        bool canUnlock = isActiveAndEnabled
+            && IsLocked
+            && IsValidActorNear(requirePlayerLayer: true)
+            && PlayerHasRequiredItem();
+        UpdateUnlockInteract(canUnlock);
+    }
+
+    void UpdateUnlockInteract(bool canUnlock)
+    {
+        if (_reportedUnlockInteract == canUnlock)
+        {
+            if (canUnlock)
+                s_currentUnlockable = this;
+            return;
+        }
+
+        if (_reportedUnlockInteract)
+        {
+            if (s_unlockableProximityCount > 0)
+                s_unlockableProximityCount--;
+
+            if (s_currentUnlockable == this)
+                s_currentUnlockable = null;
+        }
+
+        if (canUnlock)
+        {
+            s_unlockableProximityCount++;
+            s_currentUnlockable = this;
+        }
+
+        _reportedUnlockInteract = canUnlock;
+        PlayerInteractButton.SetDoorUnlockAvailable(s_unlockableProximityCount > 0);
+    }
+
+    /// <summary>
+    /// Consumes the required inventory item, clears the lock, and opens the door.
+    /// </summary>
+    public bool TryUnlockWithRequiredItem()
+    {
+        if (!IsLocked || !isActiveAndEnabled)
+            return false;
+
+        if (!IsValidActorNear(requirePlayerLayer: true))
+            return false;
+
+        if (!PlayerHasRequiredItem())
+            return false;
+
         PlayerRunState run = DungeonRunHost.Instance != null ? DungeonRunHost.Instance.Player : null;
         if (run == null)
             return false;
 
-        return run.Keys.HasKey(requiredKeyId);
+        string consumedId = requiredItemId;
+        if (!run.Inventory.TryRemove(consumedId, 1))
+            return false;
+
+        requiredItemId = string.Empty;
+        UpdateUnlockInteract(false);
+        RefreshLockUi();
+        _wantOpen = true;
+        return true;
+    }
+
+    void RefreshLockUi()
+    {
+        if (!IsLocked)
+        {
+            if (lockUiRoot != null)
+                lockUiRoot.SetActive(false);
+            return;
+        }
+
+        if (lockUiRoot != null)
+            lockUiRoot.SetActive(true);
+
+        ItemData data = null;
+        if (ItemCatalog.Current != null)
+            ItemCatalog.Current.TryGetById(requiredItemId, out data);
+
+        if (requiredItemIcon != null)
+        {
+            Sprite preview = data != null ? data.PreviewImage : null;
+            requiredItemIcon.sprite = preview;
+            requiredItemIcon.enabled = preview != null;
+        }
+
+        ApplyRarityFrame(data != null ? data.Rarity : ItemRarity.Common);
+
+        if (hasItemCheck != null)
+            hasItemCheck.SetActive(PlayerHasRequiredItem());
+    }
+
+    void ApplyRarityFrame(ItemRarity rarity)
+    {
+        if (requiredItemFrame == null)
+            return;
+
+        Sprite frame = GetRarityFrame(rarity) ?? GetRarityFrame(ItemRarity.Common);
+        requiredItemFrame.sprite = frame;
+        requiredItemFrame.enabled = frame != null;
+    }
+
+    Sprite GetRarityFrame(ItemRarity rarity)
+    {
+        int index = (int)rarity;
+        if (rarityFrames == null || index < 0 || index >= rarityFrames.Length)
+            return null;
+        return rarityFrames[index];
+    }
+
+    bool PlayerHasRequiredItem()
+    {
+        if (!IsLocked)
+            return false;
+
+        PlayerRunState run = DungeonRunHost.Instance != null ? DungeonRunHost.Instance.Player : null;
+        if (run == null)
+            return false;
+
+        return run.Inventory.GetAmount(requiredItemId) > 0;
     }
 
     /// <summary>

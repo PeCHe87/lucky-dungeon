@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Taps <see cref="InteractableLoot.CurrentSearchable"/> to begin the open channel.
+/// Routes <c>btnInteract</c> clicks to the current loot container or locked door unlock.
 /// Place on <c>btnInteract</c> (or assign the Button explicitly).
 /// </summary>
 [RequireComponent(typeof(Button))]
@@ -34,9 +34,14 @@ public sealed class LootInteractButtonBinder : MonoBehaviour
     void OnInteractClicked()
     {
         InteractableLoot loot = InteractableLoot.CurrentSearchable;
-        if (loot == null)
+        if (loot != null)
+        {
+            loot.TryBeginOpen();
             return;
+        }
 
-        loot.TryBeginOpen();
+        BuildingDoor door = BuildingDoor.CurrentUnlockable;
+        if (door != null)
+            door.TryUnlockWithRequiredItem();
     }
 }

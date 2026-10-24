@@ -28,7 +28,6 @@ public sealed class InteractableLoot : MonoBehaviour
 
     static int s_playerLayer = -1;
     static int s_searchableProximityCount;
-    static GameObject s_interactButton;
     static InteractableLoot s_currentSearchable;
 
     [Header("Prompt")]
@@ -54,7 +53,7 @@ public sealed class InteractableLoot : MonoBehaviour
     public bool IsLooted => looted;
     public bool IsOpening => _opening;
 
-    public static bool IsInteractAvailable => s_searchableProximityCount > 0;
+    public static bool IsInteractAvailable => PlayerInteractButton.IsVisible;
     public static InteractableLoot CurrentSearchable => s_currentSearchable;
 
     public void SetLooted(bool value)
@@ -238,8 +237,7 @@ public sealed class InteractableLoot : MonoBehaviour
         _reportedSearchableProximity = inSearchableProximity;
 
         bool available = s_searchableProximityCount > 0 && (s_currentSearchable == null || !s_currentSearchable._opening);
-        ApplyInteractButtonVisible(available);
-        GameEvents.RaiseLootInteractAvailableChanged(available);
+        PlayerInteractButton.SetLootAvailable(available);
     }
 
     void CancelOpen()
@@ -349,37 +347,6 @@ public sealed class InteractableLoot : MonoBehaviour
     {
         if (progressFill != null)
             progressFill.fillAmount = Mathf.Clamp01(amount);
-    }
-
-    static void ApplyInteractButtonVisible(bool visible)
-    {
-        EnsureInteractButton();
-
-        if (s_interactButton == null)
-            return;
-
-        if (s_interactButton.activeSelf != visible)
-            s_interactButton.SetActive(visible);
-    }
-
-    static void EnsureInteractButton()
-    {
-        if (s_interactButton == null)
-        {
-            GameObject controls = GameObject.Find("controls");
-            if (controls != null)
-            {
-                Transform button = controls.transform.Find("btnInteract");
-                if (button != null)
-                    s_interactButton = button.gameObject;
-            }
-        }
-
-        if (s_interactButton == null)
-            return;
-
-        if (s_interactButton.GetComponent<LootInteractButtonBinder>() == null)
-            s_interactButton.AddComponent<LootInteractButtonBinder>();
     }
 
     static bool IsPlayerCollider(Collider other)

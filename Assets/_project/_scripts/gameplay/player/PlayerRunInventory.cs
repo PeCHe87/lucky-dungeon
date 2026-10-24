@@ -48,6 +48,32 @@ public sealed class PlayerRunInventory
         return true;
     }
 
+    /// <summary>Removes up to <paramref name="amount"/> of <paramref name="itemId"/>. Returns false if not enough.</summary>
+    public bool TryRemove(string itemId, int amount = 1)
+    {
+        if (string.IsNullOrEmpty(itemId) || amount <= 0)
+            return false;
+
+        int previous = GetAmount(itemId);
+        if (previous < amount)
+            return false;
+
+        int next = previous - amount;
+        if (next == 0)
+        {
+            _amounts.Remove(itemId);
+            _order.Remove(itemId);
+        }
+        else
+        {
+            _amounts[itemId] = next;
+        }
+
+        Debug.Log($"[PlayerRunInventory] itemId='{itemId}' amount {previous} → {next}");
+        GameEvents.RaisePlayerRunInventoryChanged();
+        return true;
+    }
+
     /// <summary>
     /// Fills <paramref name="buffer"/> with inventory-ordered stacks (newest unique first), up to <paramref name="maxCount"/>.
     /// </summary>
