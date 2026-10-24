@@ -89,18 +89,22 @@ public sealed class BuildingDoor : MonoBehaviour
         GameEvents.PlayerRunInventoryChanged -= OnInventoryChanged;
         GameEvents.DungeonRunStarted -= OnDungeonRunStarted;
         UpdateUnlockInteract(false);
+        if (lockUiRoot != null)
+            lockUiRoot.SetActive(false);
     }
 
     void OnDungeonRunStarted(Dungeon _)
     {
-        RefreshLockUi();
-        RefreshUnlockInteract();
+        bool playerNear = IsLocked && IsValidActorNear(requirePlayerLayer: true);
+        RefreshLockUi(playerNear);
+        RefreshUnlockInteract(playerNear);
     }
 
     void OnInventoryChanged()
     {
-        RefreshLockUi();
-        RefreshUnlockInteract();
+        bool playerNear = IsLocked && IsValidActorNear(requirePlayerLayer: true);
+        RefreshLockUi(playerNear);
+        RefreshUnlockInteract(playerNear);
     }
 
     void ResolveHinge()
@@ -121,11 +125,17 @@ public sealed class BuildingDoor : MonoBehaviour
 
     void Update()
     {
+        bool playerNear = false;
+        // Proximity only needed while locked (lock UI / unlock) or when free to re-evaluate open intent.
+        if (IsLocked || !IsAnimating)
+            playerNear = IsValidActorNear(requirePlayerLayer: true);
+
         // Mid open/close: keep current intent; ignore sensor until settled.
         if (!IsAnimating)
-            EvaluateSensor();
+            EvaluateSensor(playerNear);
 
-        RefreshUnlockInteract();
+        RefreshLockUi(playerNear);
+        RefreshUnlockInteract(playerNear);
 
         float target = _wantOpen ? 1f : 0f;
         _openBlend = Mathf.SmoothDamp(
@@ -138,7 +148,7 @@ public sealed class BuildingDoor : MonoBehaviour
         hinge.localRotation = Quaternion.Slerp(_closedLocalRotation, openLocalRotation, _openBlend);
     }
 
-    void EvaluateSensor()
+    void EvaluateSensor(bool playerNear)
     {
         // Locked doors stay closed until unlock interact consumes the required item.
         if (IsLocked)
@@ -147,7 +157,6 @@ public sealed class BuildingDoor : MonoBehaviour
             return;
         }
 
-        bool playerNear = IsValidActorNear(requirePlayerLayer: true);
         bool entityNear = IsValidActorNear(requirePlayerLayer: false);
 
         // Unlocked: player or any living entity opens the door.
@@ -157,11 +166,11 @@ public sealed class BuildingDoor : MonoBehaviour
             _wantOpen = false;
     }
 
-    void RefreshUnlockInteract()
+    void RefreshUnlockInteract(bool playerNear)
     {
         bool canUnlock = isActiveAndEnabled
             && IsLocked
-            && IsValidActorNear(requirePlayerLayer: true)
+            && playerNear
             && PlayerHasRequiredItem();
         UpdateUnlockInteract(canUnlock);
     }
@@ -218,14 +227,21 @@ public sealed class BuildingDoor : MonoBehaviour
 
         requiredItemId = string.Empty;
         UpdateUnlockInteract(false);
-        RefreshLockUi();
+        RefreshLockUi(playerNear: false);
         _wantOpen = true;
         return true;
     }
 
     void RefreshLockUi()
     {
-        if (!IsLocked)
+        RefreshLockUi(IsLocked && IsValidActorNear(requirePlayerLayer: true));
+    }
+
+    void RefreshLockUi(bool playerNear)
+    {
+        bool showLockUi = isActiveAndEnabled && IsLocked && playerNear;
+
+        if (!showLockUi)
         {
             if (lockUiRoot != null)
                 lockUiRoot.SetActive(false);

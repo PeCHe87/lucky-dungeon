@@ -6,12 +6,12 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Wires <see cref="LootInteractButtonBinder"/> onto battleground btnInteract.
+/// Wires interact binder + bounce animation onto battleground btnInteract.
 /// </summary>
 static class LootInteractButtonSceneInstaller
 {
     const string ScenePath = "Assets/_project/_scenes/battleground.unity";
-    const string SessionKey = "LootInteractButtonSceneInstaller_v2";
+    const string SessionKey = "LootInteractButtonSceneInstaller_v3";
     const string ControlsName = "controls";
     const string ButtonName = "btnInteract";
 
@@ -85,6 +85,12 @@ static class LootInteractButtonSceneInstaller
             dirty = true;
         }
 
+        if (buttonObject.GetComponent<UiBounceLoopAnimation>() == null)
+        {
+            buttonObject.AddComponent<UiBounceLoopAnimation>();
+            dirty = true;
+        }
+
         if (buttonObject.activeSelf)
         {
             buttonObject.SetActive(false);
@@ -96,7 +102,7 @@ static class LootInteractButtonSceneInstaller
         {
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-            Debug.Log("[LootInteractButtonSceneInstaller] Wired LootInteractButtonBinder on btnInteract.");
+            Debug.Log("[LootInteractButtonSceneInstaller] Wired interact binder + bounce on btnInteract.");
         }
 
         if (!wasLoaded && scene.isLoaded && !string.IsNullOrEmpty(activeScene.path))

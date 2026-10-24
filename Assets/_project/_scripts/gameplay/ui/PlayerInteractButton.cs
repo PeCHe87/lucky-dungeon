@@ -59,5 +59,8 @@ public static class PlayerInteractButton
 
         if (s_interactButton.GetComponent<LootInteractButtonBinder>() == null)
             s_interactButton.AddComponent<LootInteractButtonBinder>();
+
+        if (s_interactButton.GetComponent<UiBounceLoopAnimation>() == null)
+            s_interactButton.AddComponent<UiBounceLoopAnimation>();
     }
 }
