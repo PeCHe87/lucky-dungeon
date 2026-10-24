@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Routes <c>btnInteract</c> clicks to the current loot container or locked door unlock.
+/// Routes <c>btnInteract</c> clicks to loot, repairable, or locked door unlock.
 /// Place on <c>btnInteract</c> (or assign the Button explicitly).
 /// </summary>
 [RequireComponent(typeof(Button))]
@@ -37,6 +37,13 @@ public sealed class LootInteractButtonBinder : MonoBehaviour
         if (loot != null)
         {
             loot.TryBeginOpen();
+            return;
+        }
+
+        RepairableObject repairable = RepairableObject.CurrentRepairable;
+        if (repairable != null)
+        {
+            repairable.TryRepair();
             return;
         }
 

@@ -1,16 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// Shared HUD <c>btnInteract</c> visibility for loot search and locked-door unlock.
+/// Shared HUD <c>btnInteract</c> visibility for loot search, repairables, and locked-door unlock.
 /// Sources OR together so one system leaving range does not hide the button for the other.
 /// </summary>
 public static class PlayerInteractButton
 {
     static GameObject s_interactButton;
     static bool s_lootAvailable;
+    static bool s_repairAvailable;
     static bool s_doorUnlockAvailable;
 
-    public static bool IsVisible => s_lootAvailable || s_doorUnlockAvailable;
+    public static bool IsVisible => s_lootAvailable || s_repairAvailable || s_doorUnlockAvailable;
 
     public static void SetLootAvailable(bool available)
     {
@@ -18,6 +19,15 @@ public static class PlayerInteractButton
             return;
 
         s_lootAvailable = available;
+        Refresh();
+    }
+
+    public static void SetRepairAvailable(bool available)
+    {
+        if (s_repairAvailable == available)
+            return;
+
+        s_repairAvailable = available;
         Refresh();
     }
 
