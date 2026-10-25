@@ -88,6 +88,8 @@ public sealed class PlayerRangedStopFaceTarget : MonoBehaviour
             return;
         if (!targetQuery.TryGetNearestTransform(out Transform target) || target == null)
             return;
+        if (target.GetComponentInParent<CombatEntityHealth>() == null)
+            return;
 
         movement.SnapHorizontalFacingTowardWorldPosition(target.position);
     }

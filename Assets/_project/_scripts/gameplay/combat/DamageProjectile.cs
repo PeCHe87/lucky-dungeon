@@ -1,9 +1,11 @@
 using UnityEngine;
 
-/// <summary>Pooled projectile: XZ movement, trigger hit, first <see cref="IDamageable"/> on hierarchy.</summary>
+/// <summary>Pooled projectile: XZ movement, trigger/cast hit, first <see cref="IDamageable"/> on hierarchy.</summary>
 [DisallowMultipleComponent]
 public sealed class DamageProjectile : MonoBehaviour
 {
+    const float MinCastRadius = 0.05f;
+
     ProjectilePool _pool;
     Transform _owner;
     int _ownerId;
@@ -14,10 +16,14 @@ public sealed class DamageProjectile : MonoBehaviour
     float _maxTravelDistance;
     float _traveled;
     LayerMask _hitLayers;
+    LayerMask _obstacleLayers;
     DamageNumberStyle _style;
     float _pushbackDistance;
     float _pushbackDuration;
     float _deathPushForce;
+    GameObject _impactVfxPrefab;
+    float _impactVfxLifetime;
+    float _castRadius;
     bool _released;
 
     public int OwnerId => _ownerId;
@@ -37,7 +43,10 @@ public sealed class DamageProjectile : MonoBehaviour
         in DamageNumberStyle style,
         float pushbackDistance,
         float pushbackDuration,
-        float deathPushForce)
+        float deathPushForce,
+        LayerMask obstacleLayers,
+        GameObject impactVfxPrefab,
+        float impactVfxLifetime)
     {
         _pool = pool;
         _owner = owner;
@@ -55,15 +64,19 @@ public sealed class DamageProjectile : MonoBehaviour
         _maxTravelDistance = Mathf.Max(0f, maxTravelDistance);
         _traveled = 0f;
         _hitLayers = hitLayers;
+        _obstacleLayers = obstacleLayers;
         _style = style;
         _pushbackDistance = Mathf.Max(0f, pushbackDistance);
         _pushbackDuration = Mathf.Max(0.01f, pushbackDuration);
         _deathPushForce = Mathf.Max(0f, deathPushForce);
+        _impactVfxPrefab = impactVfxPrefab;
+        _impactVfxLifetime = Mathf.Max(0f, impactVfxLifetime);
         _released = false;
 
         transform.SetPositionAndRotation(worldPosition, worldRotation);
 
         EnsurePhysicsForTriggers();
+        _castRadius = ResolveCastRadius();
     }
 
     void Update()
@@ -82,6 +95,13 @@ public sealed class DamageProjectile : MonoBehaviour
         if (_speed > 0f)
         {
             Vector3 delta = _direction * (_speed * Time.deltaTime);
+            if (TryObstacleCast(delta, out RaycastHit hit))
+            {
+                transform.position = hit.point;
+                HitObstacle(hit.point, hit.normal);
+                return;
+            }
+
             transform.position += delta;
             _traveled += delta.magnitude;
         }
@@ -99,11 +119,97 @@ public sealed class DamageProjectile : MonoBehaviour
             return;
         if (_owner != null && (other.transform == _owner || other.transform.IsChildOf(_owner)))
             return;
+
+        if (LayerMaskContains(_obstacleLayers, other.gameObject.layer))
+        {
+            Vector3 point = other.ClosestPoint(transform.position);
+            Vector3 normal = -_direction;
+            if (normal.sqrMagnitude < 1e-8f)
+                normal = Vector3.up;
+            HitObstacle(point, normal);
+            return;
+        }
+
         if (!LayerMaskContains(_hitLayers, other.gameObject.layer))
             return;
 
         TryDamageFirstOnHierarchy(other.gameObject);
         ReturnToPool();
+    }
+
+    bool TryObstacleCast(Vector3 delta, out RaycastHit hit)
+    {
+        hit = default;
+        float distance = delta.magnitude;
+        if (distance < 1e-8f || _obstacleLayers.value == 0)
+            return false;
+
+        Vector3 origin = transform.position;
+        Vector3 dir = delta / distance;
+        int count = Physics.SphereCastNonAlloc(
+            origin,
+            _castRadius,
+            dir,
+            _castHits,
+            distance,
+            _obstacleLayers,
+            QueryTriggerInteraction.Ignore);
+
+        RaycastHit best = default;
+        float bestDist = float.MaxValue;
+        bool found = false;
+        for (int i = 0; i < count; i++)
+        {
+            RaycastHit candidate = _castHits[i];
+            if (candidate.collider == null)
+                continue;
+            if (_owner != null
+                && (candidate.collider.transform == _owner
+                    || candidate.collider.transform.IsChildOf(_owner)))
+                continue;
+            if (candidate.distance < bestDist)
+            {
+                bestDist = candidate.distance;
+                best = candidate;
+                found = true;
+            }
+        }
+
+        if (!found)
+            return false;
+
+        hit = best;
+        return true;
+    }
+
+    void HitObstacle(Vector3 point, Vector3 normal)
+    {
+        SpawnImpactVfx(point, normal);
+        ReturnToPool();
+    }
+
+    void SpawnImpactVfx(Vector3 point, Vector3 normal)
+    {
+        if (_impactVfxPrefab == null)
+            return;
+
+        Vector3 forward = normal;
+        if (forward.sqrMagnitude < 1e-8f)
+            forward = -_direction;
+        if (forward.sqrMagnitude < 1e-8f)
+            forward = Vector3.up;
+        else
+            forward.Normalize();
+
+        Quaternion rotation = Quaternion.LookRotation(forward, Vector3.up);
+        GameObject instance = Instantiate(_impactVfxPrefab, point, rotation);
+
+        ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < systems.Length; i++)
+            systems[i].Play(true);
+
+        if (_impactVfxLifetime > 0f)
+            Destroy(instance, _impactVfxLifetime);
     }
 
     static bool LayerMaskContains(LayerMask mask, int layer)
@@ -179,6 +285,26 @@ public sealed class DamageProjectile : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.None;
     }
 
+    float ResolveCastRadius()
+    {
+        Collider col = GetComponent<Collider>();
+        if (col == null)
+            return MinCastRadius;
+
+        if (col is SphereCollider sphere)
+            return Mathf.Max(MinCastRadius, sphere.radius * MaxAbsScale(transform));
+
+        Bounds bounds = col.bounds;
+        float r = Mathf.Max(bounds.extents.x, bounds.extents.z);
+        return Mathf.Max(MinCastRadius, r);
+    }
+
+    static float MaxAbsScale(Transform t)
+    {
+        Vector3 s = t.lossyScale;
+        return Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z), 1e-4f);
+    }
+
     void ReturnToPool()
     {
         if (_released)
@@ -189,4 +315,6 @@ public sealed class DamageProjectile : MonoBehaviour
         else
             gameObject.SetActive(false);
     }
+
+    static readonly RaycastHit[] _castHits = new RaycastHit[8];
 }

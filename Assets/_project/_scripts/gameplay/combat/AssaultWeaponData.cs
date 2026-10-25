@@ -17,10 +17,18 @@ public sealed class AssaultWeaponData : WeaponData
     [SerializeField, Min(0)] int projectileSpawnAtFrame;
     [Tooltip("Frames per second used to convert projectileSpawnAtFrame to delay. Leave 0 to use 30.")]
     [SerializeField, Min(0f)] float projectileFramesPerSecond;
+    [Tooltip("Layers that stop projectiles (walls). Separate from hitLayers damage targets.")]
+    [SerializeField] LayerMask projectileObstacleLayers;
 
     [Header("Muzzle VFX")]
     [Tooltip("Optional muzzle flash. Empty prefab = no VFX. Timed independently of projectiles.")]
     [SerializeField] RangedMuzzleVfx muzzleVfx;
+
+    [Header("Impact VFX")]
+    [Tooltip("Spawned when a projectile hits an obstacle/wall. Empty = no VFX.")]
+    [SerializeField] GameObject projectileImpactVfx;
+    [Tooltip("Auto-destroy impact VFX after this many seconds. 0 = do not auto-destroy.")]
+    [SerializeField, Min(0f)] float projectileImpactVfxLifetime = 1.5f;
 
     [Header("Attack range")]
     [Tooltip("Max horizontal strike distance. 0 = use projectileMaxDistance.")]
@@ -44,7 +52,13 @@ public sealed class AssaultWeaponData : WeaponData
     public float SpreadAngleDegrees => spreadAngleDegrees;
     public int ProjectileSpawnAtFrame => projectileSpawnAtFrame;
     public float ProjectileFramesPerSecond => projectileFramesPerSecond;
+    public LayerMask ProjectileObstacleLayers =>
+        projectileObstacleLayers.value != 0
+            ? projectileObstacleLayers
+            : (LayerMask)LayerMask.GetMask("Obstacle");
     public RangedMuzzleVfx MuzzleVfx => muzzleVfx;
+    public GameObject ProjectileImpactVfx => projectileImpactVfx;
+    public float ProjectileImpactVfxLifetime => projectileImpactVfxLifetime;
     public float MaxAttackRange => maxAttackRange;
     public float MinAttackRange => minAttackRange;
     public float AttackConeAngle => attackConeAngle;
