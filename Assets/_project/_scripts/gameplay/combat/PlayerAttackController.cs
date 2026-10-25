@@ -42,6 +42,7 @@ public sealed class PlayerAttackController : MonoBehaviour
     bool _movementPriorityCancelActive;
     bool _rangedAttackDisengagedUntilRelease;
     bool _hasBufferedAttackPress;
+    bool _deferMagazineEmptyCancel;
     RangedWeapon _subscribedRangedWeapon;
     MeleeWeapon _subscribedMeleeWeapon;
 
@@ -124,10 +125,15 @@ public sealed class PlayerAttackController : MonoBehaviour
         if (weaponHolder != null)
             weaponHolder.EquippedWeaponChanged -= OnEquippedWeaponChanged;
 
+        _deferMagazineEmptyCancel = false;
         UnsubscribeWeaponReload();
     }
 
-    void OnEquippedWeaponChanged() => RefreshWeaponReloadSubscription();
+    void OnEquippedWeaponChanged()
+    {
+        _deferMagazineEmptyCancel = false;
+        RefreshWeaponReloadSubscription();
+    }
 
     void RefreshWeaponReloadSubscription()
     {
@@ -174,13 +180,36 @@ public sealed class PlayerAttackController : MonoBehaviour
         }
     }
 
-    void OnWeaponReloadStarted() => CancelComboForMagazineEmpty();
-
-    void CancelComboForMagazineEmpty()
+    void OnWeaponReloadStarted()
     {
         ClearBufferedAttackPress("magazine empty reload");
+
+        // Let the current fire/swing clip finish before jumping to idle on empty mag.
+        if (entityStateAnimator != null && entityStateAnimator.IsMeleeAttackClipPlaying)
+        {
+            _deferMagazineEmptyCancel = true;
+            return;
+        }
+
+        ApplyMagazineEmptyPresentationCancel();
+    }
+
+    void ApplyMagazineEmptyPresentationCancel()
+    {
+        _deferMagazineEmptyCancel = false;
         weaponHolder?.CancelActiveAttack();
         AttackCancelled?.Invoke();
+    }
+
+    void TryFlushDeferredMagazineEmptyCancel()
+    {
+        if (!_deferMagazineEmptyCancel)
+            return;
+
+        if (entityStateAnimator != null && entityStateAnimator.IsMeleeAttackClipPlaying)
+            return;
+
+        ApplyMagazineEmptyPresentationCancel();
     }
 
     void Update()
@@ -206,6 +235,8 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     void LateUpdate()
     {
+        TryFlushDeferredMagazineEmptyCancel();
+
         if (_attackProvider == null || weaponHolder == null)
             return;
 
@@ -634,6 +665,8 @@ public sealed class PlayerAttackController : MonoBehaviour
 
     void CancelActiveAttackPresentation(bool disengageRangedHold)
     {
+        _deferMagazineEmptyCancel = false;
+
         if (_meleeApproachPending)
             CancelPendingMeleeApproach();
         else if (_movement != null && _movement.IsLunging)

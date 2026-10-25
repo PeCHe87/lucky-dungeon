@@ -25955,7 +25955,7 @@ PrefabInstance:
     - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: rangedWeaponData
       value: 
-      objectReference: {fileID: 11400000, guid: 5d2f8a1b4c7e9f0a3d6b8c1e4f7a9d20, type: 2}
+      objectReference: {fileID: 0}
     - target: {fileID: 9012345678901234504, guid: 414b640f1e765e14a84ad2ed17aba415, type: 3}
       propertyPath: startingWeaponData
       value: 
