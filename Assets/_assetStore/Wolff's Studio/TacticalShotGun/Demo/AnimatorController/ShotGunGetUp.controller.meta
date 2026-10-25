@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: da5f838321bc3f44380ba1fb162f7d78
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339568
+  packageName: Tactical Shotgun Animations
+  packageVersion: 2.0
+  assetPath: Assets/Wolff's Studio/TacticalShotGun/Demo/AnimatorController/ShotGunGetUp.controller
+  uploadId: 920842

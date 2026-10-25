@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ed3d8a001c2cedf4aa57db8ac067d441
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339568
+  packageName: Tactical Shotgun Animations
+  packageVersion: 2.0
+  assetPath: Assets/Wolff's Studio/TacticalShotGun/Demo/AnimatorController/ShotGunHighCover03.controller
+  uploadId: 920842

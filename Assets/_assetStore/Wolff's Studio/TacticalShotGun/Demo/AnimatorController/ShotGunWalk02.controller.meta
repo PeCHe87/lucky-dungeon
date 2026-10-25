@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 79edbcf3fae75b54f995b2cb84e89d38
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339568
+  packageName: Tactical Shotgun Animations
+  packageVersion: 2.0
+  assetPath: Assets/Wolff's Studio/TacticalShotGun/Demo/AnimatorController/ShotGunWalk02.controller
+  uploadId: 920842

@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// Pooled ranged attack: spawns a <see cref="DamageProjectile"/> from <see cref="ProjectilePool"/> on animation fire frame.
-/// Balance/config comes from <see cref="AssaultWeaponData"/>.
+/// Pooled ranged attack: schedules muzzle VFX and projectiles from frame timing on
+/// <see cref="AssaultWeaponData"/> when the attack clip starts. Animation event
+/// <c>OnRangedFireFrame</c> remains a fallback if the scheduled projectile has not fired yet.
 /// </summary>
 public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAttackActivity, IWeaponAnimationBinding, IWeaponTargetDetection, IWeaponAttackReadiness, IWeaponAttackRange
 {
@@ -29,6 +31,9 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     float _reloadEndTime;
     float _reloadDuration;
     bool _isReloading;
+
+    Coroutine _pendingMuzzleVfxCoroutine;
+    Coroutine _pendingProjectileCoroutine;
 
     void Awake()
     {
@@ -117,8 +122,9 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     public void CancelAttack()
     {
         _attackActiveTimer = 0f;
+        // Drop only the pre-clip arm. Once ArmFireForCurrentShot has scheduled muzzle/projectiles,
+        // the shot is committed — do not abort those (movement cancel was killing delayed pellets).
         _hasArmedContext = false;
-        _hasPendingFireContext = false;
     }
 
     void Update()
@@ -178,7 +184,10 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         return true;
     }
 
-    /// <summary>Called when an attack animator state starts; links armed context to the clip's fire event.</summary>
+    /// <summary>
+    /// Called when an attack animator state starts; links armed context and schedules muzzle VFX
+    /// / projectile spawn from <see cref="AssaultWeaponData"/> frame timing.
+    /// </summary>
     public void ArmFireForCurrentShot()
     {
         if (!_hasArmedContext)
@@ -187,10 +196,92 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         _pendingFireContext = _armedContext;
         _hasPendingFireContext = true;
         _hasArmedContext = false;
+
+        ScheduleFireFx(in _pendingFireContext);
     }
 
-    /// <summary>Called from animation event <c>OnRangedFireFrame</c> on the Animator object.</summary>
+    /// <summary>
+    /// Called from animation event <c>OnRangedFireFrame</c>. Fallback if the scheduled projectile
+    /// delay has not fired yet; cancels the scheduled projectile coroutine to avoid a double shot.
+    /// </summary>
     public void ApplyPendingFire()
+    {
+        if (!_hasPendingFireContext)
+            return;
+
+        CancelPendingProjectileCoroutine();
+        FirePendingProjectile();
+    }
+
+    void ScheduleFireFx(in AttackContext ctx)
+    {
+        CancelPendingFireFx();
+
+        if (data == null)
+            return;
+
+        RangedMuzzleVfx muzzle = data.MuzzleVfx;
+        if (muzzle.HasPrefab)
+        {
+            float muzzleDelay = muzzle.ResolveSpawnDelaySeconds();
+            if (muzzleDelay <= 0f)
+                SpawnMuzzleVfx(muzzle, in ctx);
+            else
+                _pendingMuzzleVfxCoroutine = StartCoroutine(SpawnMuzzleVfxAfterDelay(muzzle, ctx));
+        }
+
+        float projectileDelay = data.ResolveProjectileSpawnDelaySeconds();
+        if (projectileDelay <= 0f)
+            FirePendingProjectile();
+        else
+            _pendingProjectileCoroutine = StartCoroutine(SpawnProjectileAfterDelay(projectileDelay, ctx));
+    }
+
+    void CancelPendingFireFx()
+    {
+        CancelPendingMuzzleVfxCoroutine();
+        CancelPendingProjectileCoroutine();
+    }
+
+    void CancelPendingMuzzleVfxCoroutine()
+    {
+        if (_pendingMuzzleVfxCoroutine == null)
+            return;
+
+        StopCoroutine(_pendingMuzzleVfxCoroutine);
+        _pendingMuzzleVfxCoroutine = null;
+    }
+
+    void CancelPendingProjectileCoroutine()
+    {
+        if (_pendingProjectileCoroutine == null)
+            return;
+
+        StopCoroutine(_pendingProjectileCoroutine);
+        _pendingProjectileCoroutine = null;
+    }
+
+    IEnumerator SpawnMuzzleVfxAfterDelay(RangedMuzzleVfx vfx, AttackContext ctx)
+    {
+        yield return new WaitForSeconds(vfx.ResolveSpawnDelaySeconds());
+        _pendingMuzzleVfxCoroutine = null;
+        SpawnMuzzleVfx(vfx, in ctx);
+    }
+
+    IEnumerator SpawnProjectileAfterDelay(float delaySeconds, AttackContext ctx)
+    {
+        yield return new WaitForSeconds(delaySeconds);
+        _pendingProjectileCoroutine = null;
+
+        // Use the captured context so a later CancelAttack clearing flags cannot eat this shot.
+        if (!_hasPendingFireContext)
+            yield break;
+
+        _hasPendingFireContext = false;
+        SpawnProjectile(in ctx);
+    }
+
+    void FirePendingProjectile()
     {
         if (!_hasPendingFireContext)
             return;
@@ -200,53 +291,100 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         SpawnProjectile(in ctx);
     }
 
+    void SpawnMuzzleVfx(in RangedMuzzleVfx vfx, in AttackContext ctx)
+    {
+        if (vfx.prefab == null || ctx.attacker == null)
+            return;
+
+        Vector3 facing = ctx.facing;
+        facing.y = 0f;
+        if (facing.sqrMagnitude < 1e-8f)
+            facing = Vector3.forward;
+        else
+            facing.Normalize();
+
+        Transform origin = firePoint != null ? firePoint : ctx.attacker;
+        Quaternion facingRot = Quaternion.LookRotation(facing, Vector3.up);
+        Vector3 position = origin.position + facingRot * vfx.localOffset;
+        GameObject instance = Instantiate(vfx.prefab, position, facingRot);
+
+        ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < systems.Length; i++)
+            systems[i].Play(true);
+
+        if (vfx.destroyDelaySeconds > 0f)
+            Destroy(instance, vfx.destroyDelaySeconds);
+    }
+
     void SpawnProjectile(in AttackContext ctx)
     {
         if (data == null || ctx.attacker == null || projectilePool == null)
             return;
 
-        Vector3 forward = ctx.facing;
-        forward.y = 0f;
-        if (forward.sqrMagnitude < 1e-8f)
-            forward = Vector3.forward;
+        Vector3 baseForward = ctx.facing;
+        baseForward.y = 0f;
+        if (baseForward.sqrMagnitude < 1e-8f)
+            baseForward = Vector3.forward;
         else
-            forward.Normalize();
-
-        GameObject shot = projectilePool.TryGet();
-        if (shot == null)
-            return;
+            baseForward.Normalize();
 
         Transform originTransform = firePoint != null ? firePoint : ctx.attacker;
         Vector3 spawnPos = originTransform.TransformPoint(spawnOffset);
-        Quaternion spawnRot = Quaternion.LookRotation(forward, Vector3.up);
 
         DamageElement element = ctx.damageElementOverride ?? data.DamageElement;
         bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && UnityEngine.Random.value < data.CriticalStrikeChance);
         var style = new DamageNumberStyle(element, isCrit);
+        int ownerId = ctx.attacker.GetInstanceID();
 
-        DamageProjectile projectile = shot.GetComponent<DamageProjectile>();
-        if (projectile == null)
+        int count = Mathf.Max(1, data.ProjectileCount);
+        float halfSpread = data.SpreadAngleDegrees * 0.5f;
+        int spawned = 0;
+
+        for (int i = 0; i < count; i++)
         {
-            projectilePool.Release(shot);
-            return;
+            Vector3 forward = baseForward;
+            if (count > 1 && halfSpread > 0f)
+            {
+                float t = i / (float)(count - 1);
+                float yaw = Mathf.Lerp(-halfSpread, halfSpread, t);
+                forward = Quaternion.AngleAxis(yaw, Vector3.up) * baseForward;
+            }
+
+            GameObject shot = projectilePool.TryGet();
+            if (shot == null)
+                continue;
+
+            DamageProjectile projectile = shot.GetComponent<DamageProjectile>();
+            if (projectile == null)
+            {
+                projectilePool.Release(shot);
+                continue;
+            }
+
+            Quaternion spawnRot = Quaternion.LookRotation(forward, Vector3.up);
+            projectile.Initialize(
+                projectilePool,
+                ctx.attacker,
+                ownerId,
+                spawnPos,
+                spawnRot,
+                forward,
+                data.ProjectileSpeed,
+                data.Damage,
+                data.ProjectileLifetime,
+                data.ProjectileMaxDistance,
+                data.HitLayers,
+                in style,
+                data.PushbackDistance,
+                data.PushbackDuration);
+
+            shot.SetActive(true);
+            spawned++;
         }
 
-        projectile.Initialize(
-            projectilePool,
-            ctx.attacker,
-            spawnPos,
-            spawnRot,
-            forward,
-            data.ProjectileSpeed,
-            data.Damage,
-            data.ProjectileLifetime,
-            data.ProjectileMaxDistance,
-            data.HitLayers,
-            in style,
-            data.PushbackDistance,
-            data.PushbackDuration);
+        if (spawned <= 0)
+            return;
 
-        shot.SetActive(true);
         onAttackPerformed?.Invoke();
         ConsumeAmmo();
     }

@@ -6,6 +6,7 @@ public sealed class DamageProjectile : MonoBehaviour
 {
     ProjectilePool _pool;
     Transform _owner;
+    int _ownerId;
     Vector3 _direction;
     float _speed;
     float _damage;
@@ -18,9 +19,12 @@ public sealed class DamageProjectile : MonoBehaviour
     float _pushbackDuration;
     bool _released;
 
+    public int OwnerId => _ownerId;
+
     public void Initialize(
         ProjectilePool pool,
         Transform owner,
+        int ownerId,
         Vector3 worldPosition,
         Quaternion worldRotation,
         Vector3 xzDirection,
@@ -35,6 +39,7 @@ public sealed class DamageProjectile : MonoBehaviour
     {
         _pool = pool;
         _owner = owner;
+        _ownerId = ownerId;
         _direction = xzDirection;
         _direction.y = 0f;
         if (_direction.sqrMagnitude < 1e-8f)
@@ -85,6 +90,9 @@ public sealed class DamageProjectile : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (_released || other == null)
+            return;
+        if (other.TryGetComponent(out DamageProjectile otherProjectile)
+            && otherProjectile.OwnerId == _ownerId)
             return;
         if (_owner != null && (other.transform == _owner || other.transform.IsChildOf(_owner)))
             return;

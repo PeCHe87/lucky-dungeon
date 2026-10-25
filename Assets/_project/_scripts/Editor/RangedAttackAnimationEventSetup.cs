@@ -29,6 +29,9 @@ static class RangedAttackAnimationEventSetup
         (
             "Assets/_assetStore/Shinabro/Platform_Animation/Animation/05_Pistol/Stander@Pistol_Attack.FBX",
             "Pistol_Attack_Fire"),
+        (
+            "Assets/_assetStore/Wolff's Studio/TacticalShotGun/Animations/Shoot/Anim_ShotGunShoot01.fbx",
+            "Anim_ShotGunShoot01"),
     };
 
     [MenuItem("Knight Undead/Combat/Setup Ranged Fire Animation Events")]
