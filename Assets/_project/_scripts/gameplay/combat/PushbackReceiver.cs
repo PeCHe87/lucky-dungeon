@@ -48,7 +48,7 @@ public sealed class PushbackReceiver : MonoBehaviour
             return;
 
         NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        if (agent == null || !agent.enabled || agent.updatePosition)
+        if (!IsAgentUsable(agent) || agent.updatePosition)
             return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -61,18 +61,15 @@ public sealed class PushbackReceiver : MonoBehaviour
 
     void OnDisable()
     {
-        if (_activeKnockback != null)
-        {
-            StopCoroutine(_activeKnockback);
-            _activeKnockback = null;
-        }
-
-        RestoreNavMeshAgentAfterKnockback();
+        CancelPushback();
         _movementResumeAllowedAt = 0f;
     }
 
     public void ApplyPushback(in PushbackContext ctx)
     {
+        if (TryGetComponent(out IDefeatable defeatable) && defeatable.IsDefeated)
+            return;
+
         float distance = ctx.distance * (1f - pushbackResistance);
         if (distance <= 0.01f || ctx.duration <= 0f)
             return;
@@ -97,11 +94,23 @@ public sealed class PushbackReceiver : MonoBehaviour
         _activeKnockback = StartCoroutine(ApplyKnockbackRoutine(direction, distance, speed, ctx.duration));
     }
 
+    /// <summary>Stops an in-flight knockback (e.g. when the entity dies / ragdolls).</summary>
+    public void CancelPushback()
+    {
+        if (_activeKnockback != null)
+        {
+            StopCoroutine(_activeKnockback);
+            _activeKnockback = null;
+        }
+
+        RestoreNavMeshAgentAfterKnockback();
+    }
+
     IEnumerator ApplyKnockbackRoutine(Vector3 direction, float totalDistance, float speed, float duration)
     {
         NavMeshAgent agent = GetComponent<NavMeshAgent>();
         CharacterController controller = GetComponent<CharacterController>();
-        bool useAgent = agent != null && agent.enabled;
+        bool useAgent = IsAgentUsable(agent);
 
         BeginNavMeshAgentKnockback(agent, useAgent);
 
@@ -112,6 +121,9 @@ public sealed class PushbackReceiver : MonoBehaviour
         {
             while (elapsed < duration && moved < totalDistance - 0.001f)
             {
+                if (TryGetComponent(out IDefeatable defeatable) && defeatable.IsDefeated)
+                    break;
+
                 float dt = Time.deltaTime;
                 elapsed += dt;
                 float step = Mathf.Min(speed * dt, totalDistance - moved);
@@ -119,6 +131,8 @@ public sealed class PushbackReceiver : MonoBehaviour
                 if (step <= 0.001f)
                     break;
 
+                // Agent may be disabled mid-knockback (ragdoll death) — fall back to transform.
+                useAgent = IsAgentUsable(agent);
                 Vector3 delta = direction * step;
                 ApplyHorizontalDelta(delta, useAgent, agent, controller);
 
@@ -128,10 +142,10 @@ public sealed class PushbackReceiver : MonoBehaviour
         }
         finally
         {
-            EndNavMeshAgentKnockback(agent, useAgent);
+            EndNavMeshAgentKnockback(agent, useAgent && IsAgentUsable(agent));
             _activeKnockback = null;
             _agentKnockbackDepth = 0;
-            if (useAgent && movementResumeDelayAfterPushback > 0f)
+            if (useAgent && IsAgentUsable(agent) && movementResumeDelayAfterPushback > 0f)
             {
                 _movementResumeAllowedAt = Mathf.Max(
                     _movementResumeAllowedAt,
@@ -142,7 +156,7 @@ public sealed class PushbackReceiver : MonoBehaviour
 
     void BeginNavMeshAgentKnockback(NavMeshAgent agent, bool useAgent)
     {
-        if (!useAgent)
+        if (!useAgent || !IsAgentUsable(agent))
             return;
 
         if (_agentKnockbackDepth == 0)
@@ -166,6 +180,12 @@ public sealed class PushbackReceiver : MonoBehaviour
         if (_agentKnockbackDepth > 0)
             return;
 
+        if (!IsAgentUsable(agent))
+        {
+            _agentKnockbackDepth = 0;
+            return;
+        }
+
         ReconcileAgentTransform(agent, transform);
         agent.isStopped = _agentWasStopped;
         ReconcileNavAgentRotation(agent);
@@ -175,7 +195,7 @@ public sealed class PushbackReceiver : MonoBehaviour
     void RestoreNavMeshAgentAfterKnockback()
     {
         NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        if (agent == null || !agent.enabled || _agentKnockbackDepth <= 0)
+        if (!IsAgentUsable(agent) || _agentKnockbackDepth <= 0)
         {
             _agentKnockbackDepth = 0;
             return;
@@ -189,6 +209,9 @@ public sealed class PushbackReceiver : MonoBehaviour
 
     void ReconcileNavAgentRotation(NavMeshAgent agent)
     {
+        if (!IsAgentUsable(agent))
+            return;
+
         agent.updateRotation = true;
         if (TryGetComponent(out EntityAttackController attackController))
             attackController.SyncNavAgentFacingLock(agent);
@@ -196,6 +219,9 @@ public sealed class PushbackReceiver : MonoBehaviour
 
     static void ReconcileAgentTransform(NavMeshAgent agent, Transform root)
     {
+        if (!IsAgentUsable(agent))
+            return;
+
         Vector3 position = root.position;
         if (NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             position = hit.position;
@@ -208,7 +234,7 @@ public sealed class PushbackReceiver : MonoBehaviour
 
     void ApplyHorizontalDelta(Vector3 delta, bool useAgent, NavMeshAgent agent, CharacterController controller)
     {
-        if (useAgent)
+        if (useAgent && IsAgentUsable(agent))
         {
             agent.Move(delta);
             transform.position = agent.nextPosition;
@@ -230,4 +256,7 @@ public sealed class PushbackReceiver : MonoBehaviour
             pushbackBlockLayers,
             _selfColliders);
     }
+
+    static bool IsAgentUsable(NavMeshAgent agent) =>
+        agent != null && agent.enabled && agent.isOnNavMesh;
 }

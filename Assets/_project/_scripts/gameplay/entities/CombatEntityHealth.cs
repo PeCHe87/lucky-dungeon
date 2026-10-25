@@ -19,16 +19,20 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
     [Header("Presentation")]
     [Tooltip("World anchor for floating damage text. Defaults to this transform.")]
     [SerializeField] Transform damageNumberAnchor;
-    [SerializeField] float damageNumberHeightOffset = 1.5f;
+    [SerializeField, Min(0f)] float damageNumberHeightOffset = 1.5f;
 
     float _currentHitPoints;
     bool _defeated;
     EntityAttackController _attackController;
+    Vector3 _lastDeathPushDirection;
+    float _lastDeathPushForce;
 
     public EntityAlignment Alignment => alignment;
     public bool IsDefeated => _defeated;
     public float CurrentHitPoints => _currentHitPoints;
     public float MaxHitPoints => maxHitPoints;
+    public Vector3 LastDeathPushDirection => _lastDeathPushDirection;
+    public float LastDeathPushForce => _lastDeathPushForce;
 
     /// <summary>Fired after HP is reduced by a valid hit; argument is damage amount applied this frame.</summary>
     public event Action<float> Damaged;
@@ -50,6 +54,10 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
             stateMachine = GetComponent<AIStateMachine>();
 
         _attackController = GetComponent<EntityAttackController>();
+
+        // Enemies (not the player) get ragdoll death without requiring every prefab to be authored.
+        if (GetComponent<PlayerDeathHandler>() == null && GetComponent<EntityRagdoll>() == null)
+            gameObject.AddComponent<EntityRagdoll>();
     }
 
     public void TakeDamage(float amount, DamageNumberStyle style)
@@ -80,7 +88,7 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
         if (_currentHitPoints <= 0f)
         {
             _currentHitPoints = 0f;
-            Die();
+            Die(in hitInfo);
             return;
         }
 
@@ -119,16 +127,37 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
         HealthChanged?.Invoke();
     }
 
-    void Die()
+    void Die(in DamageHitInfo hitInfo)
     {
         if (_defeated)
             return;
 
+        ResolveDeathImpulse(in hitInfo);
         _defeated = true;
         Died?.Invoke();
 
         if (dieState != null && stateMachine != null)
             stateMachine.ForceTransition(dieState);
+    }
+
+    void ResolveDeathImpulse(in DamageHitInfo hitInfo)
+    {
+        _lastDeathPushForce = Mathf.Max(0f, hitInfo.deathPushForce);
+
+        Vector3 dir = hitInfo.pushDirection;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 1e-8f && hitInfo.HasAttacker)
+        {
+            dir = transform.position - hitInfo.attacker.position;
+            dir.y = 0f;
+        }
+
+        if (dir.sqrMagnitude < 1e-8f)
+            dir = transform.forward;
+        else
+            dir.Normalize();
+
+        _lastDeathPushDirection = dir;
     }
 
     public Vector3 GetFloatingTextWorldPosition()

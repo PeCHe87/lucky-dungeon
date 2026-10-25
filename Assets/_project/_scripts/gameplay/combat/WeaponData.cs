@@ -27,6 +27,10 @@ public abstract class WeaponData : ScriptableObject
     [SerializeField, Min(0f)] float pushbackDistance = 0.8f;
     [SerializeField, Min(0.01f)] float pushbackDuration = 0.1f;
 
+    [Header("Death")]
+    [Tooltip("Ragdoll shove on a killing blow, as velocity change (m/s) on the pelvis. 0 = no death shove.")]
+    [SerializeField, Min(0f)] float deathPushForce = 12f;
+
     [Header("Animation")]
     [SerializeField] RuntimeAnimatorController animatorController;
     [SerializeField] PlayerEntityStateAnimationProfile animationProfile;
@@ -52,6 +56,7 @@ public abstract class WeaponData : ScriptableObject
     public float CriticalStrikeChance => criticalStrikeChance;
     public float PushbackDistance => pushbackDistance;
     public float PushbackDuration => pushbackDuration;
+    public float DeathPushForce => deathPushForce;
     public RuntimeAnimatorController AnimatorController => animatorController;
     public PlayerEntityStateAnimationProfile AnimationProfile => animationProfile;
     public float TargetDetectionRadius => targetDetectionRadius;

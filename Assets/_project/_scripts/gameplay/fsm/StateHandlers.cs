@@ -15,6 +15,25 @@ static class FSMNavMesh
         if (agent != null) bb.Set(AgentKey, agent);
         return agent;
     }
+
+    /// <summary>True when pathing APIs (<see cref="NavMeshAgent.isStopped"/>, Move, SetDestination) are safe.</summary>
+    public static bool IsUsable(NavMeshAgent agent) =>
+        agent != null && agent.enabled && agent.isOnNavMesh;
+
+    public static void Stop(NavMeshAgent agent)
+    {
+        if (!IsUsable(agent))
+            return;
+        agent.isStopped = true;
+        agent.ResetPath();
+    }
+
+    public static void Resume(NavMeshAgent agent)
+    {
+        if (!IsUsable(agent))
+            return;
+        agent.isStopped = false;
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,12 +51,9 @@ public class IdleStateHandler : IStateHandler
         bb.Set("fsm.timer", 0f); // Reset the shared run timer
 
         var agent = FSMNavMesh.GetAgent(bb);
+        FSMNavMesh.Stop(agent);
         if (agent != null)
-        {
-            agent.isStopped = true;
-            agent.ResetPath();
             EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
-        }
     }
 
     public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
@@ -49,9 +65,7 @@ public class IdleStateHandler : IStateHandler
     public void OnExit(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params)
     {
         bb.Set("fsm.timer", 0f);
-
-        var agent = FSMNavMesh.GetAgent(bb);
-        if (agent != null) agent.isStopped = false;
+        FSMNavMesh.Resume(FSMNavMesh.GetAgent(bb));
     }
 }
 
@@ -76,7 +90,7 @@ public class PatrolStateHandler : IStateHandler
 
         var agent = FSMNavMesh.GetAgent(bb);
 
-        if (agent != null)
+        if (FSMNavMesh.IsUsable(agent))
         {
             agent.isStopped = false;
             agent.speed = speed;
@@ -110,6 +124,9 @@ public class PatrolStateHandler : IStateHandler
             return;
         }
 
+        if (!FSMNavMesh.IsUsable(agent))
+            return;
+
         agent.speed = speed;
 
         if (!agent.pathPending && agent.remainingDistance <= waypointThreshold)
@@ -123,7 +140,7 @@ public class PatrolStateHandler : IStateHandler
     private static void PickNewWaypoint(EntityBlackboard bb, NavMeshAgent agent, float radius)
     {
         bb.PatrolTarget = NavMeshIdlePatrolCycle.SampleRandomPointInRadius(bb.PatrolCenter, radius);
-        if (agent != null)
+        if (FSMNavMesh.IsUsable(agent))
             agent.SetDestination(bb.PatrolTarget);
     }
 }
@@ -156,18 +173,14 @@ public class ChaseStateHandler : IStateHandler
         var attack = bb.Self.GetComponent<EntityAttackController>();
         if (attack != null && attack.IsTargetInAttackRange(bb.Target))
         {
-            if (agent != null)
-            {
-                agent.isStopped = true;
-                agent.ResetPath();
-            }
+            FSMNavMesh.Stop(agent);
             return;
         }
 
         var speed = FSMParamUtils.GetFloat(@params, "speed", 4f);
         var stoppingDistance = FSMParamUtils.GetFloat(@params, "stoppingDistance", 1f);
 
-        if (agent == null)
+        if (!FSMNavMesh.IsUsable(agent))
         {
             // Fallback (shouldn't happen on fsm_patrol_entity, which has a NavMeshAgent)
             var dir = bb.Target.position - bb.Self.position;
@@ -205,11 +218,7 @@ public class AttackStateHandler : IStateHandler
     public void OnEnter(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params)
     {
         var agent = FSMNavMesh.GetAgent(bb);
-        if (agent != null)
-        {
-            agent.isStopped = true;
-            agent.ResetPath();
-        }
+        FSMNavMesh.Stop(agent);
 
         var attack = GetAttackController(bb);
         if (attack != null && bb.Target != null)
@@ -236,8 +245,7 @@ public class AttackStateHandler : IStateHandler
 
         if (attack.IsBusy || attack.IsWaitingForNextAttack)
         {
-            if (agent != null)
-                agent.isStopped = true;
+            FSMNavMesh.Stop(agent);
             return;
         }
 
@@ -268,12 +276,9 @@ public class TakeDamageStateHandler : IStateHandler
         bb.Set(HitReactTimerKey, 0f);
 
         var agent = FSMNavMesh.GetAgent(bb);
+        FSMNavMesh.Stop(agent);
         if (agent != null)
-        {
-            agent.isStopped = true;
-            agent.ResetPath();
             EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
-        }
     }
 
     public void OnTick(EntityBlackboard bb, System.Collections.Generic.IReadOnlyList<FSMParam> @params, float dt)
@@ -295,7 +300,7 @@ public class TakeDamageStateHandler : IStateHandler
         bb.Set(HitReactTimerKey, 0f);
 
         var agent = FSMNavMesh.GetAgent(bb);
-        if (agent != null)
+        if (FSMNavMesh.IsUsable(agent))
             EntityNavChaseAttackSupport.TryEnableNavLocomotion(agent, bb.Self.gameObject);
 
         EntityNavChaseAttackSupport.InvalidateChaseDestinationCaches(bb.Self.gameObject);
@@ -308,6 +313,7 @@ public class TakeDamageStateHandler : IStateHandler
 
 /// <summary>
 /// Terminal death state: disables colliders, waits destroyDelay, then destroys the GameObject.
+/// When <see cref="EntityRagdoll"/> is active, bone colliders stay enabled for physics.
 /// </summary>
 public class DieStateHandler : IStateHandler
 {
@@ -320,10 +326,20 @@ public class DieStateHandler : IStateHandler
         var agent = FSMNavMesh.GetAgent(bb);
         if (agent != null)
         {
-            agent.isStopped = true;
-            agent.ResetPath();
-            agent.enabled = false;
+            if (agent.enabled)
+            {
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    agent.ResetPath();
+                }
+                agent.enabled = false;
+            }
         }
+
+        bool ragdollActive = bb.Self.TryGetComponent(out EntityRagdoll ragdoll) && ragdoll.IsActive;
+        if (ragdollActive)
+            return;
 
         var colliders = bb.Self.GetComponentsInChildren<Collider>();
         for (int i = 0; i < colliders.Length; i++)

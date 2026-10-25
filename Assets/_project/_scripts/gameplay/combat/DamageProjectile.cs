@@ -17,6 +17,7 @@ public sealed class DamageProjectile : MonoBehaviour
     DamageNumberStyle _style;
     float _pushbackDistance;
     float _pushbackDuration;
+    float _deathPushForce;
     bool _released;
 
     public int OwnerId => _ownerId;
@@ -35,7 +36,8 @@ public sealed class DamageProjectile : MonoBehaviour
         LayerMask hitLayers,
         in DamageNumberStyle style,
         float pushbackDistance,
-        float pushbackDuration)
+        float pushbackDuration,
+        float deathPushForce)
     {
         _pool = pool;
         _owner = owner;
@@ -56,6 +58,7 @@ public sealed class DamageProjectile : MonoBehaviour
         _style = style;
         _pushbackDistance = Mathf.Max(0f, pushbackDistance);
         _pushbackDuration = Mathf.Max(0.01f, pushbackDuration);
+        _deathPushForce = Mathf.Max(0f, deathPushForce);
         _released = false;
 
         transform.SetPositionAndRotation(worldPosition, worldRotation);
@@ -125,9 +128,12 @@ public sealed class DamageProjectile : MonoBehaviour
                     return;
                 if (mb is IDamageable dmg)
                 {
-                    dmg.TakeDamage(_damage, _style, new DamageHitInfo(_owner));
+                    dmg.TakeDamage(_damage, _style, new DamageHitInfo(_owner, _direction, _deathPushForce));
 
-                    if (_pushbackDistance > 0f && ShouldApplyPushback(tr)
+                    bool killed = mb is IDefeatable afterHit && afterHit.IsDefeated;
+                    if (!killed
+                        && _pushbackDistance > 0f
+                        && ShouldApplyPushback(tr)
                         && !EntityAttackController.ShouldSuppressPushbackOn(tr.gameObject))
                     {
                         PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext

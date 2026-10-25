@@ -50,7 +50,7 @@ public static class EntityNavChaseAttackSupport
     /// <summary>Returns true when locomotion was enabled; false when blocked (agent left stopped).</summary>
     public static bool TryEnableNavLocomotion(NavMeshAgent agent, GameObject entityRoot)
     {
-        if (agent == null)
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
             return false;
 
         if (IsNavLocomotionBlocked(entityRoot))

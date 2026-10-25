@@ -490,9 +490,15 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
                     return false;
                 DamageElement element = ctx.damageElementOverride ?? data.DamageElement;
                 bool isCrit = ctx.forceCritical || (data.CriticalStrikeChance > 0f && UnityEngine.Random.value < data.CriticalStrikeChance);
-                dmg.TakeDamage(amount, new DamageNumberStyle(element, isCrit), new DamageHitInfo(ctx.attacker));
+                dmg.TakeDamage(
+                    amount,
+                    new DamageNumberStyle(element, isCrit),
+                    new DamageHitInfo(ctx.attacker, pushbackDirection, data.DeathPushForce));
 
-                if (data.PushbackDistance > 0f && ShouldApplyPushback(tr, pushbackDirection)
+                bool killed = mb is IDefeatable afterHit && afterHit.IsDefeated;
+                if (!killed
+                    && data.PushbackDistance > 0f
+                    && ShouldApplyPushback(tr, pushbackDirection)
                     && !EntityAttackController.ShouldSuppressPushbackOn(tr.gameObject))
                 {
                     PushbackUtility.TryApplyOnHierarchy(hitObject, new PushbackContext

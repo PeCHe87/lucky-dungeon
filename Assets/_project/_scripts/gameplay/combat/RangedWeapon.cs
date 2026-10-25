@@ -376,7 +376,8 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
                 data.HitLayers,
                 in style,
                 data.PushbackDistance,
-                data.PushbackDuration);
+                data.PushbackDuration,
+                data.DeathPushForce);
 
             shot.SetActive(true);
             spawned++;
