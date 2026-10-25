@@ -76,6 +76,9 @@ public sealed class PlayerEntityState : MonoBehaviour
         if (GetComponent<PlayerRunStateBinder>() == null)
             gameObject.AddComponent<PlayerRunStateBinder>();
 
+        if (GetComponent<PlayerRangedStopFaceTarget>() == null)
+            gameObject.AddComponent<PlayerRangedStopFaceTarget>();
+
         _rules = BuildRules();
         Current = PlayerEntityStateKind.Idle;
         Previous = PlayerEntityStateKind.Idle;
