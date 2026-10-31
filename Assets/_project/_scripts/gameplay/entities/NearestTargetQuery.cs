@@ -235,7 +235,7 @@ public class NearestTargetQuery : MonoBehaviour
             return;
 
         Transform normalized = NormalizeEngagedTransform(target);
-        if (!IsCombatTargetAlive(normalized))
+        if (!IsValidAttackTarget(normalized))
             return;
 
         _engagedCombatTarget = normalized;
@@ -256,7 +256,7 @@ public class NearestTargetQuery : MonoBehaviour
         if (_engagedCombatTarget == null)
             return false;
 
-        if (!IsCombatTargetAlive(_engagedCombatTarget))
+        if (!IsValidAttackTarget(_engagedCombatTarget))
         {
             ClearEngagedCombatTarget();
             return false;
@@ -291,7 +291,7 @@ public class NearestTargetQuery : MonoBehaviour
         target = null;
         if (_frozenCombatTarget == null)
             return false;
-        if (!IsCombatTargetAlive(_frozenCombatTarget))
+        if (!IsValidAttackTarget(_frozenCombatTarget))
         {
             ClearFrozenAndStickyTargets();
             return false;
@@ -533,7 +533,7 @@ public class NearestTargetQuery : MonoBehaviour
             return false;
         }
 
-        if (!IsCombatTargetAlive(_stickyTarget))
+        if (!IsValidAttackTarget(_stickyTarget))
         {
             ClearStickyTarget();
             return false;
@@ -652,7 +652,7 @@ public class NearestTargetQuery : MonoBehaviour
     {
         if (_engagedCombatTarget != null)
         {
-            if (IsCombatTargetAlive(_engagedCombatTarget))
+            if (IsValidAttackTarget(_engagedCombatTarget))
                 return false;
 
             ClearEngagedCombatTarget();
@@ -660,14 +660,14 @@ public class NearestTargetQuery : MonoBehaviour
             return true;
         }
 
-        if (_frozenCombatTarget != null && !IsCombatTargetAlive(_frozenCombatTarget))
+        if (_frozenCombatTarget != null && !IsValidAttackTarget(_frozenCombatTarget))
         {
             ClearFrozenAndStickyTargets();
             CancelPostAttackHoldOnDeath();
             return true;
         }
 
-        if (_stickyTarget != null && !IsCombatTargetAlive(_stickyTarget))
+        if (_stickyTarget != null && !IsValidAttackTarget(_stickyTarget))
         {
             _stickyTarget = null;
             _stickyCollider = null;
@@ -709,13 +709,29 @@ public class NearestTargetQuery : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Alive combat targets eligible for player attack focus. Excludes Ally-aligned entities (survivors / self).
+    /// Destructibles without <see cref="CombatEntityHealth"/> remain valid.
+    /// </summary>
+    static bool IsValidAttackTarget(Transform target)
+    {
+        if (!IsCombatTargetAlive(target))
+            return false;
+
+        var health = target.GetComponentInParent<CombatEntityHealth>();
+        if (health != null && health.Alignment == EntityAlignment.Ally)
+            return false;
+
+        return true;
+    }
+
     bool HasValidLatchedCombatTarget()
     {
-        if (_engagedCombatTarget != null && IsCombatTargetAlive(_engagedCombatTarget))
+        if (_engagedCombatTarget != null && IsValidAttackTarget(_engagedCombatTarget))
             return true;
-        if (_frozenCombatTarget != null && IsCombatTargetAlive(_frozenCombatTarget))
+        if (_frozenCombatTarget != null && IsValidAttackTarget(_frozenCombatTarget))
             return true;
-        if (_stickyTarget != null && IsCombatTargetAlive(_stickyTarget))
+        if (_stickyTarget != null && IsValidAttackTarget(_stickyTarget))
             return true;
         return false;
     }
@@ -937,7 +953,7 @@ public class NearestTargetQuery : MonoBehaviour
 
             Collider c = candidate.Collider;
             Transform targetRoot = candidate.TargetRoot != null ? candidate.TargetRoot : c.transform;
-            if (!IsCombatTargetAlive(targetRoot))
+            if (!IsValidAttackTarget(targetRoot))
                 continue;
             if (!HasLineOfSightForTier(c, tier))
                 continue;
@@ -1104,7 +1120,7 @@ public class NearestTargetQuery : MonoBehaviour
                 continue;
             if (!NavMeshChaseDriver.IsWithinXZRadius(planar, targetRoot.position, searchRadius))
                 continue;
-            if (!IsCombatTargetAlive(targetRoot))
+            if (!IsValidAttackTarget(targetRoot))
                 continue;
 
             int tier = ResolveTagTier(c);
