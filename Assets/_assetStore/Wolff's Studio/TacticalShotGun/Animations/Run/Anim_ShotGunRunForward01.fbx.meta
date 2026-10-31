@@ -1,7 +1,14 @@
 fileFormatVersion: 2
 guid: c1d1736991cac0c42937e73f7467915a
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339568
+  packageName: Tactical Shotgun Animations
+  packageVersion: 2.0
+  assetPath: Assets/Wolff's Studio/TacticalShotGun/Animations/Run/Anim_ShotGunRunForward01.fbx
+  uploadId: 920842
 ModelImporter:
-  serializedVersion: 22200
+  serializedVersion: 24200
   internalIDToNameTable: []
   externalObjects: {}
   materials:
@@ -85,6 +92,9 @@ ModelImporter:
     maxBonesPerVertex: 4
     minBoneWeight: 0.001
     optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
     meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
@@ -554,8 +564,7 @@ ModelImporter:
     - name: RightShin
       parentName: RightThigh
       position: {x: 0.0000003814697, y: -0.43199965, z: 0.00000017166137}
-      rotation: {x: -0.000000040017824, y: -0.00000008940697, z: -0.00000009895298,
-        w: 1}
+      rotation: {x: -0.000000040017824, y: -0.00000008940697, z: -0.00000009895298, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: RightFoot
       parentName: RightShin
@@ -570,8 +579,7 @@ ModelImporter:
     - name: RightToeTip
       parentName: RightToe
       position: {x: 0.000000046, y: -0.07445688, z: 0.01257145}
-      rotation: {x: 0.000000043711385, y: -0.00000004371138, z: -0.000000043711395,
-        w: 1}
+      rotation: {x: 0.000000043711385, y: -0.00000004371138, z: -0.000000043711395, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftThigh
       parentName: Hips
@@ -606,14 +614,12 @@ ModelImporter:
     - name: Spine2
       parentName: Spine1
       position: {x: 0.000000005960464, y: -0.07548721, z: -0.00000019073485}
-      rotation: {x: -0.00000006984919, y: 0.0000000116414425, z: 0.0000000014551942,
-        w: 1}
+      rotation: {x: -0.00000006984919, y: 0.0000000116414425, z: 0.0000000014551942, w: 1}
       scale: {x: 1.0000002, y: 1.0000001, z: 1.0000001}
     - name: Spine3
       parentName: Spine2
       position: {x: -0.000000102519984, y: -0.075515896, z: -0.00000022888183}
-      rotation: {x: 0.000000023283064, y: -0.0000000058206537, z: 0.0000000029103817,
-        w: 1}
+      rotation: {x: 0.000000023283064, y: -0.0000000058206537, z: 0.0000000029103817, w: 1}
       scale: {x: 1.0000002, y: 1.0000004, z: 1}
     - name: Spine4
       parentName: Spine3
@@ -633,14 +639,12 @@ ModelImporter:
     - name: RightForeArm
       parentName: RightArm
       position: {x: 0.00000045776366, y: -0.27102092, z: 0.00000030517577}
-      rotation: {x: -0.000000084293674, y: 0.000000029802322, z: -0.000000042147008,
-        w: 1}
+      rotation: {x: -0.000000084293674, y: 0.000000029802322, z: -0.000000042147008, w: 1}
       scale: {x: 1, y: 0.9999997, z: 0.9999997}
     - name: RightHand
       parentName: RightForeArm
       position: {x: -0.00000022888183, y: -0.28299972, z: 0.00000015258789}
-      rotation: {x: -0.00000006322023, y: -0.00000002980232, z: -0.000000063220234,
-        w: 1}
+      rotation: {x: -0.00000006322023, y: -0.00000002980232, z: -0.000000063220234, w: 1}
       scale: {x: 1.0000001, y: 1.0000004, z: 1.0000005}
     - name: RightFinger4Metacarpal
       parentName: RightHand
@@ -655,8 +659,7 @@ ModelImporter:
     - name: RightFinger4Medial
       parentName: RightFinger4Proximal
       position: {x: 0.000000076293944, y: -0.04300005, z: 0.0000009346008}
-      rotation: {x: 0.00000008429376, y: -0.00000008940701, z: 0.000000074505785,
-        w: 1}
+      rotation: {x: 0.00000008429376, y: -0.00000008940701, z: 0.000000074505785, w: 1}
       scale: {x: 1.0000001, y: 1.0000005, z: 1.0000002}
     - name: RightFinger4Distal
       parentName: RightFinger4Medial
@@ -681,14 +684,12 @@ ModelImporter:
     - name: RightFinger5Medial
       parentName: RightFinger5Proximal
       position: {x: -0.00000015258789, y: -0.035000272, z: 0.00000036358833}
-      rotation: {x: 0.000000042146723, y: 0.00000008940697, z: -0.000000044703246,
-        w: 1}
+      rotation: {x: 0.000000042146723, y: 0.00000008940697, z: -0.000000044703246, w: 1}
       scale: {x: 1, y: 0.9999997, z: 1.000001}
     - name: RightFinger5Distal
       parentName: RightFinger5Medial
       position: {x: 0.000000076293944, y: -0.022000121, z: 0.000000538826}
-      rotation: {x: 0.00000027395464, y: -0.000000119209275, z: -0.000000014901079,
-        w: 1}
+      rotation: {x: 0.00000027395464, y: -0.000000119209275, z: -0.000000014901079, w: 1}
       scale: {x: 1.0000005, y: 1.0000008, z: 1.0000001}
     - name: RightFinger5Tip
       parentName: RightFinger5Distal
@@ -698,20 +699,17 @@ ModelImporter:
     - name: RightFinger3Metacarpal
       parentName: RightHand
       position: {x: 0.0054473323, y: -0.027674243, z: 0.001029753}
-      rotation: {x: -0.00000071649646, y: -0.000000029802415, z: 0.00000012644034,
-        w: 1}
+      rotation: {x: -0.00000071649646, y: -0.000000029802415, z: 0.00000012644034, w: 1}
       scale: {x: 1.0000001, y: 1.0000004, z: 1.0000005}
     - name: RightFinger3Proximal
       parentName: RightFinger3Metacarpal
       position: {x: -0.0000005340576, y: -0.053650662, z: 0.0000013542175}
-      rotation: {x: 0.00000027395453, y: 0.000000059604766, z: -0.00000014751386,
-        w: 1}
+      rotation: {x: 0.00000027395453, y: 0.000000059604766, z: -0.00000014751386, w: 1}
       scale: {x: 1.0000001, y: 1.0000005, z: 1.0000001}
     - name: RightFinger3Medial
       parentName: RightFinger3Proximal
       position: {x: 0.000000076293944, y: -0.04699932, z: 0.0000009155273}
-      rotation: {x: 0.000000021073447, y: -0.000000029802354, z: 0.00000006322026,
-        w: 1}
+      rotation: {x: 0.000000021073447, y: -0.000000029802354, z: 0.00000006322026, w: 1}
       scale: {x: 1.0000004, y: 1.0000008, z: 1.0000005}
     - name: RightFinger3Distal
       parentName: RightFinger3Medial
@@ -721,8 +719,7 @@ ModelImporter:
     - name: RightFinger3Tip
       parentName: RightFinger3Distal
       position: {x: -0.000000227, y: -0.029981725, z: -0.000000465}
-      rotation: {x: 0.00000035736835, y: 0.000000014383893, z: -0.000000043013614,
-        w: 1}
+      rotation: {x: 0.00000035736835, y: 0.000000014383893, z: -0.000000043013614, w: 1}
       scale: {x: 0.9999998, y: 0.9999998, z: 1}
     - name: RightFinger1Metacarpal
       parentName: RightHand
@@ -762,8 +759,7 @@ ModelImporter:
     - name: RightFinger2Distal
       parentName: RightFinger2Medial
       position: {x: -0, y: -0.02768566, z: 0.00000045776366}
-      rotation: {x: 0.00000010536722, y: -0.00000011920927, z: 0.000000059604744,
-        w: 1}
+      rotation: {x: 0.00000010536722, y: -0.00000011920927, z: 0.000000059604744, w: 1}
       scale: {x: 1.0000001, y: 1.0000002, z: 0.9999998}
     - name: RightFinger2Tip
       parentName: RightFinger2Distal
@@ -803,8 +799,7 @@ ModelImporter:
     - name: LeftFinger1Distal
       parentName: LeftFinger1Proximal
       position: {x: 0.000000095367426, y: -0.030277709, z: 0.00000034332274}
-      rotation: {x: 0.000000044703484, y: 0.000000049107598, z: 0.00000018163212,
-        w: 1}
+      rotation: {x: 0.000000044703484, y: 0.000000049107598, z: 0.00000018163212, w: 1}
       scale: {x: 1.0000002, y: 1.0000004, z: 1.0000001}
     - name: LeftFinger1Tip
       parentName: LeftFinger1Distal
@@ -824,8 +819,7 @@ ModelImporter:
     - name: LeftFinger2Medial
       parentName: LeftFinger2Proximal
       position: {x: -0.00000030517577, y: -0.045001067, z: 0.0000010490418}
-      rotation: {x: 0.00000040039498, y: 0.000000089407024, z: -0.00000005960518,
-        w: 1}
+      rotation: {x: 0.00000040039498, y: 0.000000089407024, z: -0.00000005960518, w: 1}
       scale: {x: 0.9999998, y: 0.9999996, z: 0.9999998}
     - name: LeftFinger2Distal
       parentName: LeftFinger2Medial
@@ -845,8 +839,7 @@ ModelImporter:
     - name: LeftFinger3Proximal
       parentName: LeftFinger3Metacarpal
       position: {x: 0.00000061035155, y: -0.053650893, z: 0.0000007629394}
-      rotation: {x: 0.00000042146837, y: -0.000000089406925, z: -0.00000008429391,
-        w: 1}
+      rotation: {x: 0.00000042146837, y: -0.000000089406925, z: -0.00000008429391, w: 1}
       scale: {x: 1, y: 1.0000005, z: 1.0000005}
     - name: LeftFinger3Medial
       parentName: LeftFinger3Proximal
@@ -876,8 +869,7 @@ ModelImporter:
     - name: LeftFinger4Medial
       parentName: LeftFinger4Proximal
       position: {x: -0.00000022888183, y: -0.043000944, z: 0.00000019073485}
-      rotation: {x: -0.000000042146834, y: -0.000000029802376, z: -0.00000012666044,
-        w: 1}
+      rotation: {x: -0.000000042146834, y: -0.000000029802376, z: -0.00000012666044, w: 1}
       scale: {x: 1.0000001, y: 1.0000004, z: 1.0000005}
     - name: LeftFinger4Distal
       parentName: LeftFinger4Medial
@@ -912,20 +904,17 @@ ModelImporter:
     - name: LeftFinger5Tip
       parentName: LeftFinger5Distal
       position: {x: 0.000000215, y: -0.022408906, z: -0.000000465}
-      rotation: {x: -0.00000023841855, y: -0.0000001192093, z: -0.000000119209254,
-        w: 1}
+      rotation: {x: -0.00000023841855, y: -0.0000001192093, z: -0.000000119209254, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: Neck
       parentName: Spine4
       position: {x: -0.00000014543534, y: -0.20152, z: -0.000000038146972}
-      rotation: {x: 0.00000005820769, y: -0.000000011641546, z: -0.0000000014552091,
-        w: 1}
+      rotation: {x: 0.00000005820769, y: -0.000000011641546, z: -0.0000000014552091, w: 1}
       scale: {x: 1.0000002, y: 1.0000004, z: 1}
     - name: Head
       parentName: Neck
       position: {x: -0.000000067949294, y: -0.11100906, z: -0.0000002670288}
-      rotation: {x: -0.000000014551915, y: 0.0000000014553088, z: -0.000000001909953,
-        w: 1}
+      rotation: {x: -0.000000014551915, y: 0.0000000014553088, z: -0.000000001909953, w: 1}
       scale: {x: 1.0000001, y: 0.99999994, z: 1.0000001}
     - name: HeadTip
       parentName: Head
@@ -966,10 +955,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 339568
-  packageName: Tactical Shotgun Animations
-  packageVersion: 2.0
-  assetPath: Assets/Wolff's Studio/TacticalShotGun/Animations/Run/Anim_ShotGunRunForward01.fbx
-  uploadId: 920842

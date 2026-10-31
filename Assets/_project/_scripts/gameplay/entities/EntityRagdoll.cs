@@ -2,9 +2,8 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Swaps an enemy from animated locomotion to a bone ragdoll on death,
-/// then applies the killing-blow impulse from <see cref="CombatEntityHealth"/>.
-/// Builds a Stander/Bip001 ragdoll at runtime when none is authored on the prefab.
+/// On death, builds a Stander/Bip001 bone ragdoll and applies the killing-blow impulse.
+/// No Rigidbodies/joints exist on bones while alive (avoids skinned-mesh culling bugs).
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class EntityRagdoll : MonoBehaviour
@@ -16,18 +15,15 @@ public sealed class EntityRagdoll : MonoBehaviour
     [SerializeField] Animator animator;
     [SerializeField] NavMeshAgent agent;
     [SerializeField] Collider rootGameplayCollider;
-    [SerializeField] Rigidbody impulseBody;
-
-    [Header("Ragdoll parts")]
-    [Tooltip("All rigidbodies that make up the ragdoll. Left empty = build/collect at Awake.")]
-    [SerializeField] Rigidbody[] ragdollBodies;
-    [Tooltip("Bone colliders enabled only while ragdolling. Left empty = colliders on ragdollBodies.")]
-    [SerializeField] Collider[] ragdollColliders;
 
     [Header("Impulse")]
     [SerializeField, Range(0f, 1f)] float upwardBias = DefaultUpwardBias;
     [Tooltip("Fraction of death push velocity also applied to non-pelvis ragdoll bones.")]
     [SerializeField, Range(0f, 1f)] float secondaryBodyVelocityScale = 0.55f;
+
+    Rigidbody _impulseBody;
+    Rigidbody[] _ragdollBodies;
+    Collider[] _ragdollColliders;
 
     bool _active;
     bool _pendingDeathImpulse;
@@ -46,8 +42,8 @@ public sealed class EntityRagdoll : MonoBehaviour
         if (rootGameplayCollider == null)
             rootGameplayCollider = GetComponent<CapsuleCollider>();
 
-        EnsureRagdollParts();
-        SetRagdollEnabled(false);
+        // Strip any leftover prefab-authored bone physics so chase animation stays clean.
+        StripPreauthoredBonePhysics();
     }
 
     void OnEnable()
@@ -105,7 +101,10 @@ public sealed class EntityRagdoll : MonoBehaviour
         if (rootGameplayCollider != null)
             rootGameplayCollider.enabled = false;
 
-        // Drop non-ragdoll colliders (weapon props, etc.) so only bone bodies collide.
+        if (!TryBuildStanderRagdoll())
+            return;
+
+        // Drop leftover gameplay colliders (weapon props, etc.); bone colliders stay on.
         var allCols = GetComponentsInChildren<Collider>(true);
         for (int i = 0; i < allCols.Length; i++)
         {
@@ -117,17 +116,16 @@ public sealed class EntityRagdoll : MonoBehaviour
             col.enabled = false;
         }
 
-        SetRagdollEnabled(true);
         Physics.SyncTransforms();
     }
 
     bool IsRagdollCollider(Collider col)
     {
-        if (ragdollColliders == null)
+        if (_ragdollColliders == null)
             return false;
-        for (int i = 0; i < ragdollColliders.Length; i++)
+        for (int i = 0; i < _ragdollColliders.Length; i++)
         {
-            if (ragdollColliders[i] == col)
+            if (_ragdollColliders[i] == col)
                 return true;
         }
         return false;
@@ -157,7 +155,6 @@ public sealed class EntityRagdoll : MonoBehaviour
             dir.Normalize();
         }
 
-        // deathPushForce is treated as VelocityChange (m/s): reliable after kinematic→dynamic.
         _pendingDeathVelocity = dir * force;
         _pendingDeathImpulse = true;
     }
@@ -167,65 +164,54 @@ public sealed class EntityRagdoll : MonoBehaviour
         if (velocity.sqrMagnitude < 1e-8f)
             return;
 
-        if (impulseBody != null && !impulseBody.isKinematic)
-            impulseBody.linearVelocity = velocity;
+        if (_impulseBody != null && !_impulseBody.isKinematic)
+            _impulseBody.linearVelocity = velocity;
 
-        if (ragdollBodies == null || secondaryBodyVelocityScale <= 0f)
+        if (_ragdollBodies == null || secondaryBodyVelocityScale <= 0f)
             return;
 
         Vector3 secondary = velocity * secondaryBodyVelocityScale;
-        for (int i = 0; i < ragdollBodies.Length; i++)
+        for (int i = 0; i < _ragdollBodies.Length; i++)
         {
-            Rigidbody rb = ragdollBodies[i];
-            if (rb == null || rb == impulseBody || rb.isKinematic)
+            Rigidbody rb = _ragdollBodies[i];
+            if (rb == null || rb == _impulseBody || rb.isKinematic)
                 continue;
             rb.linearVelocity = secondary;
         }
     }
 
-    void SetRagdollEnabled(bool enabled)
+    void StripPreauthoredBonePhysics()
     {
-        if (ragdollColliders != null)
+        var joints = GetComponentsInChildren<CharacterJoint>(true);
+        for (int i = 0; i < joints.Length; i++)
         {
-            for (int i = 0; i < ragdollColliders.Length; i++)
-            {
-                if (ragdollColliders[i] != null)
-                    ragdollColliders[i].enabled = enabled;
-            }
+            if (joints[i] != null)
+                DestroyImmediate(joints[i]);
         }
 
-        if (ragdollBodies == null)
-            return;
-
-        for (int i = 0; i < ragdollBodies.Length; i++)
+        var bodies = GetComponentsInChildren<Rigidbody>(true);
+        for (int i = 0; i < bodies.Length; i++)
         {
-            Rigidbody rb = ragdollBodies[i];
-            if (rb == null)
+            Rigidbody rb = bodies[i];
+            if (rb == null || rb.gameObject == gameObject)
                 continue;
-
-            rb.detectCollisions = enabled;
-            rb.isKinematic = !enabled;
-            if (enabled)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
+            DestroyImmediate(rb);
         }
-    }
 
-    void EnsureRagdollParts()
-    {
-        if (ragdollBodies == null || ragdollBodies.Length == 0)
+        var capsules = GetComponentsInChildren<CapsuleCollider>(true);
+        for (int i = 0; i < capsules.Length; i++)
         {
-            if (!TryBuildStanderRagdoll())
-                ragdollBodies = CollectExistingChildBodies();
+            CapsuleCollider capsule = capsules[i];
+            if (capsule == null || capsule.gameObject == gameObject)
+                continue;
+            if (rootGameplayCollider != null && capsule == rootGameplayCollider)
+                continue;
+            DestroyImmediate(capsule);
         }
 
-        if (impulseBody == null)
-            impulseBody = FindPelvisBody();
-
-        if (ragdollColliders == null || ragdollColliders.Length == 0)
-            ragdollColliders = CollectRagdollColliders();
+        _ragdollBodies = null;
+        _ragdollColliders = null;
+        _impulseBody = null;
     }
 
     bool TryBuildStanderRagdoll()
@@ -278,9 +264,10 @@ public sealed class EntityRagdoll : MonoBehaviour
         if (rForeRb != null && rUpperRb != null)
             Connect(rForeRb, rUpperRb, 20f, 0f, 0f, 0f, 80f);
 
-        ragdollBodies = CollectExistingChildBodies();
-        impulseBody = pelvisRb;
-        return ragdollBodies.Length > 0;
+        _impulseBody = pelvisRb;
+        _ragdollBodies = CollectExistingChildBodies();
+        _ragdollColliders = CollectRagdollColliders();
+        return _ragdollBodies.Length > 0;
     }
 
     Transform FindBone(string boneName)
@@ -304,9 +291,11 @@ public sealed class EntityRagdoll : MonoBehaviour
         rb.angularDamping = 0.5f;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-        rb.isKinematic = true;
+        rb.isKinematic = false;
         rb.useGravity = true;
-        rb.detectCollisions = false;
+        rb.detectCollisions = true;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
 
         var capsule = bone.GetComponent<CapsuleCollider>();
         if (capsule == null)
@@ -315,7 +304,7 @@ public sealed class EntityRagdoll : MonoBehaviour
         capsule.radius = radius;
         capsule.height = Mathf.Max(height, radius * 2f);
         capsule.center = Vector3.zero;
-        capsule.enabled = false;
+        capsule.enabled = true;
 
         return rb;
     }
@@ -370,47 +359,28 @@ public sealed class EntityRagdoll : MonoBehaviour
 
     Collider[] CollectRagdollColliders()
     {
-        if (ragdollBodies == null || ragdollBodies.Length == 0)
+        if (_ragdollBodies == null || _ragdollBodies.Length == 0)
             return System.Array.Empty<Collider>();
 
         int count = 0;
-        for (int i = 0; i < ragdollBodies.Length; i++)
+        for (int i = 0; i < _ragdollBodies.Length; i++)
         {
-            if (ragdollBodies[i] == null)
+            if (_ragdollBodies[i] == null)
                 continue;
-            count += ragdollBodies[i].GetComponents<Collider>().Length;
+            count += _ragdollBodies[i].GetComponents<Collider>().Length;
         }
 
         var result = new Collider[count];
         int w = 0;
-        for (int i = 0; i < ragdollBodies.Length; i++)
+        for (int i = 0; i < _ragdollBodies.Length; i++)
         {
-            if (ragdollBodies[i] == null)
+            if (_ragdollBodies[i] == null)
                 continue;
-            var cols = ragdollBodies[i].GetComponents<Collider>();
+            var cols = _ragdollBodies[i].GetComponents<Collider>();
             for (int c = 0; c < cols.Length; c++)
                 result[w++] = cols[c];
         }
 
         return result;
-    }
-
-    Rigidbody FindPelvisBody()
-    {
-        if (ragdollBodies == null)
-            return null;
-
-        for (int i = 0; i < ragdollBodies.Length; i++)
-        {
-            Rigidbody rb = ragdollBodies[i];
-            if (rb == null)
-                continue;
-            string n = rb.name;
-            if (n.IndexOf("Pelvis", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("Hips", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return rb;
-        }
-
-        return ragdollBodies.Length > 0 ? ragdollBodies[0] : null;
     }
 }
