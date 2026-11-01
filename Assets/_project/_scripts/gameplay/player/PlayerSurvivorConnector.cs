@@ -3,10 +3,13 @@ using UnityEngine;
 
 /// <summary>
 /// Channels nearby <see cref="SurvivorAlly"/> units within a radius until they are marked connected.
-/// Connected survivors follow authored <see cref="followSlots"/> Transforms around the player.
+/// Connected survivors follow authored <see cref="followSlots"/> Transforms around the player,
+/// and pause while living enemies are within the hold radius.
 /// </summary>
 public sealed class PlayerSurvivorConnector : MonoBehaviour
 {
+    const int EnemyHoldOverlapCapacity = 64;
+
     [Header("Connect")]
     [SerializeField, Min(0.1f)] float connectRadius = 3.5f;
     [SerializeField, Min(0.01f)] float connectDuration = 1.75f;
@@ -16,24 +19,36 @@ public sealed class PlayerSurvivorConnector : MonoBehaviour
     [Tooltip("Empty child Transforms around the player. Each connected survivor is assigned one.")]
     [SerializeField] Transform[] followSlots;
 
+    [Header("Follower hold")]
+    [Tooltip("While any living Enemy is inside this XZ radius, connected survivors stop following.")]
+    [SerializeField, Min(0.1f)] float followerHoldEnemyRadius = 6f;
+    [SerializeField] LayerMask enemyHoldLayerMask = ~0;
+
     readonly List<SurvivorAlly> _connectedSurvivors = new List<SurvivorAlly>(8);
     SurvivorAlly[] _slotOccupants;
+    Collider[] _enemyHoldOverlapBuffer;
 
     SurvivorAlly _channelTarget;
     float _channelElapsed;
+    bool _followerHoldActive;
 
     public float ConnectRadius => connectRadius;
     public float ConnectDuration => connectDuration;
     public IReadOnlyList<SurvivorAlly> ConnectedSurvivors => _connectedSurvivors;
 
+    /// <summary>True while at least one living Enemy is inside the hold radius.</summary>
+    public bool IsFollowerHoldActive => _followerHoldActive;
+
     void Awake()
     {
         EnsureOccupantBuffer();
+        _enemyHoldOverlapBuffer = new Collider[EnemyHoldOverlapCapacity];
     }
 
     void Update()
     {
         PruneConnected();
+        RefreshFollowerHold();
 
         if (!TryGetFreeSlotIndex(out _))
         {
@@ -83,11 +98,13 @@ public sealed class PlayerSurvivorConnector : MonoBehaviour
     void OnDisable()
     {
         ClearChannel();
+        _followerHoldActive = false;
     }
 
     void OnDrawGizmosSelected()
     {
         NavMeshChaseDriver.DrawXZWireDisc(transform.position, connectRadius, new Color(0.3f, 0.85f, 1f, 0.9f));
+        NavMeshChaseDriver.DrawXZWireDisc(transform.position, followerHoldEnemyRadius, new Color(1f, 0.35f, 0.25f, 0.9f));
 
         if (followSlots == null)
             return;
@@ -105,6 +122,48 @@ public sealed class PlayerSurvivorConnector : MonoBehaviour
         }
 
         Gizmos.color = previous;
+    }
+
+    void RefreshFollowerHold()
+    {
+        _followerHoldActive = HasLivingEnemyInHoldRadius();
+    }
+
+    bool HasLivingEnemyInHoldRadius()
+    {
+        if (_enemyHoldOverlapBuffer == null || _enemyHoldOverlapBuffer.Length == 0)
+            _enemyHoldOverlapBuffer = new Collider[EnemyHoldOverlapCapacity];
+
+        float radius = Mathf.Max(0.1f, followerHoldEnemyRadius);
+        int count = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            radius,
+            _enemyHoldOverlapBuffer,
+            enemyHoldLayerMask,
+            QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < count; i++)
+        {
+            Collider hit = _enemyHoldOverlapBuffer[i];
+            if (hit == null)
+                continue;
+
+            CombatEntityHealth enemyHealth = hit.GetComponentInParent<CombatEntityHealth>();
+            if (enemyHealth == null
+                || enemyHealth.Alignment != EntityAlignment.Enemy
+                || enemyHealth.IsDefeated)
+                continue;
+
+            if (enemyHealth.transform == transform || enemyHealth.transform.IsChildOf(transform))
+                continue;
+
+            if (!NavMeshChaseDriver.IsWithinXZRadius(transform.position, enemyHealth.transform.position, radius))
+                continue;
+
+            return true;
+        }
+
+        return false;
     }
 
     SurvivorAlly FindNearestConnectable()

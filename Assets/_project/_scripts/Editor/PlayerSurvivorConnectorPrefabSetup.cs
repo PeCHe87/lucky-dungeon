@@ -3,7 +3,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Ensures <see cref="PlayerSurvivorConnector"/> and default follow-slot Transforms on the player prefab.
+/// Ensures <see cref="PlayerSurvivorConnector"/> exists on the player prefab.
+/// Creates default follow-slot Transforms only when missing; never overwrites a non-empty
+/// <c>followSlots</c> array so manual prefab edits are preserved.
 /// </summary>
 [InitializeOnLoad]
 static class PlayerSurvivorConnectorPrefabSetup
@@ -54,6 +56,19 @@ static class PlayerSurvivorConnectorPrefabSetup
                 changed = true;
             }
 
+            var so = new SerializedObject(connector);
+            SerializedProperty slotsProp = so.FindProperty("followSlots");
+            if (slotsProp != null && HasAnyAssignedSlot(slotsProp))
+            {
+                if (changed)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+                    Debug.Log("[PlayerSurvivorConnectorPrefabSetup] Added PlayerSurvivorConnector (followSlots already assigned; left unchanged).");
+                }
+
+                return;
+            }
+
             Transform slotsRoot = root.transform.Find(SlotsRootName);
             if (slotsRoot == null)
             {
@@ -85,44 +100,40 @@ static class PlayerSurvivorConnectorPrefabSetup
                 slots[i] = slot;
             }
 
-            var so = new SerializedObject(connector);
-            SerializedProperty slotsProp = so.FindProperty("followSlots");
             if (slotsProp != null)
             {
-                bool slotsNeedAssign = slotsProp.arraySize != DefaultSlotCount;
-                if (!slotsNeedAssign)
-                {
-                    for (int i = 0; i < DefaultSlotCount; i++)
-                    {
-                        if (slotsProp.GetArrayElementAtIndex(i).objectReferenceValue != slots[i])
-                        {
-                            slotsNeedAssign = true;
-                            break;
-                        }
-                    }
-                }
+                slotsProp.arraySize = DefaultSlotCount;
+                for (int i = 0; i < DefaultSlotCount; i++)
+                    slotsProp.GetArrayElementAtIndex(i).objectReferenceValue = slots[i];
 
-                if (slotsNeedAssign)
-                {
-                    slotsProp.arraySize = DefaultSlotCount;
-                    for (int i = 0; i < DefaultSlotCount; i++)
-                        slotsProp.GetArrayElementAtIndex(i).objectReferenceValue = slots[i];
-
-                    so.ApplyModifiedPropertiesWithoutUndo();
-                    changed = true;
-                }
+                so.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
             }
 
             if (changed)
             {
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
-                Debug.Log("[PlayerSurvivorConnectorPrefabSetup] Ensured PlayerSurvivorConnector + follow slots on player prefab.");
+                Debug.Log("[PlayerSurvivorConnectorPrefabSetup] Ensured PlayerSurvivorConnector + default follow slots on player prefab.");
             }
         }
         finally
         {
             PrefabUtility.UnloadPrefabContents(root);
         }
+    }
+
+    static bool HasAnyAssignedSlot(SerializedProperty slotsProp)
+    {
+        if (slotsProp == null || !slotsProp.isArray || slotsProp.arraySize <= 0)
+            return false;
+
+        for (int i = 0; i < slotsProp.arraySize; i++)
+        {
+            if (slotsProp.GetArrayElementAtIndex(i).objectReferenceValue != null)
+                return true;
+        }
+
+        return false;
     }
 }
 #endif

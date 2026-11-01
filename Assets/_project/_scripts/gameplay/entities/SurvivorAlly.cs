@@ -22,6 +22,8 @@ public sealed class SurvivorAlly : MonoBehaviour
     [Header("Follow")]
     [SerializeField, Min(0.1f)] float followStopDistance = 1.5f;
     [SerializeField, Min(0.1f)] float navMeshSampleRadius = 2f;
+    [Tooltip("After arriving at the follow slot, wait this long once the slot leaves stop range before chasing again. Prevents jitter from small player moves.")]
+    [SerializeField, Min(0f)] float followResumeDelay = 0.4f;
 
     [Header("Animation")]
     [Tooltip("Animator state while waiting to be rescued (before connection).")]
@@ -51,10 +53,14 @@ public sealed class SurvivorAlly : MonoBehaviour
 
     Transform _leader;
     Transform _followSlot;
+    PlayerSurvivorConnector _leaderConnector;
     bool _connected;
     bool _playingConnectionSuccess;
     Vector3 _lastSampledGoal;
     bool _hasSampledGoal;
+    bool _settledAtFollowGoal;
+    bool _waitingToResumeFollow;
+    float _resumeFollowAtTime;
     int _notConnectedIdleHash;
     int _connectionSuccessHash;
     int _idleHash;
@@ -138,11 +144,26 @@ public sealed class SurvivorAlly : MonoBehaviour
         if (_playingConnectionSuccess || agent == null || !agent.isOnNavMesh)
             return;
 
+        if (_leaderConnector != null && _leaderConnector.IsFollowerHoldActive)
+        {
+            if (agent.hasPath)
+                agent.ResetPath();
+            return;
+        }
+
         Vector3 followPosition = GetFollowPosition();
         float stop = Mathf.Max(0.1f, followStopDistance);
         agent.stoppingDistance = stop;
 
         if (NavMeshChaseDriver.IsWithinXZRadius(transform.position, followPosition, stop))
+        {
+            MarkSettledAtFollowGoal();
+            if (agent.hasPath)
+                agent.ResetPath();
+            return;
+        }
+
+        if (!ShouldResumeFollow())
         {
             if (agent.hasPath)
                 agent.ResetPath();
@@ -207,9 +228,11 @@ public sealed class SurvivorAlly : MonoBehaviour
 
         _leader = leader;
         _followSlot = followSlot != null ? followSlot : leader;
+        _leaderConnector = leader.GetComponent<PlayerSurvivorConnector>();
         _connected = true;
         _playingConnectionSuccess = true;
         _hasSampledGoal = false;
+        ResetFollowResumeState();
         _lastPlayedHash = int.MinValue;
         SetConnectProgress(0f, false);
         TakeOverLocomotionAnimator();
@@ -260,7 +283,9 @@ public sealed class SurvivorAlly : MonoBehaviour
         _playingConnectionSuccess = false;
         _leader = null;
         _followSlot = null;
+        _leaderConnector = null;
         _lastPlayedHash = int.MinValue;
+        ResetFollowResumeState();
         StopFollowing();
         PlayNotConnectedIdle(force: true);
         Disconnected?.Invoke();
@@ -274,6 +299,48 @@ public sealed class SurvivorAlly : MonoBehaviour
 
         if (agent.hasPath)
             agent.ResetPath();
+    }
+
+    void MarkSettledAtFollowGoal()
+    {
+        _settledAtFollowGoal = true;
+        _waitingToResumeFollow = false;
+        _resumeFollowAtTime = 0f;
+    }
+
+    void ResetFollowResumeState()
+    {
+        _settledAtFollowGoal = false;
+        _waitingToResumeFollow = false;
+        _resumeFollowAtTime = 0f;
+    }
+
+    /// <summary>
+    /// First chase after connect is immediate. After settling on the slot, wait
+    /// <see cref="followResumeDelay"/> once the slot leaves stop range before chasing again.
+    /// </summary>
+    bool ShouldResumeFollow()
+    {
+        if (!_settledAtFollowGoal)
+            return true;
+
+        float delay = Mathf.Max(0f, followResumeDelay);
+        if (delay <= 0f)
+            return true;
+
+        if (!_waitingToResumeFollow)
+        {
+            _waitingToResumeFollow = true;
+            _resumeFollowAtTime = Time.time + delay;
+            return false;
+        }
+
+        if (Time.time < _resumeFollowAtTime)
+            return false;
+
+        _settledAtFollowGoal = false;
+        _waitingToResumeFollow = false;
+        return true;
     }
 
     void TakeOverLocomotionAnimator()

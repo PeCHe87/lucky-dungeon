@@ -11,7 +11,6 @@ using UnityEngine.UI;
 static class LevelRotatorSceneInstaller
 {
     const string ScenePath = "Assets/_project/_scenes/battleground.unity";
-    const string SessionKey = "LevelRotatorSceneInstaller_v1";
     const string PanelName = "ui_levelRotator";
     const string LeftButtonName = "btn_rotateLeft";
     const string RightButtonName = "btn_rotateRight";
@@ -19,21 +18,11 @@ static class LevelRotatorSceneInstaller
     [MenuItem("Tools/Lucky Dungeon/Install Level Rotator Controls")]
     static void InstallFromMenu()
     {
-        SessionState.SetBool(SessionKey, false);
         EnsureSceneWired();
-    }
-
-    [InitializeOnLoadMethod]
-    static void ScheduleInstall()
-    {
-        EditorApplication.delayCall += EnsureSceneWired;
     }
 
     static void EnsureSceneWired()
     {
-        if (SessionState.GetBool(SessionKey, false))
-            return;
-
         if (EditorApplication.isCompiling || EditorApplication.isUpdating)
         {
             EditorApplication.delayCall += EnsureSceneWired;
@@ -71,8 +60,6 @@ static class LevelRotatorSceneInstaller
 
         if (!wasLoaded && scene.isLoaded && !string.IsNullOrEmpty(activeScene.path))
             EditorSceneManager.OpenScene(activeScene.path, OpenSceneMode.Single);
-
-        SessionState.SetBool(SessionKey, true);
     }
 
     static bool EnsureRotator(GameObject panelObject)
