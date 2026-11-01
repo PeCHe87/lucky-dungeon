@@ -12,6 +12,7 @@ public sealed class UiSwapWeaponButtonBinder : MonoBehaviour, IPointerDownHandle
     const string AmmoPanelPath = "ammo";
     const string AmmoIconPath = "ammo/icon";
     const string AmmoLabelPath = "ammo/txtAmmo";
+    const string MeleePanelPath = "melee";
 
     [SerializeField] WeaponHolder weaponHolder;
     [Tooltip("If unset, uses first PlayerEntityState in the scene.")]
@@ -27,10 +28,16 @@ public sealed class UiSwapWeaponButtonBinder : MonoBehaviour, IPointerDownHandle
     [SerializeField] Image ammoIcon;
     [SerializeField] TextMeshProUGUI ammoLabel;
 
+    [Header("Melee durability")]
+    [Tooltip("Shown only for finite-lifetime melee weapons (not fists).")]
+    [SerializeField] GameObject meleePanel;
+    [SerializeField] Slider meleeDurabilitySlider;
+
     Button _button;
     CanvasGroup _canvasGroup;
     string _trackedAmmoItemId;
     int _lastShownAmmoAmount = int.MinValue;
+    MeleeWeapon _subscribedMelee;
 
     void Awake()
     {
@@ -72,6 +79,7 @@ public sealed class UiSwapWeaponButtonBinder : MonoBehaviour, IPointerDownHandle
         GameEvents.PlayerRunInventoryChanged -= OnInventoryChanged;
         GameEvents.LootObtained -= OnLootObtained;
         GameEvents.DungeonRunStarted -= OnDungeonRunStarted;
+        UnsubscribeMelee();
     }
 
     void LateUpdate()
@@ -110,10 +118,13 @@ public sealed class UiSwapWeaponButtonBinder : MonoBehaviour, IPointerDownHandle
         }
     }
 
+    void OnMeleeDurabilityChanged() => ApplyMeleeDurabilitySlider(_subscribedMelee);
+
     void RefreshEquippedWeaponUi()
     {
         RefreshWeaponIcon();
         RefreshAmmoPanel();
+        RefreshMeleeDurabilityPanel();
     }
 
     void SyncTrackedAmmoAmountIfChanged()
@@ -170,6 +181,24 @@ public sealed class UiSwapWeaponButtonBinder : MonoBehaviour, IPointerDownHandle
             Transform label = transform.Find(AmmoLabelPath);
             if (label != null)
                 ammoLabel = label.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (meleePanel == null)
+        {
+            Transform panel = transform.Find(MeleePanelPath);
+            if (panel != null)
+                meleePanel = panel.gameObject;
+        }
+
+        if (meleeDurabilitySlider == null && meleePanel != null)
+        {
+            meleeDurabilitySlider = meleePanel.GetComponentInChildren<Slider>(true);
+            if (meleeDurabilitySlider != null)
+            {
+                meleeDurabilitySlider.minValue = 0f;
+                meleeDurabilitySlider.maxValue = 1f;
+                meleeDurabilitySlider.interactable = false;
+            }
         }
     }
 
@@ -232,6 +261,55 @@ public sealed class UiSwapWeaponButtonBinder : MonoBehaviour, IPointerDownHandle
             ammoIcon.sprite = iconSprite;
             ammoIcon.enabled = iconSprite != null;
         }
+    }
+
+    void RefreshMeleeDurabilityPanel()
+    {
+        ResolveUiRefs();
+        UnsubscribeMelee();
+
+        MeleeWeapon melee = null;
+        bool show = false;
+        if (weaponHolder != null
+            && weaponHolder.IsMeleeEquipped()
+            && weaponHolder.Current is MeleeWeapon currentMelee
+            && currentMelee.Data is MeleeWeaponData meleeData
+            && meleeData.HasFiniteLifetime)
+        {
+            melee = currentMelee;
+            show = true;
+        }
+
+        if (meleePanel != null && meleePanel.activeSelf != show)
+            meleePanel.SetActive(show);
+
+        if (!show || melee == null)
+            return;
+
+        _subscribedMelee = melee;
+        _subscribedMelee.AmmoChanged += OnMeleeDurabilityChanged;
+        ApplyMeleeDurabilitySlider(melee);
+    }
+
+    void ApplyMeleeDurabilitySlider(MeleeWeapon melee)
+    {
+        if (meleeDurabilitySlider == null || melee == null)
+            return;
+
+        int max = melee.MaxLifetimeUsages;
+        float normalized = max > 0
+            ? Mathf.Clamp01((float)melee.RemainingLifetimeUsages / max)
+            : 0f;
+        meleeDurabilitySlider.SetValueWithoutNotify(normalized);
+    }
+
+    void UnsubscribeMelee()
+    {
+        if (_subscribedMelee == null)
+            return;
+
+        _subscribedMelee.AmmoChanged -= OnMeleeDurabilityChanged;
+        _subscribedMelee = null;
     }
 
     static int GetInventoryAmount(string itemId)

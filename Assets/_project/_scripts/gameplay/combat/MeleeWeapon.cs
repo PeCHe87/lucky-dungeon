@@ -350,12 +350,12 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
             Debug.Log($"[MeleeWeapon] Applying pending damage (attacker={attackerName}).", this);
         }
 
-        ApplyDamage(in ctx);
+        int hits = ApplyDamage(in ctx);
         onAttackPerformed?.Invoke();
-        ConsumeAmmo();
+        ConsumeAmmo(hitLanded: hits > 0);
     }
 
-    void ConsumeAmmo()
+    void ConsumeAmmo(bool hitLanded)
     {
         if (data == null || _currentAmmo <= 0)
             return;
@@ -363,7 +363,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
         _currentAmmo--;
         LogMagazine($"Charge consumed ({_currentAmmo}/{data.MagazineSize}).");
 
-        if (data.HasFiniteLifetime && _remainingLifetimeUsages > 0)
+        // Durability only wears on a real damage hit — whiffs do not consume lifetime.
+        if (hitLanded && data.HasFiniteLifetime && _remainingLifetimeUsages > 0)
         {
             _remainingLifetimeUsages--;
             LogMagazine($"Lifetime remaining {_remainingLifetimeUsages}/{data.MaxLifetimeUsages}.");
@@ -443,10 +444,11 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
         Debug.Log($"[MeleeWeapon:{name}] {message}", this);
     }
 
-    void ApplyDamage(in AttackContext ctx)
+    /// <returns>Number of targets that took damage this swing.</returns>
+    int ApplyDamage(in AttackContext ctx)
     {
         if (data == null || ctx.attacker == null)
-            return;
+            return 0;
 
         Vector3 forward = ctx.facing;
         forward.y = 0f;
@@ -505,6 +507,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
             if (candidatesInCone > 0 && damagedCount == 0)
                 Debug.LogWarning("[MeleeWeapon] Hit colliders in cone but no IDamageable found on hierarchy.", this);
         }
+
+        return damagedCount;
     }
 
     /// <summary>Walks up from the hit object and applies damage to the first <see cref="IDamageable"/> found.</summary>
