@@ -1421,6 +1421,7 @@ MonoBehaviour:
   rangedWeapon: {fileID: 1827364555011111004}
   meleeWeaponData: {fileID: 11400000, guid: 655da958bdc2b714e989e4dceebb26bf, type: 2}
   rangedWeaponData: {fileID: 11400000, guid: 5d2f8a1b4c7e9f0a3d6b8c1e4f7a9d20, type: 2}
+  brokenMeleeFallback: {fileID: 11400000, guid: c9070ea9c586a43cf63bdc376a8cfc4c, type: 2}
   logEquippedWeaponChanges: 1
 --- !u!114 &9012345678901234505
 MonoBehaviour:

@@ -45,6 +45,10 @@ public sealed class AssaultWeaponData : WeaponData
     [Tooltip("Magazine reload duration in seconds (scaled time).")]
     [SerializeField, Min(0f)] float reloadTime = 1.5f;
 
+    [Header("Ammo")]
+    [Tooltip("Inventory item consumed to refill the magazine. Null = free reload (enemies / no requirement).")]
+    [SerializeField] ItemData requiredAmmoItem;
+
     public float ProjectileSpeed => projectileSpeed;
     public float ProjectileLifetime => projectileLifetime;
     public float ProjectileMaxDistance => projectileMaxDistance;
@@ -65,6 +69,7 @@ public sealed class AssaultWeaponData : WeaponData
     public float ApproachStopDistanceBuffer => approachStopDistanceBuffer;
     public int MagazineSize => magazineSize;
     public float ReloadTime => reloadTime;
+    public ItemData RequiredAmmoItem => requiredAmmoItem;
 
     public float ResolveProjectileSpawnDelaySeconds()
     {

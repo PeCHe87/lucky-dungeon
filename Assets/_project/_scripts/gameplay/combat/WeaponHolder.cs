@@ -19,6 +19,8 @@ public sealed class WeaponHolder : MonoBehaviour
     [SerializeField] MeleeWeaponData meleeWeaponData;
     [Tooltip("Applied to rangedWeapon when it is a RangedWeapon.")]
     [SerializeField] AssaultWeaponData rangedWeaponData;
+    [Tooltip("Replaces a broken finite melee weapon (player fists).")]
+    [SerializeField] MeleeWeaponData brokenMeleeFallback;
     [Header("Debug")]
     [SerializeField] bool logEquippedWeaponChanges = true;
 
@@ -178,6 +180,22 @@ public sealed class WeaponHolder : MonoBehaviour
             default:
                 return null;
         }
+    }
+
+    /// <summary>
+    /// Replaces a broken finite melee weapon with <see cref="brokenMeleeFallback"/> (typically fists).
+    /// </summary>
+    public bool TryRevertBrokenMelee()
+    {
+        if (brokenMeleeFallback == null)
+        {
+            Debug.LogWarning(
+                $"{nameof(WeaponHolder)} on {name}: {nameof(TryRevertBrokenMelee)} failed — {nameof(brokenMeleeFallback)} is not assigned.",
+                this);
+            return false;
+        }
+
+        return TryReplaceSlotWeapon(brokenMeleeFallback);
     }
 
     /// <summary>

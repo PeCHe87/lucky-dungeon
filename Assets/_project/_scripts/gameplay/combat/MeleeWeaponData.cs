@@ -31,6 +31,10 @@ public sealed class MeleeWeaponData : WeaponData
     [Tooltip("Magazine reload duration in seconds (scaled time).")]
     [SerializeField, Min(0f)] float reloadTime = 1.5f;
 
+    [Header("Lifetime")]
+    [Tooltip("Total successful swings before this weapon is destroyed. 0 = infinite (fists / enemies).")]
+    [SerializeField, Min(0)] int maxLifetimeUsages;
+
     [Header("Attack VFX")]
     [Tooltip("Optional VFX per combo step. Index 0 = Attacking1, 1 = Attacking2, etc. Empty prefab = no VFX.")]
     [SerializeField] MeleeAttackSwingVfx[] attackSwingVfx;
@@ -48,6 +52,8 @@ public sealed class MeleeWeaponData : WeaponData
     public float ApproachLungeSpeed => approachLungeSpeed;
     public int MagazineSize => magazineSize;
     public float ReloadTime => reloadTime;
+    public int MaxLifetimeUsages => maxLifetimeUsages;
+    public bool HasFiniteLifetime => maxLifetimeUsages > 0;
 
     public bool TryGetAttackSwingVfx(int swingIndex, out MeleeAttackSwingVfx entry)
     {

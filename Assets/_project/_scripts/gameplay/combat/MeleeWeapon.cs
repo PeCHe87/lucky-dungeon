@@ -35,13 +35,17 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     float _reloadEndTime;
     float _reloadDuration;
     bool _isReloading;
+    int _remainingLifetimeUsages;
 
     void Awake()
     {
         if (data == null)
             Debug.LogWarning($"{nameof(MeleeWeapon)} on {name}: {nameof(data)} is not assigned.", this);
         else
+        {
+            ResetLifetimeUsages();
             RefillMagazine();
+        }
 
         int maxTargets = data != null ? data.MaxTargetsPerSwing : 8;
         _overlapBuffer = new Collider[Mathf.Max(32, maxTargets * 4)];
@@ -51,6 +55,7 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     public void SetData(MeleeWeaponData value)
     {
         data = value;
+        ResetLifetimeUsages();
         if (data == null || _isReloading)
             return;
         RefillMagazine();
@@ -65,6 +70,8 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
     public int CurrentAmmo => _currentAmmo;
     public int MagazineSize => data != null ? data.MagazineSize : 0;
     public bool IsReloading => _isReloading;
+    public int RemainingLifetimeUsages => _remainingLifetimeUsages;
+    public int MaxLifetimeUsages => data != null ? data.MaxLifetimeUsages : 0;
 
     /// <summary>0–1 while reloading (empty → full). 1 when not reloading or reload duration is 0.</summary>
     public float ReloadProgress
@@ -355,12 +362,48 @@ public sealed class MeleeWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IAt
 
         _currentAmmo--;
         LogMagazine($"Charge consumed ({_currentAmmo}/{data.MagazineSize}).");
+
+        if (data.HasFiniteLifetime && _remainingLifetimeUsages > 0)
+        {
+            _remainingLifetimeUsages--;
+            LogMagazine($"Lifetime remaining {_remainingLifetimeUsages}/{data.MaxLifetimeUsages}.");
+        }
+
         AmmoChanged?.Invoke();
+
+        if (data.HasFiniteLifetime && _remainingLifetimeUsages <= 0)
+        {
+            BreakWeapon();
+            return;
+        }
 
         if (_currentAmmo > 0)
             return;
 
         StartReload();
+    }
+
+    void BreakWeapon()
+    {
+        _isReloading = false;
+        _reloadEndTime = 0f;
+        _reloadDuration = 0f;
+        CancelAttack();
+        LogMagazine("Lifetime exhausted — reverting to broken melee fallback.");
+
+        WeaponHolder holder = GetComponentInParent<WeaponHolder>();
+        if (holder == null)
+        {
+            Debug.LogWarning($"{nameof(MeleeWeapon)} on {name}: lifetime exhausted but no {nameof(WeaponHolder)} found.", this);
+            return;
+        }
+
+        holder.TryRevertBrokenMelee();
+    }
+
+    void ResetLifetimeUsages()
+    {
+        _remainingLifetimeUsages = data != null && data.HasFiniteLifetime ? data.MaxLifetimeUsages : 0;
     }
 
     void StartReload()

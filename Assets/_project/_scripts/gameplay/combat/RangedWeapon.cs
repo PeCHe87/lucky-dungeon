@@ -31,6 +31,8 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
     float _reloadEndTime;
     float _reloadDuration;
     bool _isReloading;
+    bool _playerResolved;
+    bool _isPlayerWeapon;
 
     Coroutine _pendingMuzzleVfxCoroutine;
     Coroutine _pendingProjectileCoroutine;
@@ -40,7 +42,7 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         if (data == null)
             Debug.LogWarning($"{nameof(RangedWeapon)} on {name}: {nameof(data)} is not assigned.", this);
         else
-            RefillMagazine();
+            LoadMagazineFromSource(raiseAmmoChanged: false);
     }
 
     /// <summary>Assigns balance/config. Prefer setting via <see cref="WeaponHolder"/>; local SerializeField is a fallback.</summary>
@@ -49,7 +51,7 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         data = value;
         if (data == null || _isReloading)
             return;
-        RefillMagazine();
+        LoadMagazineFromSource();
     }
 
     public WeaponData Data => data;
@@ -134,13 +136,20 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         if (_attackActiveTimer > 0f)
             _attackActiveTimer -= Time.deltaTime;
 
-        if (!_isReloading)
+        if (_isReloading)
+        {
+            if (Time.time >= _reloadEndTime)
+                FinishReload();
             return;
+        }
 
-        if (Time.time < _reloadEndTime)
-            return;
-
-        FinishReload();
+        // Equip/load can leave the mag empty until inventory has rounds; start reload when reserve appears.
+        if (_currentAmmo <= 0
+            && RequiresInventoryAmmo()
+            && GetInventoryAmmoAmount() > 0)
+        {
+            StartReload();
+        }
     }
 
     public bool IsTargetWithinAttackRange(Vector3 origin, Vector3 facingFlat, Vector3 targetWorldPos)
@@ -413,6 +422,12 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         if (data == null || _isReloading)
             return;
 
+        if (RequiresInventoryAmmo() && GetInventoryAmmoAmount() <= 0)
+        {
+            LogMagazine("Reload skipped — no inventory ammo.");
+            return;
+        }
+
         _isReloading = true;
         _reloadDuration = data.ReloadTime;
         _reloadEndTime = Time.time + _reloadDuration;
@@ -428,14 +443,110 @@ public sealed class RangedWeapon : MonoBehaviour, IWeapon, IWeaponDataSource, IA
         _isReloading = false;
         _reloadEndTime = 0f;
         _reloadDuration = 0f;
-        RefillMagazine();
+
+        if (RequiresInventoryAmmo())
+            RefillMagazineFromInventory();
+        else
+            RefillMagazine();
+
         LogMagazine($"Reload finished. Magazine refilled ({_currentAmmo}/{(data != null ? data.MagazineSize : 0)}).");
         AmmoChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Player weapons with <see cref="AssaultWeaponData.RequiredAmmoItem"/> load only from inventory.
+    /// Enemies / no ammo requirement keep a free full magazine.
+    /// </summary>
+    void LoadMagazineFromSource(bool raiseAmmoChanged = true)
+    {
+        if (RequiresInventoryAmmo())
+        {
+            _currentAmmo = 0;
+            RefillMagazineFromInventory();
+        }
+        else
+        {
+            RefillMagazine();
+        }
+
+        if (raiseAmmoChanged)
+            AmmoChanged?.Invoke();
     }
 
     void RefillMagazine()
     {
         _currentAmmo = data != null ? data.MagazineSize : 0;
+    }
+
+    void RefillMagazineFromInventory()
+    {
+        if (data == null)
+        {
+            _currentAmmo = 0;
+            return;
+        }
+
+        int needed = Mathf.Max(0, data.MagazineSize - _currentAmmo);
+        if (needed <= 0)
+            return;
+
+        PlayerRunInventory inventory = TryGetPlayerInventory();
+        if (inventory == null)
+        {
+            LogMagazine("Magazine empty — no player inventory.");
+            return;
+        }
+
+        string ammoId = data.RequiredAmmoItem.ItemId;
+        int available = inventory.GetAmount(ammoId);
+        int take = Mathf.Min(needed, available);
+        if (take <= 0)
+        {
+            LogMagazine($"Magazine empty — inventory has 0 '{ammoId}'.");
+            return;
+        }
+
+        if (!inventory.TryRemove(ammoId, take))
+        {
+            LogMagazine($"Magazine empty — failed to remove '{ammoId}' x{take}.");
+            return;
+        }
+
+        _currentAmmo += take;
+        LogMagazine($"Consumed inventory ammo '{ammoId}' x{take} → mag {_currentAmmo}/{data.MagazineSize}.");
+    }
+
+    bool RequiresInventoryAmmo()
+    {
+        if (data == null || data.RequiredAmmoItem == null || string.IsNullOrEmpty(data.RequiredAmmoItem.ItemId))
+            return false;
+
+        EnsurePlayerResolved();
+        return _isPlayerWeapon;
+    }
+
+    int GetInventoryAmmoAmount()
+    {
+        if (data?.RequiredAmmoItem == null)
+            return 0;
+
+        PlayerRunInventory inventory = TryGetPlayerInventory();
+        return inventory != null ? inventory.GetAmount(data.RequiredAmmoItem.ItemId) : 0;
+    }
+
+    static PlayerRunInventory TryGetPlayerInventory()
+    {
+        DungeonRunHost host = DungeonRunHost.Instance;
+        return host != null ? host.Player?.Inventory : null;
+    }
+
+    void EnsurePlayerResolved()
+    {
+        if (_playerResolved)
+            return;
+
+        _isPlayerWeapon = GetComponentInParent<PlayerEntityState>() != null;
+        _playerResolved = true;
     }
 
     void LogMagazine(string message)

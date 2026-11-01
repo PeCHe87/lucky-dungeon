@@ -9,6 +9,8 @@ public abstract class WeaponData : ScriptableObject
     [Tooltip("Player-facing name shown in UI.")]
     [SerializeField] string displayName;
     [SerializeField] WeaponType weaponType = WeaponType.None;
+    [Tooltip("Icon shown in weapon swap UI and inventory.")]
+    [SerializeField] Sprite icon;
 
     [Header("Combat")]
     [SerializeField] float damage = 10f;
@@ -48,6 +50,7 @@ public abstract class WeaponData : ScriptableObject
     public string WeaponId => weaponId;
     public string DisplayName => displayName;
     public WeaponType WeaponType => weaponType;
+    public Sprite Icon => icon;
     public float Damage => damage;
     public float Cooldown => cooldown;
     public float AttackActiveDuration => attackActiveDuration;
