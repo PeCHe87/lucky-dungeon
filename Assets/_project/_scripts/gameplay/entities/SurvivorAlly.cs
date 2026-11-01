@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// Ally survivor that can be channel-connected by <see cref="PlayerSurvivorConnector"/>
 /// and then NavMesh-follows an assigned follow-slot Transform around the player.
 /// Animation: <c>not_connected_idle</c> before connect, one-shot <c>connection_success</c> on connect,
-/// then regular idle / move while escorting.
+/// then regular idle / move while escorting. Can detach and escape to a safe-area goal.
 /// </summary>
 [RequireComponent(typeof(CombatEntityHealth))]
 [DefaultExecutionOrder(114)]
@@ -24,6 +24,8 @@ public sealed class SurvivorAlly : MonoBehaviour
     [SerializeField, Min(0.1f)] float navMeshSampleRadius = 2f;
     [Tooltip("After arriving at the follow slot, wait this long once the slot leaves stop range before chasing again. Prevents jitter from small player moves.")]
     [SerializeField, Min(0f)] float followResumeDelay = 0.4f;
+    [Tooltip("Stop distance used when pathing to a safe-area escape goal.")]
+    [SerializeField, Min(0.1f)] float escapeStopDistance = 0.75f;
 
     [Header("Animation")]
     [Tooltip("Animator state while waiting to be rescued (before connection).")]
@@ -53,8 +55,10 @@ public sealed class SurvivorAlly : MonoBehaviour
 
     Transform _leader;
     Transform _followSlot;
+    Transform _escapeGoal;
     PlayerSurvivorConnector _leaderConnector;
     bool _connected;
+    bool _escaping;
     bool _playingConnectionSuccess;
     Vector3 _lastSampledGoal;
     bool _hasSampledGoal;
@@ -70,6 +74,7 @@ public sealed class SurvivorAlly : MonoBehaviour
     bool _ownsNavLocomotionDisable;
 
     public bool IsConnected => _connected;
+    public bool IsEscaping => _escaping;
     public Transform Leader => _leader;
     public Transform FollowSlot => _followSlot;
     public bool IsPlayingConnectionSuccess => _playingConnectionSuccess;
@@ -77,6 +82,7 @@ public sealed class SurvivorAlly : MonoBehaviour
     public bool CanConnect =>
         isActiveAndEnabled
         && !_connected
+        && !_escaping
         && health != null
         && !health.IsDefeated;
 
@@ -111,7 +117,7 @@ public sealed class SurvivorAlly : MonoBehaviour
             health.Died += OnDied;
 
         TakeOverLocomotionAnimator();
-        if (!_connected)
+        if (!_connected && !_escaping)
             PlayNotConnectedIdle(force: true);
     }
 
@@ -120,7 +126,17 @@ public sealed class SurvivorAlly : MonoBehaviour
         if (health != null)
             health.Died -= OnDied;
 
-        ClearConnection();
+        if (_escaping)
+        {
+            _escaping = false;
+            _escapeGoal = null;
+            StopFollowing();
+        }
+        else
+        {
+            ClearConnection();
+        }
+
         RestoreLocomotionAnimator();
     }
 
@@ -132,6 +148,12 @@ public sealed class SurvivorAlly : MonoBehaviour
 
     void Update()
     {
+        if (_escaping)
+        {
+            TickEscape();
+            return;
+        }
+
         if (!_connected)
             return;
 
@@ -183,6 +205,15 @@ public sealed class SurvivorAlly : MonoBehaviour
         if (animator == null || health != null && health.IsDefeated)
             return;
 
+        if (_escaping)
+        {
+            bool escapingMove = IsAgentMoving();
+            if (escapingMove)
+                EntityNavChaseAttackSupport.SyncLocomotionFacing(agent, gameObject);
+            CrossFadeIfNeeded(escapingMove ? _moveHash : _idleHash);
+            return;
+        }
+
         if (!_connected)
         {
             CrossFadeIfNeeded(_notConnectedIdleHash);
@@ -218,12 +249,50 @@ public sealed class SurvivorAlly : MonoBehaviour
     }
 
     /// <summary>
+    /// Detaches from the player and NavMesh-paths to <paramref name="safeGoal"/>.
+    /// On arrival, despawns and logs that the survivor was saved.
+    /// </summary>
+    public void BeginEscape(Transform safeGoal)
+    {
+        if (_escaping || safeGoal == null)
+            return;
+
+        if (health != null && health.IsDefeated)
+            return;
+
+        if (!_connected && !_escaping)
+            return;
+
+        DetachFromPlayerForEscape();
+
+        _escaping = true;
+        _escapeGoal = safeGoal;
+        _hasSampledGoal = false;
+        ResetFollowResumeState();
+        _playingConnectionSuccess = false;
+        SetConnectProgress(0f, false);
+        TakeOverLocomotionAnimator();
+
+        if (agent == null)
+        {
+            Debug.LogWarning(
+                $"[{nameof(SurvivorAlly)}] '{name}' escape requested but has no NavMeshAgent.",
+                this);
+            return;
+        }
+
+        agent.stoppingDistance = Mathf.Max(0.1f, escapeStopDistance);
+        if (!agent.enabled)
+            agent.enabled = true;
+    }
+
+    /// <summary>
     /// Locks this survivor as connected, plays connection success, then follows <paramref name="followSlot"/>.
     /// Falls back to the leader position if the slot is missing.
     /// </summary>
     public void MarkConnected(Transform leader, Transform followSlot)
     {
-        if (!CanConnect || leader == null)
+        if (!CanConnect || leader == null || _escaping)
             return;
 
         _leader = leader;
@@ -267,11 +336,89 @@ public sealed class SurvivorAlly : MonoBehaviour
     void OnDied()
     {
         SetConnectProgress(0f, false);
+        if (_escaping)
+        {
+            _escaping = false;
+            _escapeGoal = null;
+            StopFollowing();
+            return;
+        }
+
         ClearConnection();
+    }
+
+    void TickEscape()
+    {
+        if (health != null && health.IsDefeated)
+        {
+            _escaping = false;
+            _escapeGoal = null;
+            StopFollowing();
+            return;
+        }
+
+        if (_escapeGoal == null)
+        {
+            CompleteEscape();
+            return;
+        }
+
+        if (agent == null || !agent.isOnNavMesh)
+            return;
+
+        Vector3 goalPosition = _escapeGoal.position;
+        float stop = Mathf.Max(0.1f, escapeStopDistance);
+        agent.stoppingDistance = stop;
+
+        if (NavMeshChaseDriver.IsWithinXZRadius(transform.position, goalPosition, stop))
+        {
+            CompleteEscape();
+            return;
+        }
+
+        NavMeshChaseDriver.RefreshChaseDestinationIfNeeded(
+            agent,
+            goalPosition,
+            navMeshSampleRadius,
+            ref _lastSampledGoal,
+            ref _hasSampledGoal);
+    }
+
+    void CompleteEscape()
+    {
+        _escaping = false;
+        _escapeGoal = null;
+        StopFollowing();
+        Debug.Log("Survivor was saved!", this);
+        Destroy(gameObject);
+    }
+
+    void DetachFromPlayerForEscape()
+    {
+        if (!_connected)
+        {
+            _leader = null;
+            _followSlot = null;
+            _leaderConnector = null;
+            return;
+        }
+
+        _connected = false;
+        _playingConnectionSuccess = false;
+        _leader = null;
+        _followSlot = null;
+        _leaderConnector = null;
+        _lastPlayedHash = int.MinValue;
+        ResetFollowResumeState();
+        StopFollowing();
+        Disconnected?.Invoke();
     }
 
     void ClearConnection()
     {
+        if (_escaping)
+            return;
+
         if (!_connected)
         {
             StopFollowing();
