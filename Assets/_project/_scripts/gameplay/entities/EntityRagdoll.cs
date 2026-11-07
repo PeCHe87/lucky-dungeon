@@ -1,20 +1,35 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
 /// On death, builds a Stander/Bip001 bone ragdoll and applies the killing-blow impulse.
 /// No Rigidbodies/joints exist on bones while alive (avoids skinned-mesh culling bugs).
+/// Disable <see cref="enableRagdoll"/> (or remove this component) to keep the Die animator clip;
+/// when disabled, a short root slide still uses the killing-blow death push to exaggerate that clip.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class EntityRagdoll : MonoBehaviour
 {
     const float DefaultUpwardBias = 0.25f;
+    const float DefaultDeathSlideDuration = 0.15f;
+    const float DefaultDeathForceToDistanceScale = 0.08f;
 
     [Header("Refs")]
     [SerializeField] CombatEntityHealth health;
     [SerializeField] Animator animator;
     [SerializeField] NavMeshAgent agent;
     [SerializeField] Collider rootGameplayCollider;
+
+    [Header("Behaviour")]
+    [Tooltip("When false, death uses the Die FSM / animator clip only (no bone ragdoll).")]
+    [SerializeField] bool enableRagdoll = true;
+
+    [Header("Animated death shove")]
+    [Tooltip("Root slide duration when Enable Ragdoll is off. Uses weapon Death Push Force × scale as distance.")]
+    [SerializeField, Min(0.01f)] float deathSlideDuration = DefaultDeathSlideDuration;
+    [Tooltip("Converts weapon Death Push Force (m/s ragdoll units) into horizontal slide meters.")]
+    [SerializeField, Min(0f)] float deathForceToDistanceScale = DefaultDeathForceToDistanceScale;
 
     [Header("Impulse")]
     [SerializeField, Range(0f, 1f)] float upwardBias = DefaultUpwardBias;
@@ -24,10 +39,12 @@ public sealed class EntityRagdoll : MonoBehaviour
     Rigidbody _impulseBody;
     Rigidbody[] _ragdollBodies;
     Collider[] _ragdollColliders;
+    Collider[] _selfColliders;
 
     bool _active;
     bool _pendingDeathImpulse;
     Vector3 _pendingDeathVelocity;
+    Coroutine _animatedDeathShove;
 
     public bool IsActive => _active;
 
@@ -41,6 +58,8 @@ public sealed class EntityRagdoll : MonoBehaviour
             agent = GetComponent<NavMeshAgent>();
         if (rootGameplayCollider == null)
             rootGameplayCollider = GetComponent<CapsuleCollider>();
+
+        _selfColliders = GetComponentsInChildren<Collider>(true);
 
         // Strip any leftover prefab-authored bone physics so chase animation stays clean.
         StripPreauthoredBonePhysics();
@@ -56,6 +75,8 @@ public sealed class EntityRagdoll : MonoBehaviour
     {
         if (health != null)
             health.Died -= OnDied;
+
+        StopAnimatedDeathShove();
     }
 
     void OnDied()
@@ -63,9 +84,90 @@ public sealed class EntityRagdoll : MonoBehaviour
         if (_active)
             return;
 
-        _active = true;
-        ActivateRagdoll();
-        QueueDeathImpulse();
+        if (enableRagdoll)
+        {
+            _active = true;
+            ActivateRagdoll();
+            QueueDeathImpulse();
+            return;
+        }
+
+        StartAnimatedDeathShove();
+    }
+
+    void StartAnimatedDeathShove()
+    {
+        StopAnimatedDeathShove();
+
+        if (health == null || deathForceToDistanceScale <= 0f)
+            return;
+
+        float force = health.LastDeathPushForce;
+        if (force <= 0f)
+            return;
+
+        Vector3 dir = health.LastDeathPushDirection;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 1e-8f)
+            dir = transform.forward;
+        else
+            dir.Normalize();
+
+        float resistance = 0f;
+        if (TryGetComponent(out PushbackReceiver pushback))
+        {
+            pushback.CancelPushback();
+            resistance = pushback.PushbackResistance;
+        }
+
+        float distance = force * deathForceToDistanceScale * (1f - resistance);
+        if (distance <= 0.01f)
+            return;
+
+        _animatedDeathShove = StartCoroutine(AnimatedDeathShoveRoutine(dir, distance, deathSlideDuration));
+    }
+
+    void StopAnimatedDeathShove()
+    {
+        if (_animatedDeathShove == null)
+            return;
+
+        StopCoroutine(_animatedDeathShove);
+        _animatedDeathShove = null;
+    }
+
+    IEnumerator AnimatedDeathShoveRoutine(Vector3 direction, float totalDistance, float duration)
+    {
+        LayerMask blockLayers = PushbackGeometryProbe.ResolveBlockLayers(transform);
+        float speed = totalDistance / Mathf.Max(0.01f, duration);
+        float moved = 0f;
+        float elapsed = 0f;
+
+        try
+        {
+            while (elapsed < duration && moved < totalDistance - 0.001f)
+            {
+                float dt = Time.deltaTime;
+                elapsed += dt;
+                float step = Mathf.Min(speed * dt, totalDistance - moved);
+                step = PushbackGeometryProbe.ClampTravelByCollision(
+                    transform,
+                    direction,
+                    step,
+                    blockLayers,
+                    _selfColliders);
+                if (step <= 0.001f)
+                    break;
+
+                transform.position += direction * step;
+                moved += step;
+                yield return null;
+            }
+        }
+        finally
+        {
+            _animatedDeathShove = null;
+        }
     }
 
     void FixedUpdate()

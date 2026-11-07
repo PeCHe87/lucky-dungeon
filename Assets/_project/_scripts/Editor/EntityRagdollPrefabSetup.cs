@@ -3,9 +3,10 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Ensures enemy combat prefabs have <see cref="EntityRagdoll"/> and strips any pre-authored
+/// Ensures listed enemy combat prefabs have <see cref="EntityRagdoll"/> (opt-in via component;
+/// uncheck Enable Ragdoll on a prefab to keep Die animation only) and strips any pre-authored
 /// bone Rigidbodies/joints (ragdoll is built at runtime on death only).
-/// Never touches the player prefab.
+/// Never touches the player prefab. CombatEntityHealth does not auto-add this component.
 /// </summary>
 [InitializeOnLoad]
 public static class EntityRagdollPrefabSetup

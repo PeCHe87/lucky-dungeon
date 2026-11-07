@@ -54,10 +54,6 @@ public sealed class CombatEntityHealth : MonoBehaviour, IDamageable, IDefeatable
             stateMachine = GetComponent<AIStateMachine>();
 
         _attackController = GetComponent<EntityAttackController>();
-
-        // Enemies (not the player) get ragdoll death without requiring every prefab to be authored.
-        if (GetComponent<PlayerDeathHandler>() == null && GetComponent<EntityRagdoll>() == null)
-            gameObject.AddComponent<EntityRagdoll>();
     }
 
     public void TakeDamage(float amount, DamageNumberStyle style)

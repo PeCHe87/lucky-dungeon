@@ -1770,6 +1770,7 @@ GameObject:
   - component: {fileID: 6130574277704718171}
   - component: {fileID: 2358170560755285425}
   - component: {fileID: 2161664020602246441}
+  - component: {fileID: 3893470124409684619}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_range
   m_TagString: Entity
@@ -2079,6 +2080,7 @@ MonoBehaviour:
   rangedWeapon: {fileID: 3577614497911487224}
   meleeWeaponData: {fileID: 11400000, guid: d1282f60875e452fc24e6aaabbe0a003, type: 2}
   rangedWeaponData: {fileID: 11400000, guid: 4592d7c7459b4eb40e8a2c4f89f9a754, type: 2}
+  brokenMeleeFallback: {fileID: 0}
   logEquippedWeaponChanges: 0
 --- !u!114 &5584859218802866874
 MonoBehaviour:
@@ -2284,8 +2286,31 @@ MonoBehaviour:
   animator: {fileID: 974160349899826416}
   agent: {fileID: 66708481262817313}
   rootGameplayCollider: {fileID: 1510293228299829987}
+  enableRagdoll: 1
+  deathSlideDuration: 0.15
+  deathForceToDistanceScale: 0.08
   upwardBias: 0.25
   secondaryBodyVelocityScale: 0.55
+--- !u!114 &3893470124409684619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353573894065297185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 814c9d03b0baebb48abc9c962896dcdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDeathLootDrop
+  health: {fileID: 2025908165253351341}
+  lootPrefab: {fileID: 9042969807836583497, guid: 2a5cedfedd7dda547bfe3a3cb17bf59c, type: 3}
+  dropChance: 0
+  spawnDelay: 0.15
+  destroyLootAfterOpened: 1
+  destroyLootDelay: 0
+  fixedLoot: []
+  randomLoot: []
 --- !u!1 &7360468481391053212
 GameObject:
   m_ObjectHideFlags: 0

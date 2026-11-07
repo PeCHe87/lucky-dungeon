@@ -45,6 +45,12 @@ public sealed class InteractableLoot : MonoBehaviour
     [SerializeField] RandomLootEntry[] randomLoot;
     [SerializeField] bool looted;
 
+    [Header("Lifetime")]
+    [Tooltip("When true, destroys this loot object after a successful open instead of keeping the clear state.")]
+    [SerializeField] bool destroyAfterLooted;
+    [Tooltip("Seconds to wait after looting before destroying (0 = end of frame).")]
+    [SerializeField, Min(0f)] float destroyDelayAfterLooted;
+
     int _playerOverlapCount;
     bool _reportedSearchableProximity;
     bool _opening;
@@ -63,6 +69,50 @@ public sealed class InteractableLoot : MonoBehaviour
 
         looted = value;
         RefreshPrompt();
+    }
+
+    /// <summary>
+    /// Replaces this container's fixed/random tables (deep copy) and marks it unlooted.
+    /// Used when spawning world loot from an enemy death drop configuration.
+    /// </summary>
+    public void ApplyLootConfiguration(FixedLootEntry[] fixedEntries, RandomLootEntry[] randomEntries)
+    {
+        if (_opening)
+            CancelOpen();
+
+        fixedLoot = CloneFixedEntries(fixedEntries);
+        randomLoot = CloneRandomEntries(randomEntries);
+        looted = false;
+        RefreshPrompt();
+    }
+
+    /// <summary>Overrides whether this container destroys itself after a successful open.</summary>
+    public void ApplyDespawnAfterLoot(bool destroy, float delay)
+    {
+        destroyAfterLooted = destroy;
+        destroyDelayAfterLooted = Mathf.Max(0f, delay);
+    }
+
+    static FixedLootEntry[] CloneFixedEntries(FixedLootEntry[] source)
+    {
+        if (source == null || source.Length == 0)
+            return System.Array.Empty<FixedLootEntry>();
+
+        var copy = new FixedLootEntry[source.Length];
+        for (int i = 0; i < source.Length; i++)
+            copy[i] = source[i];
+        return copy;
+    }
+
+    static RandomLootEntry[] CloneRandomEntries(RandomLootEntry[] source)
+    {
+        if (source == null || source.Length == 0)
+            return System.Array.Empty<RandomLootEntry>();
+
+        var copy = new RandomLootEntry[source.Length];
+        for (int i = 0; i < source.Length; i++)
+            copy[i] = source[i];
+        return copy;
     }
 
     /// <summary>Starts the open channel if this loot is searchable and the player is in range.</summary>
@@ -265,6 +315,9 @@ public sealed class InteractableLoot : MonoBehaviour
 
         if (granted != null && granted.Count > 0)
             GameEvents.RaiseLootObtained(granted);
+
+        if (destroyAfterLooted)
+            Destroy(gameObject, destroyDelayAfterLooted);
     }
 
     List<(string itemId, int amount)> GrantRewards()

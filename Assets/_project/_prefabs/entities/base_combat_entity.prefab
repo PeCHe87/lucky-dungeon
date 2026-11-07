@@ -307,6 +307,7 @@ GameObject:
   - component: {fileID: 8880000000000000001}
   - component: {fileID: 1898047316968971629}
   - component: {fileID: 1457977399522476428}
+  - component: {fileID: 3875920360638342469}
   m_Layer: 8
   m_Name: base_combat_entity
   m_TagString: Entity
@@ -538,8 +539,31 @@ MonoBehaviour:
   animator: {fileID: 7533446042223888342}
   agent: {fileID: 0}
   rootGameplayCollider: {fileID: 2000000000000000003}
+  enableRagdoll: 1
+  deathSlideDuration: 0.15
+  deathForceToDistanceScale: 0.08
   upwardBias: 0.25
   secondaryBodyVelocityScale: 0.55
+--- !u!114 &3875920360638342469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 814c9d03b0baebb48abc9c962896dcdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDeathLootDrop
+  health: {fileID: 8591119451767267003}
+  lootPrefab: {fileID: 9042969807836583497, guid: 2a5cedfedd7dda547bfe3a3cb17bf59c, type: 3}
+  dropChance: 0
+  spawnDelay: 0.15
+  destroyLootAfterOpened: 1
+  destroyLootDelay: 0
+  fixedLoot: []
+  randomLoot: []
 --- !u!1 &2000000000000000011
 GameObject:
   m_ObjectHideFlags: 0
