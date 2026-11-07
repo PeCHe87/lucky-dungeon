@@ -1245,6 +1245,18 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3689118446056951229, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.y
       value: 4.38
@@ -3896,6 +3908,18 @@ PrefabInstance:
       propertyPath: deathForceToDistanceScale
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2614154267041728895, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
       propertyPath: fieldOfView
       value: 
@@ -5313,6 +5337,18 @@ PrefabInstance:
       propertyPath: deathForceToDistanceScale
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2614154267041728895, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
       propertyPath: fieldOfView
       value: 
@@ -6348,6 +6384,18 @@ PrefabInstance:
     - target: {fileID: 1369572090052691427, guid: f776d9b0fd49f64488310afd8bf359b3, type: 3}
       propertyPath: deathForceToDistanceScale
       value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000005, guid: f776d9b0fd49f64488310afd8bf359b3, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000005, guid: f776d9b0fd49f64488310afd8bf359b3, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000005, guid: f776d9b0fd49f64488310afd8bf359b3, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4088201733402775376, guid: f776d9b0fd49f64488310afd8bf359b3, type: 3}
       propertyPath: m_Name
@@ -8281,6 +8329,18 @@ PrefabInstance:
       propertyPath: deathForceToDistanceScale
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2614154267041728895, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
       propertyPath: fieldOfView
       value: 
@@ -9226,6 +9286,18 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3689118446056951229, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.y
       value: 4.38
@@ -9795,6 +9867,135 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1235163015}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &841631895
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1929243392}
+    m_Modifications:
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: dropChance
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: lootPrefab
+      value: 
+      objectReference: {fileID: 9042969807836583497, guid: 76ea10a4e957fd540bf8090e4ea9d537, type: 3}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: spawnDelay
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: randomLoot.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: destroyLootAfterOpened
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: randomLoot.Array.data[0].item
+      value: 
+      objectReference: {fileID: 11400000, guid: cb90d2a756e22944381e4c26bfdc1678, type: 2}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: randomLoot.Array.data[0].chance
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: randomLoot.Array.data[0].maxAmount
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1428673840967607935, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: randomLoot.Array.data[0].minAmount
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1633804709154150852, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: animator
+      value: 
+      objectReference: {fileID: 2067628788}
+    - target: {fileID: 2196670000000000003, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3223640597944539606, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: enableRagdoll
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3223640597944539606, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: deathSlideDuration
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3223640597944539606, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: deathForceToDistanceScale
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088201733402775376, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_Name
+      value: zombie_combat_entity_chaser_patroller_melee
+      objectReference: {fileID: 0}
+    - target: {fileID: 4227449232532627032, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: animator
+      value: 
+      objectReference: {fileID: 2067628788}
+    - target: {fileID: 7749087462137932978, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: animator
+      value: 
+      objectReference: {fileID: 2067628788}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -23.64
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 17.71
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.98739403
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.15828195
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 18.214
+      objectReference: {fileID: 0}
+    - target: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 520785009218808087, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2067628789}
+  m_SourcePrefab: {fileID: 100100000, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+--- !u!4 &841631896 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9027769756202637317, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+  m_PrefabInstance: {fileID: 841631895}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &845950652
 GameObject:
   m_ObjectHideFlags: 0
@@ -12722,6 +12923,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HCFX_Hit_03
       objectReference: {fileID: 0}
+    - target: {fileID: 1004229041087787908, guid: e6eb729988ef2f349a24b0b4ae8fea47, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1004229041087787911, guid: e6eb729988ef2f349a24b0b4ae8fea47, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.75
@@ -14508,6 +14713,17 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1178773608}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1187993979 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3069475849036746691, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+  m_PrefabInstance: {fileID: 841631895}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
 --- !u!1001 &1192937490
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16868,6 +17084,18 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3689118446056951229, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.y
       value: 4.38
@@ -18177,6 +18405,18 @@ PrefabInstance:
     - target: {fileID: 2000000000000000012, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_ConstrainProportionsScale
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3689118446056951229, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -19697,6 +19937,17 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1618317107}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1622506624 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8191682148270025306, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+  m_PrefabInstance: {fileID: 841631895}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678abcdef06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponHolder
 --- !u!1 &1624582237
 GameObject:
   m_ObjectHideFlags: 0
@@ -23364,6 +23615,7 @@ Transform:
   - {fileID: 697065070}
   - {fileID: 426347109}
   - {fileID: 1385327427}
+  - {fileID: 841631896}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1939913842
@@ -23561,6 +23813,18 @@ PrefabInstance:
     - target: {fileID: 2000000000000000012, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_ConstrainProportionsScale
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000002, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3689118446056951229, guid: 8be821c022690e144b837a0bc81fb0f1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -25534,6 +25798,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2050591568}
   m_CullTransparentMesh: 1
+--- !u!1 &2067628786 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 520785009218808087, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+  m_PrefabInstance: {fileID: 841631895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &2067628788 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 520785009209385631, guid: e58b6e71da9728b4b9b6ff9901f2706a, type: 3}
+  m_PrefabInstance: {fileID: 841631895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2067628789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2067628786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a06f67a4c0caf8b4ca03f74444494454, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeAttackAnimationEventReceiver
+  meleeWeapon: {fileID: 1187993979}
+  weaponHolder: {fileID: 1622506624}
+  logHitFrameEvents: 0
 --- !u!1001 &2072252416
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26814,6 +27103,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1428673840967607935, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
       propertyPath: randomLoot.Array.data[2].minAmount
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000003, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000003, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000003, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
+      propertyPath: deathVfxSpawnDelay
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3069475849036746691, guid: 64ac683df1a0cba4ba5c8f77aac4591d, type: 3}
@@ -28314,6 +28615,18 @@ PrefabInstance:
     - target: {fileID: 2161664020602246441, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
       propertyPath: deathForceToDistanceScale
       value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxPrefab
+      value: 
+      objectReference: {fileID: 192166, guid: c6de9c3e430816d40aedcaaf84000975, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: damageVfxPrefab
+      value: 
+      objectReference: {fileID: 167524, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+    - target: {fileID: 2196670000000000004, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
+      propertyPath: deathVfxSpawnDelay
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2614154267041728895, guid: 7f69eac745c40b84d8e5d2cfb75f5c73, type: 3}
       propertyPath: fieldOfView

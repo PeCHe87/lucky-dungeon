@@ -1771,6 +1771,7 @@ GameObject:
   - component: {fileID: 2358170560755285425}
   - component: {fileID: 2161664020602246441}
   - component: {fileID: 3893470124409684619}
+  - component: {fileID: 2196670000000000004}
   m_Layer: 8
   m_Name: base_combat_entity_chaser_patroller_range
   m_TagString: Entity
@@ -2311,6 +2312,26 @@ MonoBehaviour:
   destroyLootDelay: 0
   fixedLoot: []
   randomLoot: []
+--- !u!114 &2196670000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353573894065297185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 219667044ebb4b50acd8f669273095f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityCombatVfx
+  health: {fileID: 2025908165253351341}
+  spawnAnchor: {fileID: 6934060178787341393}
+  damageVfxPrefab: {fileID: 0}
+  damageVfxLocalOffset: {x: 0, y: 0, z: 0}
+  damageVfxDestroyDelay: 2
+  deathVfxPrefab: {fileID: 0}
+  deathVfxLocalOffset: {x: 0, y: 0, z: 0}
+  deathVfxDestroyDelay: 3
 --- !u!1 &7360468481391053212
 GameObject:
   m_ObjectHideFlags: 0
